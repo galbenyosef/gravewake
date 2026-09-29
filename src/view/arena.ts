@@ -325,7 +325,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.2, 0.8), 800);
   const cores = inst(new THREE.SphereGeometry(1, 8, 6), glowMaterial(0xffffff, 1.6), 800);
   const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.12), 800);
-  const lobs = inst(new THREE.IcosahedronGeometry(0.4, 1), glowMaterial(token('--lob'), 3), 64);
+  // Hurled rounds: a burning skull-stone (a dark lump inside a ball of fire) that sheds sparks.
+  const lobs = inst(new THREE.IcosahedronGeometry(0.3, 1), new THREE.MeshStandardMaterial({ color: token('--bone'), roughness: 0.9, emissive: token('--lob'), emissiveIntensity: 0.6 }), 64);
+  const lobFire = inst(new THREE.SphereGeometry(0.55, 10, 8), glowMaterial(token('--lob'), 1.4, 0.45), 64);
   const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
   const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
 
@@ -541,7 +543,10 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       if (b.lob) {
         const t = 1 - b.life / T.LOB_FLIGHT_S;
         m4.compose(v3.set(b.x, 0.6 + 4 * LOB_ARC_U * t * (1 - t), b.y), q.setFromAxisAngle(up, time * 5), s3.set(1, 1, 1));
-        lobs.setMatrixAt(nl++, m4);
+        lobs.setMatrixAt(nl, m4);
+        m4.compose(v3, q, s3.setScalar(0.9 + Math.sin(time * 25 + b.id) * 0.12));
+        lobFire.setMatrixAt(nl++, m4);
+        if (dt > 0) particles.spark(b.x, b.y, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8, token('--lob'), 0.09, 0.4, v3.y);
         floorLight(b.x, b.y, 1.6, 1.2, token('--lob'));
       } else if (b.hostile) {
         const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15, sp = Math.hypot(b.vx, b.vy) || 1;
@@ -565,7 +570,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       }
     }
     for (let i = nf; i < MAX_FLOOR_LIGHTS; i++) floorU.uLights.value[i]!.w = 0;
-    bolts.count = nb; boltHalos.count = nb; orbs.count = no; cores.count = no; halos.count = no; lobs.count = nl;
+    bolts.count = nb; boltHalos.count = nb; orbs.count = no; cores.count = no; halos.count = no; lobs.count = nl; lobFire.count = nl;
     let ns = 0, nr = 0;
     for (const k of s.pickups) {
       const blink = k.life < 2 && Math.floor(time * 10) % 2 === 0 ? 0.001 : 1;
@@ -589,7 +594,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       scorches.setMatrixAt(nsc++, m4);
     }
     scorches.count = nsc;
-    for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
+    for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, lobFire, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
 
     // effects
     particles.update(dt);
