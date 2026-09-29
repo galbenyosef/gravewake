@@ -82,11 +82,11 @@ function atLum(color: number, lum: number, exact = false) {
  * --trim as dull metal, `glow` unlit in `glow`. Every lit slot catches a cold moonlight rim on its silhouette edge.
  * `emissiveIntensity` is the body's glow: the arena flashes it on a hit.
  */
-export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM) {
+export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM, rimColor = token('--moon')) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED });
   const uniforms = {
     uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) }, uCloth: { value: atLum(body, CLOTH_LUM, true) },
-    uRim: { value: new THREE.Color(token('--moon')).multiplyScalar(rim) },
+    uRim: { value: new THREE.Color(rimColor).multiplyScalar(rim) },
     uSurface: { value: new THREE.Vector2(LOOK.SURFACE_GRAIN, LOOK.SURFACE_BUMP) },
   };
   m.onBeforeCompile = (sh) => {
@@ -263,7 +263,8 @@ export function buildShield(deg: number, color: number) {
 
 /** The player's ship: the `ship` model in the hull colour, glowing in its glow colour. */
 export function buildShip(color: number, glow: number) {
-  const paint = paintMaterial(color, glow, glow);
+  // His edges catch his own fire, not the moon: the one warm silhouette on the field.
+  const paint = paintMaterial(color, glow, glow, LOOK.RIM, glow);
   paint.emissiveIntensity = 0.3;
   const rig = buildRig('wizard', paint);
   rig.obj.scale.setScalar(LOOK.WIZARD_SCALE);

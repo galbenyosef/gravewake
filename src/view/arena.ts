@@ -110,12 +110,12 @@ function floorMaterial() {
         alb = mix(alb, uStone * 0.35, verge * 0.7);
         moss *= 1.0 - path;
         float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
-        float wet = smoothstep(0.27, 0.25, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
+        float wet = smoothstep(0.245, 0.225, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
         alb *= 1.0 - 0.75 * wet;
         float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
         alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
         diffuseColor.rgb = alb;`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.75, wet);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.9, wet);')
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
           // Relief: a world-space height (mounds and sunk stones) differenced across a few cm, so the moon rakes across
@@ -123,7 +123,8 @@ function floorMaterial() {
           const float E = 0.06;
           float h0 = reliefH(p), hx = reliefH(p + vec2(E, 0.0)), hz = reliefH(p + vec2(0.0, E));
           float k = uRelief * (1.0 - 0.8 * wet) / E;
-          vec3 nw = normalize(vec3(-(hx - h0) * k, 1.0, -(hz - h0) * k));
+          vec3 base = (vec4(normal, 0.0) * viewMatrix).xyz; // the bank's slope, in world space
+          vec3 nw = normalize(base + vec3(-(hx - h0) * k, 0.0, -(hz - h0) * k));
           normal = normalize((viewMatrix * vec4(nw, 0.0)).xyz);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
@@ -143,7 +144,7 @@ function floorMaterial() {
         // Standing water: the moonlit sky in it (stronger at a glancing angle), a pale shoreline, and the spells mirrored.
         float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
         float shore = smoothstep(0.15, 0.5, wet) * smoothstep(0.85, 0.5, wet);
-        totalEmissiveRadiance += alb * spell + spell * 0.25 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
+        totalEmissiveRadiance += alb * spell + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
           + uMoon * wave * 0.012 * (0.5 + broad);`);
   };
   return { material: m, uniforms };
@@ -239,6 +240,14 @@ function blobTexture() {
   return t;
 }
 
+/** The clearing sits low: past the arena's edge the ground rises in a ragged bank (a berm), so the fixed camera gets
+ *  height at the rim and the moon throws the bank's shadow in. Height in u at (x, z); scenery stands on it. */
+function bermHeight(x: number, z: number) {
+  const edge = Math.max(Math.abs(x) - HALF_W, Math.abs(z) - HALF_H) - 0.4;
+  const t = Math.min(1, Math.max(0, edge / LOOK.BERM_W_U)), wobble = 0.75 + 0.25 * Math.sin(x * 0.7 + Math.cos(z * 0.5) * 2) * Math.sin(z * 0.6 + x * 0.2);
+  return LOOK.BERM_U * t * t * (3 - 2 * t) * wobble;
+}
+
 /** The scenery round the clearing (content/arena.kdl): one instanced draw per model and paint, its rest pose, as it
  *  never moves. */
 function plantClearing(scene: THREE.Scene) {
@@ -248,7 +257,7 @@ function plantClearing(scene: THREE.Scene) {
     const { model, paint, glow } = scs[0]!, spots = scs.flatMap((sc) => sc.placements);
     const im = new THREE.InstancedMesh(restGeometry(model), paintMaterial(token(paint), token(glow ?? paint), undefined, LOOK.SCENERY_RIM), spots.length);
     im.castShadow = true; im.receiveShadow = true;
-    spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0, p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
+    spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, bermHeight(p.x, p.z), p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
     im.frustumCulled = false;
     (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
     scene.add(im);
@@ -285,7 +294,11 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // The clearing: procedural floor, ground fog, and the dead wood, graves and roots round its edge.
   const { material: floorMat, uniforms: floorU } = floorMaterial();
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), floorMat);
+  const floorGeo = new THREE.PlaneGeometry(140, 100, 280, 200).rotateX(-Math.PI / 2);
+  const fp = floorGeo.attributes.position!;
+  for (let i = 0; i < fp.count; i++) fp.setY(i, bermHeight(fp.getX(i), fp.getZ(i)));
+  floorGeo.computeVertexNormals();
+  const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.receiveShadow = true;
   scene.add(floor);
   const fogU = THREE.UniformsUtils.clone(fogShader.uniforms);

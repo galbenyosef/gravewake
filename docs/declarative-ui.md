@@ -194,6 +194,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `BLOOM_THRESHOLD` | bloom threshold |
 | `SHADOW` | contact-shadow darkness under characters (the moon casts the real shadows) |
 | `SHADOW_MAP` | the moon's shadow map size, px |
+| `BERM_U` | height of the bank the clearing sits in, past the arena's edge (u); scenery stands on it |
+| `BERM_W_U` | how far the bank takes to rise |
 | `CANOPY_Y_U` | height of the dead canopy whose moon shadow dapples the clearing, u |
 | `VIGNETTE` | vignette depth |
 | `GRADE` | how far the shadows lean towards moonlight |

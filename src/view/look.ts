@@ -11,7 +11,7 @@ export const LOOK = {
   /** Characters are drawn larger than their collision radius r, at r + this (u): small ones read at phone size, a boss
    *  grows a little. View only; hits still use r. The wizard is drawn at WIZARD_SCALE. */
   CHARACTER_PAD_U: 0.4,
-  WIZARD_SCALE: 1.3,
+  WIZARD_SCALE: 1.5,
   /** The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
    *  (soulfire eyes, the moon on their edges), under the wizard's light. */
   BODY_LUM: 0.1,
@@ -55,12 +55,15 @@ export const LOOK = {
   FLASH_KILL: 30,
   FLASH_BOSS: 60,
   /** Bloom: only magic should cross the threshold. */
-  BLOOM: 0.75,
+  BLOOM: 0.6,
   BLOOM_RADIUS: 0.4,
   BLOOM_THRESHOLD: 0.8,
   /** Contact shadows under characters (the moon casts the real ones), and the moon's shadow map size (px). */
   SHADOW: 0.5,
   SHADOW_MAP: 2048,
+  /** The bank the clearing sits in: its height past the edge (u), and how far it takes to rise (u). */
+  BERM_U: 1.6,
+  BERM_W_U: 3.5,
   /** Height of the dead canopy whose shadow dapples the clearing, u. */
   CANOPY_Y_U: 14,
   /** The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */

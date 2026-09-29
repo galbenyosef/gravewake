@@ -17,8 +17,12 @@ belt = at(torus('belt', 0.4, 0.035, 'trim', 18, 4), (0.02, 0, 0.16), scale=(0.95
 clasp = at(smooth(ball('clasp', 0.06, 'trim', 8, 5)), (0.33, 0, 0.66))
 satchel = at(smooth(box('satchel', (0.16, 0.12, 0.2), 'trim', 0.04)), (-0.05, -0.42, 0.1), (0, 0, 10))
 # A torn cape dragging out behind him, so from above he is a wedge, not a stack of balls.
-cape = [tube('cape', [(-0.2, y, 0.62), (-0.45, y * 1.25, 0.3), (-0.7, y * 1.35, -0.1), (-0.95, y * 1.2, -0.38)], [0.13, 0.12, 0.09, 0.02], 'cloth', 6) for y in (-0.22, 0.0, 0.22)]
-for c in cape: rough(c, 0.03, 7, 4)
+cape = slab('cape', [(0.0, -0.3), (-0.55, -0.42), (-0.95, -0.5), (-1.05, -0.3), (-0.98, -0.1), (-1.08, 0.12), (-0.96, 0.32), (-1.0, 0.5), (-0.55, 0.42), (0.0, 0.3)], 0.04, 'cloth', 0.015)
+# Hung from the shoulders, falling back and down to drag on the ground, sagging between the shoulders.
+deform(cape, lambda v: Vector((v.x - 0.18, v.y * (1 + 0.1 * -v.x), 0.62 + v.x * 0.95 + 0.25 * v.x * v.x - 0.08 * math.cos(v.y * 3) + v.z)))
+smooth(cape)
+rough(cape, 0.03, 6, 4)
+cape = [cape]
 pauldrons = [at(ball('shoulder', 0.17, 'cloth', 10, 6), (-0.02, sd * 0.33, 0.66), scale=(1.1, 1.2, 0.55)) for sd in (1, -1)]
 # Embers stitched round his hem and down the cape: runes of the fire he carries, the one warm colour on the field.
 hem = [tube('hemrune', [(math.cos(t) * 0.5, math.sin(t) * 0.5, -0.3), (math.cos(t + 0.12) * 0.51, math.sin(t + 0.12) * 0.51, -0.24)], 0.018, 'glow', 3)
