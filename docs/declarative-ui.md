@@ -162,6 +162,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
 | `WIZARD_SCALE` | the wizard's drawn size |
 | `FACETED` | models shaded in flat facets (hard, chiselled planes) rather than smoothed |
+| `WIZARD_HALO` | opacity of the faint warm halo on the ground round the wizard |
 | `BODY_LUM` | the brightest a body's paint may be: the dead stay dark shapes with bright tells |
 | `EXPOSURE` | tone-mapping exposure, the whole frame |
 | `MOON_KEY` | moon key light intensity (--moon) |
@@ -194,7 +195,9 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `BLOOM` | bloom strength (only magic should cross the threshold) |
 | `BLOOM_RADIUS` | bloom radius |
 | `BLOOM_THRESHOLD` | bloom threshold |
-| `SHADOW` | contact-shadow darkness under characters (the moon casts the real shadows) |
+| `SHADOW` | contact-shadow darkness under characters and scenery (the moon casts the real shadows) |
+| `STAINS` | stains kills leave on the ground, at most this many |
+| `STAIN_S` | how long a stain takes to fade, s |
 | `SHADOW_MAP` | the moon's shadow map size, px |
 | `BERM_U` | height of the bank the clearing sits in, past the arena's edge (u); scenery stands on it |
 | `BERM_W_U` | how far the bank takes to rise |
@@ -332,7 +335,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
-| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" light= out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
+| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" light= shadow= out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
 
 ## Content helpers
 

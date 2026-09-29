@@ -122,6 +122,8 @@ export const ScatterSchema = z.strictObject({
   scale: pos, vary: nonneg.default(0),
   chance: z.number().min(0).max(1).default(1),
   face: z.enum(['in', 'any']).default('any'),
+  /** Contact shadow under each one: its footprint radius at scale 1, u (0: none). */
+  shadow: nonneg.default(0),
   /** Each one lights the ground round it, this radius (u), in its glow colour. */
   light: pos.optional(),
   seed: z.number().int(),

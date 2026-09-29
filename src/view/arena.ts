@@ -299,6 +299,15 @@ function bermHeight(x: number, z: number) {
   return LOOK.BERM_U * t * t * (3 - 2 * t) * wobble;
 }
 
+/** Contact shadows under the scenery, so every stone, grave and trunk sits in the ground rather than on it. */
+function contactShadows() {
+  const spots = SCATTERS.filter((sc) => sc.shadow > 0).flatMap((sc) => sc.placements.map((p) => ({ ...p, r: sc.shadow * p.scale })));
+  const im = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: LOOK.SHADOW, depthWrite: false }), spots.length);
+  spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, bermHeight(p.x, p.z) + 0.02, p.z), new THREE.Quaternion(), new THREE.Vector3(p.r * 2, 1, p.r * 2))));
+  im.frustumCulled = false;
+  return im;
+}
+
 /** The scenery round the clearing (content/arena.kdl): one instanced draw per model and paint, its rest pose, as it
  *  never moves. */
 function plantClearing(scene: THREE.Scene) {
@@ -354,19 +363,24 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   scene.add(floor);
   const fogU = THREE.UniformsUtils.clone(fogShader.uniforms);
   fogU.uColor.value.set(token('--moon')).multiplyScalar(LOOK.FOG_BRIGHT);
-  const groundFog = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...fogShader, uniforms: fogU, transparent: true, depthWrite: false }));
-  groundFog.position.y = LOOK.FOG_Y_U;
+  const groundFog = new THREE.Mesh(floorGeo.clone(), new THREE.ShaderMaterial({ ...fogShader, uniforms: fogU, transparent: true, depthWrite: false }));
+  groundFog.position.y = LOOK.FOG_Y_U; // it lies over the bank too, a hand above the ground everywhere
   groundFog.renderOrder = 1;
   scene.add(groundFog);
   // Scenery that carries a light (grave-lanterns) lights the ground round it.
   SCATTERS.filter((sc) => sc.light).flatMap((sc) => sc.placements.map((p) => ({ ...p, r: sc.light!, col: token(sc.glow ?? sc.paint) }))).slice(0, LOOK.STATIC_LIGHTS)
     .forEach((l, i) => { floorU.uStatic.value[i]!.set(l.x, l.z, l.r * l.scale, LOOK.LANTERN_LIGHT); floorU.uStaticCol.value[i]!.set(l.col); });
   plantClearing(scene);
+  scene.add(contactShadows());
 
   // The wizard, and the light he carries (lights the floor through floorU.uPlayer and the characters round him).
   const ship = buildShip(token('--player'), token('--player-glow'));
   ship.obj.traverse((o) => { o.castShadow = true; });
   scene.add(ship.obj);
+  // A faint warm halo on the ground round him: the one warm pool the eye can always find.
+  const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.5, LOOK.WIZARD_HALO));
+  shipHalo.scale.setScalar(1.3);
+  scene.add(shipHalo);
   const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
   scene.add(shipLight);
   const beamGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0);
@@ -386,7 +400,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   shadows.renderOrder = 0;
 
   // Scorch: a kill burns a dark mark into the ground that fades over SCORCH_S (a shrinking disc: instanced, one draw).
-  const SCORCH_N = 48, SCORCH_S = 4;
+  const SCORCH_N = LOOK.STAINS, SCORCH_S = LOOK.STAIN_S;
   const scorches = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: 0.7, depthWrite: false }), SCORCH_N);
   const scorchLife = Array.from({ length: SCORCH_N }, () => ({ x: 0, z: 0, r: 0, t: 0 }));
   let scorchNext = 0;
@@ -543,6 +557,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     const aimA = Math.atan2(p.ay, p.ax);
     shipLight.position.set(p.x + Math.cos(aimA) * 0.7 - Math.sin(aimA) * 0.35, 2.3, p.y + Math.sin(aimA) * 0.7 + Math.cos(aimA) * 0.35);
     shipLight.visible = !dead;
+    shipHalo.visible = !dead;
+    shipHalo.position.set(p.x, 0.05, p.y);
     const speed = Math.hypot(p.vx, p.vy);
     if (!dead && speed > 1 && dt > 0) {
       const bx = p.x - (p.vx / speed) * 0.45, bz = p.y - (p.vy / speed) * 0.45;
