@@ -1,7 +1,7 @@
 // The fight as a whole: the twin sticks end to end, and a full swarm for the look.
 import type { Meta, StoryObj } from '@storybook/html-vite';
 import { expect } from 'storybook/test';
-import { drag, fight, game, ready, stage, storyArgs, storyControls, type StoryArgs } from './stage';
+import { drag, fight, game, ready, screenText, stage, storyArgs, storyControls, type StoryArgs } from './stage';
 
 export default {
   title: 'Arena',
@@ -42,5 +42,19 @@ export const FullSwarm: Story = {
     if (!args.runInteraction) return;
     await ready();
     await expect(game.getState().run.enemies.length).toBeGreaterThan(10);
+  },
+};
+
+/** Wave 7, the ice wave: every enemy in `--ice`, and its double-size Colossus. */
+export const IceStorm: Story = {
+  render: () => stage(() => {
+    const s = fight([['colossus', 7, 0], ['drone', 2, -6], ['drone', 3, 6], ['wasp', -2, 6], ['lancer', 12, -7], ['splitter', 13, 6]], { px: -11, py: 0, wave: 7 });
+    return { run: { ...s, enemies: s.enemies.map((e) => (e.kind === 'colossus' ? { ...e, scale: 2 } : e)) }, ui: { screen: 'play' } };
+  }, 400),
+  play: async ({ args }) => {
+    if (!args.runInteraction) return;
+    await ready();
+    await expect(screenText().some((t) => t.includes('ICE STORM'))).toBe(true);
+    await expect(game.getState().run.enemies.find((e) => e.kind === 'colossus')?.scale).toBe(2);
   },
 };

@@ -28,7 +28,7 @@ describe('content', () => {
   it('loads a diverse roster', () => {
     expect(ENEMY_IDS.length).toBeGreaterThanOrEqual(12);
     expect(new Set(ENEMY_IDS.map((k) => ENEMIES[k]!.model)).size).toBe(ENEMY_IDS.length); // every enemy has its own shape
-    expect(WAVES.length).toBe(10);
+    expect(WAVES.length).toBe(11);
     expect(UPGRADE_IDS.length).toBeGreaterThanOrEqual(6);
   });
   it('refuses two movement words', () => {

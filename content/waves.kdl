@@ -28,6 +28,12 @@ wave "w06" title="Shield Wall" {
     spawn "lancer" count=3 gap=0.8 at=5
     spawn "mite" count=12 gap=0.15 at=8
 }
+wave "ice" title="Ice Storm" tint="--ice" {
+    spawn "drone" count=8 gap=0.4
+    spawn "wasp" count=3 gap=1 at=3
+    spawn "lancer" count=2 gap=1.2 at=6
+    spawn "colossus" scale=2 at=12
+}
 wave "w07" title="Hive Mind" {
     spawn "hive" count=2 gap=1
     spawn "wasp" count=3 gap=1 at=4
