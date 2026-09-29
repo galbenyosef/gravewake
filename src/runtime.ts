@@ -41,7 +41,11 @@ export async function boot(el: HTMLElement): Promise<() => void> {
   const a = arena;
   const stopInput = startInput(pixi.canvas, {
     enabled: () => { const u = ui.getState(), s = game.getState().run; return u.screen === 'play' && !u.paused && !u.portrait && (s.phase === 'fight' || s.phase === 'cleared'); },
-    blocked: (x, y) => pixi.renderer.events.rootBoundary.hitTest(x, y)?.eventMode === 'static',
+    blocked: (x, y) => {
+      const b = pixi.renderer.events.rootBoundary;
+      b.rootTarget = pixi.stage; // Pixi only sets it while dispatching its own events; this runs outside them
+      return b.hitTest(x, y)?.eventMode === 'static';
+    },
     ship: () => { const p = game.getState().run.player; return a.toScreen(p.x, p.y); },
   });
   // A phone call or app switch pauses the fight.

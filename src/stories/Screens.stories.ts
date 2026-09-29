@@ -19,6 +19,7 @@ export const Title: Story = {
     await press('CODEX');
     await expect(ui.getState().screen).toBe('codex');
     await press('BACK');
+    await expect(ui.getState().screen).toBe('title');
     await press('DEPLOY');
     await expect(ui.getState().screen).toBe('play');
     await expect(game.getState().run.wave).toBe(1);

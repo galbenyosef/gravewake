@@ -4,8 +4,8 @@
 import { Application, Container } from 'pixi.js';
 
 export const H = 390;
-/** Narrower than this (a portrait phone) and the design scales by width instead, and the rotate prompt shows. */
-export const MIN_W = 640;
+/** Narrower than this (a tablet, a portrait phone) and the design scales by width instead, gaining height; the widest screen (the codex, 780) must fit. */
+export const MIN_W = 800;
 /** A finger-sized target in design px (about 9 mm on a phone held in landscape). */
 const TOUCH_PX = 48;
 
