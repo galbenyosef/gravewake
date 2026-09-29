@@ -49,14 +49,14 @@ export const Hud: Story = {
 };
 
 export const Upgrade: Story = {
-  render: () => stage(() => ({ run: { ...fight([]), phase: 'upgrade', offer: ['overclock', 'split-barrel', 'plating'] }, ui: { screen: 'play' } })),
+  render: () => stage(() => ({ run: { ...fight([]), phase: 'upgrade', offer: ['quickened-tongue', 'forked-flame', 'warding-salve'] }, ui: { screen: 'play' } })),
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
     await expect(screenText()).toContain('CHOOSE A BOON');
     await press('FORKED FLAME');
     const s = game.getState().run;
-    await expect([s.phase, s.wave, s.stats.barrels, s.taken]).toEqual(['fight', 4, 2, ['split-barrel']]);
+    await expect([s.phase, s.wave, s.stats.barrels, s.taken]).toEqual(['fight', 4, 2, ['forked-flame']]);
   },
 };
 

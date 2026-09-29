@@ -1,27 +1,28 @@
-// Between waves the wizard takes one of these boons. Effect words and what they do are in src/upgrades.ts.
+// Between waves the wizard takes one of these boons: upgrade "id" name= icon= (a short glyph for the card) blurb=, then
+// one effect word per line. Effect words and what they do are in src/upgrades.ts.
 
-upgrade "overclock" name="Quickened Tongue" icon="CAS" blurb="Casting speed +25%" {
-    fire-rate 1.25
+upgrade "quickened-tongue" name="Quickened Tongue" icon="CAS" blurb="Casting speed +25%" {
+    cast-rate 1.25
 }
-upgrade "hollow-point" name="Hexed Embers" icon="DMG" blurb="Spell damage +30%" {
+upgrade "hexed-embers" name="Hexed Embers" icon="DMG" blurb="Spell damage +30%" {
     damage 1.3
 }
-upgrade "split-barrel" name="Forked Flame" icon="x2" blurb="One more bolt, fanned" {
-    barrels 1
+upgrade "forked-flame" name="Forked Flame" icon="x2" blurb="One more bolt, fanned" {
+    bolts 1
 }
-upgrade "lance" name="Piercing Rite" icon="PRC" blurb="Spells pass through one more foe" {
+upgrade "piercing-rite" name="Piercing Rite" icon="PRC" blurb="Spells pass through one more foe" {
     pierce 1
 }
-upgrade "afterburner" name="Ghoststep" icon="SPD" blurb="Move speed +15%" {
-    thrust 1.15
+upgrade "ghoststep" name="Ghoststep" icon="SPD" blurb="Move speed +15%" {
+    stride 1.15
 }
-upgrade "plating" name="Warding Salve" icon="HP" blurb="+1 vigour, fully mended" {
-    hull 1
+upgrade "warding-salve" name="Warding Salve" icon="HP" blurb="+1 vigour, fully mended" {
+    vigour 1
 }
-upgrade "tractor" name="Soul Lure" icon="MAG" blurb="Soul pull range +60%" {
-    magnet 1.6
+upgrade "soul-lure" name="Soul Lure" icon="MAG" blurb="Soul pull range +60%" {
+    lure 1.6
 }
-upgrade "railgun" name="Hastened Bolt" icon="VEL" blurb="Spell speed +25%, damage +10%" {
-    shot-speed 1.25
+upgrade "hastened-bolt" name="Hastened Bolt" icon="VEL" blurb="Spell speed +25%, damage +10%" {
+    spell-speed 1.25
     damage 1.1
 }

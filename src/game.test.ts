@@ -87,9 +87,9 @@ describe('waves', () => {
     const touches = (scale?: number) => { const s0 = arena([['skeleton', gap, 0]]); return types(step({ ...s0, enemies: [{ ...s0.enemies[0]!, scale }] }, IDLE, DT)).includes('hurt'); };
     expect([touches(), touches(2)]).toEqual([false, true]);
   });
-  it('plating repairs to the new maximum', () => {
+  it('warding salve mends to the new maximum', () => {
     const s0 = run(arena([]), T.CLEAR_PAUSE_S + 0.1);
-    const s = pickUpgrade({ ...s0, offer: ['plating'], player: { ...s0.player, hp: 1 } }, 'plating');
+    const s = pickUpgrade({ ...s0, offer: ['warding-salve'], player: { ...s0.player, hp: 1 } }, 'warding-salve');
     expect([s.player.hp, maxHp(s)]).toEqual([T.PLAYER_HP + 1, T.PLAYER_HP + 1]);
   });
 });

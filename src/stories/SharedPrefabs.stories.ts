@@ -45,7 +45,7 @@ function draw() {
   demo.show(use('demo', {}, {
     buttons: [btn('PLAIN', hit('plain')), btn('PRIMARY', hit('primary'), 'primary'), btn('DANGER', hit('danger'), 'danger'), btn('OFF', hit('off'), 'off')],
     bar: [bar('BOSS', 0.62)],
-    cards: ['overclock', 'hollow-point', 'split-barrel', 'plating'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
+    cards: ['quickened-tongue', 'hexed-embers', 'forked-flame', 'warding-salve'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
     enemies: ['skeleton', 'ghoul', 'warden', 'barrow', 'lich', 'colossus'].map(enemyCard),
   }));
 }
@@ -64,6 +64,6 @@ export const AllPrefabs: StoryObj<StoryArgs> = {
     taps.length = 0;
     await press('PRIMARY');
     await press('HEXED EMBERS');
-    await expect(taps).toEqual(['primary', 'hollow-point']);
+    await expect(taps).toEqual(['primary', 'hexed-embers']);
   },
 };

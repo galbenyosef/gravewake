@@ -40,7 +40,7 @@ describe('screens render from the stores', () => {
   });
   it('upgrade picker, pause, game over, rotate', () => {
     const run = newRun(5);
-    game.setState({ run: { ...run, phase: 'upgrade', offer: ['overclock', 'plating', 'lance'] } }); ui.setState({ ...initialUi, screen: 'play' }); drawAll();
+    game.setState({ run: { ...run, phase: 'upgrade', offer: ['quickened-tongue', 'warding-salve', 'piercing-rite'] } }); ui.setState({ ...initialUi, screen: 'play' }); drawAll();
     expect(texts()).toContain('CHOOSE A BOON');
     ui.setState({ paused: true }); drawAll();
     expect(texts()).toContain('PAUSED');

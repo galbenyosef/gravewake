@@ -1,10 +1,10 @@
-// In-fight heads-up display: hull and score top-left, wave and boss bar top-centre, multiplier and pause top-right,
+// In-fight heads-up display: vigour and score top-left, wave and boss bar top-centre, multiplier and pause top-right,
 // and a centre banner for wave starts and clears.
 prefab "hud" {
     panel class="hud" {
         panel class="hud-top" {
             panel class="hud-left" {
-                pips class="hull" count=(bind)"maxHp" value=(bind)"hp"
+                pips class="vigour" count=(bind)"maxHp" value=(bind)"hp"
                 text class="score" bind="score"
             }
             panel class="hud-mid" {

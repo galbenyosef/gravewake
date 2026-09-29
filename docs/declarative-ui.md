@@ -76,7 +76,7 @@ Built-ins (engine) and game-defined (`defineProp` in shared.ts).
 | `text` | `bind="x"` or a literal |
 | `sprite` | atlas texture; unused here (the engine's texture hook throws) |
 | `meter` | `meter value=(bind)"fill"`: a fill of `w * value`, coloured by `tint` |
-| `pips` | `pips count=(bind)"max" value=(bind)"hp"`: hull diamonds, lit up to value |
+| `pips` | `pips count=(bind)"max" value=(bind)"hp"`: vigour diamonds, lit up to value |
 | `corners` | sci-fi corner brackets over the whole parent box, coloured by `tint` |
 | `enemy-glyph` | `enemy-glyph kind=(bind)"kind"`: an enemy's 2D glyph in its palette colour |
 
@@ -104,7 +104,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--text` | body text (parchment) |
 | `--dim` | secondary text |
 | `--accent` | primary UI accent (tarnished gold): primary buttons, kickers, corners |
-| `--blood` | secondary UI accent: danger buttons, elite tier, boss bar, hull pips |
+| `--blood` | secondary UI accent: danger buttons, elite tier, boss bar, vigour pips |
 | `--gold` | score, multiplier, bosses |
 | `--danger` | hurt, game over |
 | `--good` | positive |
@@ -264,14 +264,14 @@ Under an `upgrade` node in `content/upgrades.kdl`.
 
 | Word | Use |
 |---|---|
-| `damage` | `damage x`: shot damage times x |
-| `fire-rate` | `fire-rate x`: shots per second times x |
-| `shot-speed` | `shot-speed x`: shot speed times x |
-| `barrels` | `barrels n`: n more fanned barrels |
-| `pierce` | `pierce n`: shots pass through n more enemies |
-| `thrust` | `thrust x`: move speed times x |
-| `magnet` | `magnet x`: shard pull range times x |
-| `hull` | `hull n`: n more hull points, repaired to full |
+| `damage` | `damage x`: spell damage times x |
+| `cast-rate` | `cast-rate x`: spells cast per second times x |
+| `spell-speed` | `spell-speed x`: spell speed times x |
+| `bolts` | `bolts n`: n more bolts a cast, fanned |
+| `pierce` | `pierce n`: spells pass through n more enemies |
+| `stride` | `stride x`: walking speed times x |
+| `lure` | `lure x`: soul pull range times x |
+| `vigour` | `vigour n`: n more vigour, mended to full |
 
 ## Models
 
@@ -381,7 +381,7 @@ In draw order (later on top). Each is `screens/<name>.kdl` + `.css` + `.ts` (bin
 
 | Screen | Use |
 |---|---|
-| `hud` | hull, score, wave, boss bar, multiplier, pause, wave banners |
+| `hud` | vigour, score, wave, boss bar, multiplier, pause, wave banners |
 | `upgrade` | three upgrade cards between waves |
 | `gameover` | score, best, retry |
 | `pause` | resume, sound, quit |

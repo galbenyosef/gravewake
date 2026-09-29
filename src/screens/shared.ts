@@ -27,7 +27,7 @@ defineElement('meter', ({ value }, { w, h }) => {
   return c;
 });
 
-/** Hull pips: `count` diamonds across the box, the first `value` lit, the rest dim; coloured by `tint`. */
+/** Vigour pips: `count` diamonds across the box, the first `value` lit, the rest dim; coloured by `tint`. */
 const PIP_GAP_PX = 5;
 defineElement('pips', ({ count, value }, { w, h }) => {
   const c = new Container(), n = count as number, size = Math.min(h, (w - PIP_GAP_PX * (n - 1)) / Math.max(1, n));
