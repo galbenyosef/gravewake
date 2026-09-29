@@ -45,7 +45,7 @@ export const FullSwarm: Story = {
   },
 };
 
-/** Wave 7, the ice wave: every enemy in `--ice`, and its double-size Colossus. */
+/** Wave 7, the frost wave: every enemy in `--ice`, and its double-size Bone Colossus. */
 export const IceStorm: Story = {
   render: () => stage(() => {
     const s = fight([['colossus', 7, 0], ['drone', 2, -6], ['drone', 3, 6], ['wasp', -2, 6], ['lancer', 12, -7], ['splitter', 13, 6]], { px: -11, py: 0, wave: 7 });
@@ -54,7 +54,7 @@ export const IceStorm: Story = {
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
-    await expect(screenText().some((t) => t.includes('ICE STORM'))).toBe(true);
+    await expect(screenText().some((t) => t.includes('HOARFROST'))).toBe(true);
     await expect(game.getState().run.enemies.find((e) => e.kind === 'colossus')?.scale).toBe(2);
   },
 };

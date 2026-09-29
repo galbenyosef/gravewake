@@ -60,21 +60,25 @@ const star = (n: number, inner: number, outer = 1) => Array.from({ length: n * 2
 const sym = (half: Pt[]): Pt[] => [...half, ...half.slice().reverse().map(([x, y]) => [-x, y] as const)];
 /** A shape and its mirror image across the vertical axis (paired wings, legs, guns). */
 const pair = (pts: Pt[]): Pt[][] => [pts, pts.map(([x, y]) => [-x, y] as const)];
+/** A polyline arc: `n` points on a circle of radius r about (cx, cy) from angle a0 to a1 (0 = right, forward is up). */
+const arc = (n: number, r: number, cx: number, cy: number, a0: number, a1: number): Pt[] => Array.from({ length: n }, (_, i) => { const a = a0 + ((a1 - a0) * i) / (n - 1); return [cx + Math.cos(a) * r, cy + Math.sin(a) * r] as const; });
+/** A skull seen from above-front: braincase, two sockets. */
+const skullGlyph = (r: number, cx: number, cy: number): Pt[][] => [ring(12, r, cx, cy), ring(6, r * 0.28, cx - r * 0.38, cy - r * 0.3), ring(6, r * 0.28, cx + r * 0.38, cy - r * 0.3)];
 const GLYPHS: Record<Model, readonly (readonly Pt[])[]> = {
-  skeleton: [ring(16, 0.7, 0, 0.05), ring(10, 0.22, 0, -0.55), ...pair(ring(8, 0.2, 0.88, 0.1))],
-  tick: [sym([[0, -1], [0.22, -0.8], [0.42, -0.25], [0.38, 0.45], [0, 0.95]]), ...pair([[0.4, -0.3], [0.85, -0.55]]), ...pair([[0.42, 0.05], [0.9, 0.05]]), ...pair([[0.38, 0.35], [0.8, 0.65]])],
-  lance: [sym([[0, -1], [0.12, -0.3], [0.7, -0.15], [0.55, 0.3], [0.2, 0.35], [0.4, 0.9], [0, 0.7]])],
-  hornet: [sym([[0, -0.95], [0.2, -0.75], [0.26, -0.3], [0.3, 0.25], [0.18, 0.8], [0, 1]]), ...pair([[0.24, -0.35], [0.95, -0.7], [0.98, -0.42], [0.28, -0.12]])],
-  urchin: [star(12, 0.58), ring(14, 0.45)],
-  bastion: [sym([[0, -0.95], [0.85, -0.7], [0.85, -0.5], [0, -0.72]]), ring(4, 0.62, 0, 0.2, -Math.PI / 4), ...pair(ring(8, 0.3, 0.6, 0.15))],
-  nest: [ring(18, 0.95), star(6, 0.18, 0.55), ...Array.from({ length: 6 }, (_, i) => ring(6, 0.12, Math.cos(i * 1.047 + 0.3) * 0.75, Math.sin(i * 1.047 + 0.3) * 0.75))],
-  wraith: [ring(16, 0.65, 0, -0.05), ring(10, 0.28, 0, -0.35), sym([[0.3, 0.5], [0.12, 1], [0, 0.75]])],
-  geode: [...Array.from({ length: 4 }, (_, q) => Array.from({ length: 6 }, (_, i) => { const a = q * Math.PI / 2 + 0.2 + i * 0.23; return [Math.cos(a) * 0.9, Math.sin(a) * 0.9] as const; })), star(5, 0.25, 0.5)],
-  jelly: [Array.from({ length: 32 }, (_, i) => { const a = (i / 32) * Math.PI * 2, r = 0.72 + 0.08 * Math.cos(a * 8); return [Math.cos(a) * r, Math.sin(a) * r] as const; }), sym([[0.08, -0.3], [0.08, -0.08], [0.3, -0.08], [0.3, 0.08], [0.08, 0.08], [0.08, 0.3]])],
-  crab: [ring(18, 0.72, 0, 0.1).map(([x, y]) => [x * 1.15, y] as const), [[-0.12, -1], [0.12, -1], [0.12, -0.1], [-0.12, -0.1]], ...pair([[0.75, -0.2], [1, -0.55]]), ...pair([[0.75, 0.35], [1, 0.75]])],
-  rail: [[[-0.06, -1], [0.06, -1], [0.06, 0.05], [-0.06, 0.05]], sym([[0, 0], [0.22, 0.05], [0.25, 0.45], [0, 0.5]]), ...pair([[0.2, 0.4], [0.7, 0.9]]), [[0, 0.5], [0, 1]]],
-  angel: [star(6, 0.32), ring(12, 0.3)],
-  walker: [ring(4, 0.55, 0, 0.1, -Math.PI / 4), ...pair([[0.45, -0.3], [0.9, -0.3], [0.9, 0.25], [0.45, 0.25]]), ...pair([[0.62, -0.3], [0.62, -0.9], [0.74, -0.9], [0.74, -0.3]])],
+  skeleton: [...skullGlyph(0.3, 0, -0.62), [[-0.5, -0.22], [0.5, -0.22]], ...[0, 0.18, 0.36].map((y) => [[-0.34 + y * 0.3, -0.1 + y], [0.34 - y * 0.3, -0.1 + y]] as Pt[]), [[0, -0.3], [0, 0.6]], [[-0.5, -0.22], [-0.7, -1]], ...pair([[0.14, 0.6], [0.2, 1]])],
+  crawler: [...skullGlyph(0.42, 0, 0), ...pair([[0.3, -0.25], [0.7, -0.7], [0.95, -0.4]]), ...pair([[0.4, 0], [0.85, -0.1], [1, 0.25]]), ...pair([[0.3, 0.25], [0.65, 0.6], [0.8, 0.95]])],
+  ghoul: [ring(12, 0.36, 0, 0.3).map(([x, y]) => [x, y * 1.2] as const), ...skullGlyph(0.2, 0, -0.35), ...pair([[0.3, 0.05], [0.62, -0.4], [0.55, -0.95]]), ...pair([[0.55, -0.95], [0.66, -1]]), ...pair([[0.2, 0.7], [0.3, 1]])],
+  banshee: [...skullGlyph(0.2, 0, -0.55), ...pair([[0.12, -0.35], [0.55, -0.55], [0.95, -0.5]]), sym([[0.08, -0.35], [0.3, 0.1], [0.2, 0.5], [0, 0.6]]), [[0, 0.5], [0, 1]], ...pair([[0.15, 0.45], [0.35, 0.95]])],
+  blightskull: [...skullGlyph(0.5, 0, -0.35), ...pair([[0.35, -0.55], [0.75, -0.7], [0.85, -0.35]]), [[0, 0.15], [0, 1]], ...pair([[0.25, 0.1], [0.45, 0.85]])],
+  warden: [sym([[0, -1], [0.62, -0.8], [0.62, -0.6], [0, -0.52]]), ring(10, 0.28, 0, 0.12), ...pair([[0.2, 0.05], [0.55, 0.2], [0.7, 0.45]]), ...pair(ring(8, 0.22, 0.48, 0.05))],
+  barrow: [ring(18, 0.95), [[-0.45, -0.25], [0.45, -0.25], [0.45, 0.25], [-0.45, 0.25], [-0.45, -0.25]], ...Array.from({ length: 4 }, (_, i) => { const a = i * 1.6 + 0.4; return [[Math.cos(a) * 0.6, Math.sin(a) * 0.6], [Math.cos(a) * 0.9, Math.sin(a) * 0.85]] as Pt[]; }), sym([[0.12, 0.35], [0.12, 0.7], [0, 0.78]])],
+  wraith: [ring(14, 0.3, 0, -0.1), ring(6, 0.08, -0.1, -0.2), ring(6, 0.08, 0.1, -0.2), sym([[0.3, 0], [0.35, 0.5], [0.15, 1], [0, 0.8]]), [[0.4, 0.5], [0.55, -0.8]], arc(8, 0.55, 0.05, -0.8, -Math.PI * 0.05, -Math.PI * 0.95)],
+  bloat: [ring(18, 0.8, 0, 0.15), ...skullGlyph(0.2, 0, -0.72), ...[-0.3, 0, 0.3].map((x) => [[x, -0.1], [x, 0.5]] as Pt[]), ...pair(ring(6, 0.14, 0.85, -0.2))],
+  necromancer: [ring(14, 0.48, 0, 0.15), ...skullGlyph(0.2, 0, -0.35), ...[-1.2, -0.6, 0, 0.6, 1.2].map((a) => [[Math.sin(a) * 0.25, -0.1], [Math.sin(a) * 0.55, -0.25 + Math.abs(a) * 0.12]] as Pt[]), [[0.6, 0.8], [0.6, -0.7]], ring(8, 0.16, 0.6, -0.85)],
+  catapult: [[[-0.45, -0.7], [0.45, -0.7], [0.45, 0.7], [-0.45, 0.7], [-0.45, -0.7]], [[0, 0.1], [0, -1]], ring(8, 0.16, 0, -0.95), ...pair(ring(8, 0.2, 0.6, -0.45)), ...pair(ring(8, 0.2, 0.6, 0.45))],
+  lich: [star(6, 0.35), ring(10, 0.26), ...Array.from({ length: 8 }, (_, i) => { const a = (i / 8) * Math.PI * 2; return [[Math.cos(a) * 0.12, Math.sin(a) * 0.12], [Math.cos(a) * 0.22, Math.sin(a) * 0.22]] as Pt[]; })],
+  golem: [ring(14, 0.5, 0, 0.1), ...skullGlyph(0.18, 0, -0.45), ...pair(ring(10, 0.3, 0.72, -0.05)), ...pair(ring(8, 0.22, 0.8, -0.6)), ...[0, 0.2, 0.4].map((y) => [[-0.3, y], [0.3, y]] as Pt[])],
+  archer: [...skullGlyph(0.22, 0, 0.1), arc(10, 0.75, 0, 0.1, -Math.PI * 0.85, -Math.PI * 0.15), [[-0.64, -0.3], [0, 0.05], [0.64, -0.3]], [[0, 0.05], [0, -1]], sym([[0.3, 0.3], [0.2, 0.9], [0, 1]])],
 };
 
 /** An enemy's glyph in its palette colour, fitted to the box: `enemy-glyph kind=(bind)"kind"`. */

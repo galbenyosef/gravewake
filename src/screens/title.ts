@@ -13,7 +13,7 @@ export function drawTitle() {
   const { screen } = ui.getState(), { meta } = game.getState();
   if (screen !== 'title') return titleUi.show(null);
   titleUi.show(use('title', {
-    best: meta.best ? `BEST ${meta.best.toLocaleString('en-US')} · WAVE ${meta.bestWave}` : 'NO RECORD YET',
-    hint: 'Left thumb flies · right thumb aims and fires  (WASD + mouse on desktop)',
-  }, { buttons: [btn('DEPLOY', () => Actions.start(), 'primary'), btn('CODEX', Actions.openCodex), btn(meta.muted ? 'SOUND OFF' : 'SOUND ON', Actions.toggleMute)] }));
+    best: meta.best ? `BEST ${meta.best.toLocaleString('en-US')} · WAVE ${meta.bestWave}` : 'NO ONE HAS COME BACK YET',
+    hint: 'Left thumb walks · right thumb aims and casts  (WASD + mouse on desktop)',
+  }, { buttons: [btn('ENTER', () => Actions.start(), 'primary'), btn('BESTIARY', Actions.openCodex), btn(meta.muted ? 'SOUND OFF' : 'SOUND ON', Actions.toggleMute)] }));
 }

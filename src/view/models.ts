@@ -15,7 +15,7 @@ import { token } from '../tokens';
 /** The rig contract with models/kit.py (src/models.test.ts checks every .glb against it). */
 export const CLIPS = ['idle', 'attack', 'die'] as const;
 export const SLOTS = ['body', 'trim', 'glow'] as const;
-export const RIGS = [...MODELS, 'ship', ...SCENERY] as const;
+export const RIGS = [...MODELS, 'wizard', ...SCENERY] as const;
 export type Clip = (typeof CLIPS)[number];
 export type Slot = (typeof SLOTS)[number];
 export type RigName = (typeof RIGS)[number];
@@ -221,7 +221,7 @@ export function buildShield(deg: number, color: number) {
 export function buildShip(color: number, glow: number) {
   const paint = paintMaterial(color, glow, glow);
   paint.emissiveIntensity = 0.3;
-  const rig = buildRig('ship', paint);
+  const rig = buildRig('wizard', paint);
   rig.obj.scale.setScalar(0.85);
   return rig;
 }

@@ -4,8 +4,8 @@ prefab "title" {
         panel class="title-scrim"
         panel class="logo" {
             text class="logo-kicker" "LIORA LABS PRESENTS"
-            text class="logo-word" "PRISMFALL"
-            text class="logo-tag" "HOLD THE LINE AGAINST THE SWARM"
+            text class="logo-word" "GRAVEWAKE"
+            text class="logo-tag" "THE DEAD DO NOT STAY BURIED"
         }
         panel class="title-buttons" slot="buttons"
         text class="title-best" bind="best"

@@ -1,51 +1,51 @@
-// Waves in order: each `spawn` opens `count` warp gates `gap` seconds apart, the first `at` seconds into the wave.
+// Waves in order: each `spawn` opens `count` graves `gap` seconds apart, the first `at` seconds into the wave.
 // Past the last wave the list loops with tougher enemies (LOOP_HP_MULT in src/tuning.ts).
 
-wave "w01" title="First Contact" {
+wave "w01" title="The First Grave" {
     spawn "drone" count=8 gap=0.6
 }
-wave "w02" title="Swarm" {
+wave "w02" title="Bones in the Leaves" {
     spawn "drone" count=8 gap=0.4
     spawn "mite" count=10 gap=0.2 at=4
 }
-wave "w03" title="Lancers" {
+wave "w03" title="Ghouls" {
     spawn "drone" count=6 gap=0.5
     spawn "lancer" count=3 gap=1.2 at=2
     spawn "bomber" count=3 gap=0.6 at=6
 }
-wave "w04" title="Stingers" {
+wave "w04" title="Banshees" {
     spawn "wasp" count=4 gap=0.8
     spawn "splitter" count=3 gap=1.5 at=3
     spawn "drone" count=6 gap=0.3 at=7
 }
-wave "w05" title="The Seraph" {
+wave "w05" title="The Lich" {
     spawn "seraph"
     spawn "drone" count=6 gap=0.8 at=6
 }
-wave "w06" title="Shield Wall" {
+wave "w06" title="Grave Wardens" {
     spawn "bulwark" count=2 gap=2
     spawn "mender" count=2 gap=1 at=1
     spawn "lancer" count=3 gap=0.8 at=5
     spawn "mite" count=12 gap=0.15 at=8
 }
-wave "ice" title="Ice Storm" tint="--ice" {
+wave "ice" title="Hoarfrost" tint="--ice" {
     spawn "drone" count=8 gap=0.4
     spawn "wasp" count=3 gap=1 at=3
     spawn "lancer" count=2 gap=1.2 at=6
     spawn "colossus" scale=2 at=12
 }
-wave "w07" title="Hive Mind" {
+wave "w07" title="Open Barrows" {
     spawn "hive" count=2 gap=1
     spawn "wasp" count=3 gap=1 at=4
     spawn "bomber" count=5 gap=0.5 at=8
 }
-wave "w08" title="Phantoms" {
+wave "w08" title="Wraiths" {
     spawn "phantom" count=4 gap=1.2
     spawn "mortar" count=2 gap=1 at=3
     spawn "splitter" count=3 gap=1 at=7
     spawn "sniper" count=2 gap=2 at=5
 }
-wave "w09" title="Everything" {
+wave "w09" title="The Whole Graveyard" {
     spawn "bulwark" count=1
     spawn "mender" count=1 at=1
     spawn "mortar" count=2 gap=1 at=2
@@ -54,7 +54,7 @@ wave "w09" title="Everything" {
     spawn "sniper" count=2 gap=1.5 at=9
     spawn "drone" count=10 gap=0.25 at=10
 }
-wave "w10" title="The Colossus" {
+wave "w10" title="The Bone Colossus" {
     spawn "colossus"
     spawn "mender" count=1 at=4
     spawn "bomber" count=4 gap=0.6 at=10

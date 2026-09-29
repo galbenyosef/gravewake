@@ -1,7 +1,7 @@
 // The run is over: score, records, retry.
 prefab "gameover" {
     panel class="shared-scrim gameover" {
-        text class="go-title" "SIGNAL LOST"
+        text class="go-title" "YOU HAVE FALLEN"
         text class="go-score" bind="score"
         text class="go-best" bind-class="bestState" bind="best"
         panel class="go-stats" {

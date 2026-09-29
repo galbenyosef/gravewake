@@ -63,7 +63,7 @@ export const AllPrefabs: StoryObj<StoryArgs> = {
     await ready();
     taps.length = 0;
     await press('PRIMARY');
-    await press('HOLLOW POINT');
+    await press('HEXED EMBERS');
     await expect(taps).toEqual(['primary', 'hollow-point']);
   },
 };

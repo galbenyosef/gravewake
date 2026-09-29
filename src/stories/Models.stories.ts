@@ -46,7 +46,7 @@ function viewer() {
   scene.add(glow);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: token('--floor') }));
   const camera = new THREE.PerspectiveCamera(24, W / H, 0.1, 50);
-  camera.position.set(0, 8.5, 9.5);
+  camera.position.set(0, 11, 6.4); // the arena camera's tilt (about 30 degrees off straight down)
   camera.lookAt(0, 0.1, 0);
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
@@ -60,9 +60,9 @@ function viewer() {
   function show(name: RigName, still: boolean) {
     stage.clear();
     const scenery: Record<string, string> = { tree: '--wood', roots: '--wood', grave: '--stone' };
-    const col = name === 'ship' ? token('--player') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
+    const col = name === 'wizard' ? token('--player') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
     rigs = CLIPS.map((c, i) => {
-      const rig = name === 'ship' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
+      const rig = name === 'wizard' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
       const holder = new THREE.Group();
       holder.add(rig.obj, floor.clone());
       rig.obj.position.y = 0.9;
@@ -120,21 +120,21 @@ export default {
   argTypes: { still: { control: 'boolean', description: 'Freeze each panel mid-clip in a three-quarter view (screenshots).' } },
 } satisfies Meta<Args>;
 
-export const Ship = model('ship');
+export const Wizard = model('wizard');
 export const Skeleton = model('skeleton');
-export const Tick = model('tick');
-export const Lance = model('lance');
-export const Hornet = model('hornet');
-export const Urchin = model('urchin');
-export const Bastion = model('bastion');
-export const Nest = model('nest');
+export const Crawler = model('crawler');
+export const Ghoul = model('ghoul');
+export const Banshee = model('banshee');
+export const Blightskull = model('blightskull');
+export const Warden = model('warden');
+export const Barrow = model('barrow');
 export const Wraith = model('wraith');
-export const Geode = model('geode');
-export const Jelly = model('jelly');
-export const Crab = model('crab');
-export const Angel = model('angel');
-export const Walker = model('walker');
-export const Rail = model('rail');
+export const Bloat = model('bloat');
+export const Necromancer = model('necromancer');
+export const Catapult = model('catapult');
+export const Lich = model('lich');
+export const Golem = model('golem');
+export const Archer = model('archer');
 export const Tree = model('tree');
 export const Grave = model('grave');
 export const Roots = model('roots');

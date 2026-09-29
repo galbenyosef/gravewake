@@ -226,26 +226,27 @@ Under an `upgrade` node in `content/upgrades.kdl`.
 
 ## Models
 
-One Blender script per character, `models/<name>.py`. `enemy model=` in `content/enemies.kdl` names one; `ship` is the player.
+One Blender script per character, `models/<name>.py`. `enemy model=` in `content/enemies.kdl` names one; `wizard` is the
+player; `tree`, `grave` and `roots` are scenery (`SCENERY` in `src/content.ts`, placed by `content/arena.kdl`).
 See each in Storybook under Models (idle, attack and die side by side; `still` freezes them for screenshots).
 
 | Model | Use |
 |---|---|
-| `ship` | the player's fighter: swept wings, wingtip guns that recoil on each shot, twin engines |
-| `skeleton` | Drone: big-skulled, chunky-boned soldier with a rusted pauldron and a notched sword; hacks overhead, falls into a bone pile |
-| `tick` | Mite: beetle with a glowing abdomen, skittering legs, snapping mandibles |
-| `lance` | Lancer: armoured hull, drill-lance that spins, pauldrons that fold back on the charge |
-| `hornet` | Wasp: striped abdomen and glowing stinger that curls to fire, four fluttering wings |
-| `urchin` | Bomber: spiked mine with a lit fuse; swells when close, bursts spikes on death |
-| `bastion` | Bulwark: shield-wall golem, tower shield with a sigil, spiked pauldrons; shield-bashes |
-| `nest` | Hive: ridged brood-mound on claw roots, comb cells, petals that open to summon |
-| `wraith` | Phantom: hooded eye that looks around, torn cloak, orbiting shards; flares on a blink |
-| `geode` | Splitter: rock egg over a crystal heart; its four plates burst open on death |
-| `jelly` | Mender: jellyfish with a glowing cross and a halo; pumps when it heals |
-| `crab` | Mortar: artillery crab; its mortar tube kicks back on every lob |
-| `rail` | Sniper: tripod railgun with glowing coils; the barrel slams back on the shot |
-| `angel` | Seraph: armoured heart in a turning ring of six blade wings that flare to fire |
-| `walker` | Colossus: siege titan on stomping legs, twin shoulder cannons that recoil |
+| `wizard` | the player: hooded wanderer in a torn cloak, pointed hood, ember eyes, gnarled staff with witchfire that jabs on each spell |
+| `skeleton` | Skeleton (drone): big-skulled, chunky-boned soldier, rusted pauldron, notched sword; shambles, hacks overhead |
+| `crawler` | Crawler (mite): a skull on six finger-bone legs; skitters, rears and snaps |
+| `ghoul` | Ghoul (lancer): starved corpse on its knuckles, knobbed spine, hooked claws; rears back and flings itself on the charge |
+| `banshee` | Banshee (wasp): legless ghost, gown fraying to streamers, hair blown back, arms wide; screams with a glowing mouth |
+| `bloat` | Bloat (splitter): swollen, stitched corpse with skulls pressing through its belly and light leaking from the seams; bursts |
+| `warden` | Grave Warden (bulwark): dead knight in rusted plate, horned great-helm, coffin-lid shield with a burning sigil; shield-bashes |
+| `blightskull` | Blightskull (bomber): a great horned skull adrift in streaming soulfire; swells and splits its jaw, bursts |
+| `necromancer` | Necromancer (mender): tall robed priest, spiked collar, bone mask, staff with a caged skull-lantern it raises to mend |
+| `barrow` | Barrow (hive): a split grave mound round a sarcophagus, lid askew, rune headstone, arms clawing out; the lid heaves to summon |
+| `wraith` | Wraith (phantom): empty cowl with two cold eyes, cloak fraying to smoke, a scythe; the cloak flares and the scythe sweeps |
+| `catapult` | Bone Catapult (mortar): rotten frame on rib wheels, a femur arm with a burning skull in the cup; rocks back and hurls |
+| `archer` | Deadeye (sniper): hooded skeleton with a bow taller than itself and a quiver; draws, holds, looses |
+| `lich` | The Lich (seraph): floating crowned skull in robes of state, a blazing phylactery, six blades turning in a ring; arms up to cast |
+| `golem` | Bone Colossus (colossus): a giant of fused bones and skulls round a caged soul, trunk arms and knuckle fists; slams the ground |
 | `tree` | scenery: a dead oak on clawing roots, bare crown (stands on z = 0, 1 unit about a metre) |
 | `grave` | scenery: a leaning, bitten headstone on a plinth, a mound and a broken iron cross |
 | `roots` | scenery: a snapped, rotten stump and the roots it throws across the ground |

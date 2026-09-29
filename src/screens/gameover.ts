@@ -19,5 +19,5 @@ export function drawGameover() {
     bestState: isBest ? 'new' : '',
     wave: `Reached wave ${s.wave}`,
     kills: `${s.kills} kills`,
-  }, { buttons: [btn('RETRY', () => Actions.start(), 'primary'), btn('TITLE', Actions.quit)] }));
+  }, { buttons: [btn('RISE AGAIN', () => Actions.start(), 'primary'), btn('TITLE', Actions.quit)] }));
 }

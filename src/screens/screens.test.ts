@@ -25,27 +25,27 @@ beforeAll(() => {
 describe('screens render from the stores', () => {
   it('title', () => {
     ui.setState(initialUi); drawAll();
-    expect(texts()).toContain('PRISMFALL');
+    expect(texts()).toContain('GRAVEWAKE');
   });
   it('codex lists every enemy', () => {
     ui.setState({ ...initialUi, screen: 'codex' }); drawAll();
-    expect(texts()).toContain('COLOSSUS');
+    expect(texts()).toContain('BONE COLOSSUS');
   });
   it('hud with a boss bar', () => {
     let run = newRun(5);
     run = { ...run, wave: 5, spawnIdx: 0, waveTime: 0 };
     for (let i = 0; i < 90; i++) run = step(run, IDLE, 1 / 60);
     game.setState({ run }); ui.setState({ ...initialUi, screen: 'play' }); drawAll();
-    expect(texts()).toContain('SERAPH');
+    expect(texts()).toContain('THE LICH');
   });
   it('upgrade picker, pause, game over, rotate', () => {
     const run = newRun(5);
     game.setState({ run: { ...run, phase: 'upgrade', offer: ['overclock', 'plating', 'lance'] } }); ui.setState({ ...initialUi, screen: 'play' }); drawAll();
-    expect(texts()).toContain('CHOOSE AN UPGRADE');
+    expect(texts()).toContain('CHOOSE A BOON');
     ui.setState({ paused: true }); drawAll();
     expect(texts()).toContain('PAUSED');
     game.setState({ run: { ...run, phase: 'dead', score: 1234 } }); ui.setState({ paused: false }); drawAll();
-    expect(texts()).toContain('SIGNAL LOST');
+    expect(texts()).toContain('YOU HAVE FALLEN');
     ui.setState({ portrait: true }); drawAll();
     expect(texts()).toContain('ROTATE TO LANDSCAPE');
   });

@@ -2,7 +2,7 @@
 prefab "upgrade" {
     panel class="shared-scrim upgrade" {
         text class="up-kicker" bind="kicker"
-        text class="up-title" "CHOOSE AN UPGRADE"
+        text class="up-title" "CHOOSE A BOON"
         panel class="up-cards" slot="cards"
     }
 }

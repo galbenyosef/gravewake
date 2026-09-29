@@ -15,12 +15,12 @@ export const Title: Story = {
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
-    await expect(screenText()).toContain('PRISMFALL');
-    await press('CODEX');
+    await expect(screenText()).toContain('GRAVEWAKE');
+    await press('BESTIARY');
     await expect(ui.getState().screen).toBe('codex');
     await press('BACK');
     await expect(ui.getState().screen).toBe('title');
-    await press('DEPLOY');
+    await press('ENTER');
     await expect(ui.getState().screen).toBe('play');
     await expect(game.getState().run.wave).toBe(1);
   },
@@ -31,7 +31,7 @@ export const Codex: Story = {
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
-    for (const name of ['MITE', 'BULWARK', 'PHANTOM', 'SERAPH', 'COLOSSUS']) await expect(screenText()).toContain(name);
+    for (const name of ['CRAWLER', 'GRAVE WARDEN', 'WRAITH', 'THE LICH', 'BONE COLOSSUS']) await expect(screenText()).toContain(name);
   },
 };
 
@@ -53,8 +53,8 @@ export const Upgrade: Story = {
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
-    await expect(screenText()).toContain('CHOOSE AN UPGRADE');
-    await press('SPLIT BARREL');
+    await expect(screenText()).toContain('CHOOSE A BOON');
+    await press('FORKED FLAME');
     const s = game.getState().run;
     await expect([s.phase, s.wave, s.stats.barrels, s.taken]).toEqual(['fight', 4, 2, ['split-barrel']]);
   },
@@ -68,9 +68,9 @@ export const GameOver: Story = {
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();
-    await expect(screenText()).toContain('SIGNAL LOST');
+    await expect(screenText()).toContain('YOU HAVE FALLEN');
     await expect(screenText()).toContain('BEST 50,210');
-    await press('RETRY');
+    await press('RISE AGAIN');
     const s = game.getState().run;
     await expect([s.phase, s.wave, s.score]).toEqual(['fight', 1, 0]);
   },
