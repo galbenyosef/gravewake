@@ -7,14 +7,14 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { enemyDef, radius, waveDef } from '../content';
+import { enemyDef, radius, SCATTERS, SCENERY, waveDef } from '../content';
 import { sfx } from '../audio';
 import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
 import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
-import { BODY_GLOW, buildRig, buildShield, buildShip, glowMaterial, metalMaterial, paintMaterial, shared, type Rig } from './models';
+import { BODY_GLOW, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
+import { LOOK } from './look';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
 /** Camera: tilt from straight down, and how much it follows the ship (0 = fixed on the centre, 1 = locked to the ship). */
@@ -25,63 +25,127 @@ const MAX_RIPPLES = 8;
 const LOB_ARC_U = 3.2;
 const SHAKE_DECAY_PER_S = 5;
 
+/** Floor lights: the ground under each spell, enemy bolt and lobbed round is lit by it (the brightest few). */
+const MAX_FLOOR_LIGHTS = LOOK.FLOOR_LIGHTS;
+
+// Shared GLSL: value noise and fbm (the clearing's earth, moss, moon dapple and ground fog are all procedural).
+const NOISE = /* glsl */ `
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+  }
+  float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a * vnoise(p); p = p * 2.03 + 17.1; a *= 0.5; } return v; }
+  // Distance to the nearest cell centre (x) and to the nearest cell edge (y), and the cell's hash (z).
+  vec3 cells(vec2 p) {
+    vec2 i = floor(p), f = fract(p); float d1 = 8.0, d2 = 8.0, id = 0.0;
+    for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec2 g = vec2(x, y), o = vec2(hash(i + g), hash(i + g + 5.3)), r = g + o - f; float d = dot(r, r);
+      if (d < d1) { d2 = d1; d1 = d; id = hash(i + g + 9.1); } else if (d < d2) d2 = d;
+    }
+    return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), id);
+  }`;
+
+/**
+ * The clearing's floor, all procedural: dark earth with rot and moss, leaf litter and stones, root-cracks; lit only by
+ * cold moonlight falling through a dead canopy (dapple), the wizard's own light, and the spells in flight.
+ */
 const floorShader = {
   uniforms: {
-    uTime: { value: 0 }, uGrid: { value: new THREE.Color() }, uFloor: { value: new THREE.Color() }, uWall: { value: new THREE.Color() },
-    uPlayer: { value: new THREE.Vector2() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
+    uTime: { value: 0 }, uEarth: { value: new THREE.Color() }, uMoss: { value: new THREE.Color() }, uMoon: { value: new THREE.Color() },
+    uPlayerCol: { value: new THREE.Color() }, uStone: { value: new THREE.Color() }, uMoonLevels: { value: new THREE.Vector3(LOOK.FLOOR_AMBIENT, LOOK.FLOOR_MOON, LOOK.FLOOR_DAPPLE) }, uPlayer: { value: new THREE.Vector2() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
     uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 0, 0)) },
+    uLights: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
+    uLightCol: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Color()) },
   },
   vertexShader: /* glsl */ `
     varying vec2 vPos;
     void main() { vPos = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
-    uniform float uTime; uniform vec3 uGrid; uniform vec3 uFloor; uniform vec3 uWall; uniform vec2 uPlayer; uniform vec2 uHalf;
-    uniform vec4 uRipples[${MAX_RIPPLES}];
+    uniform float uTime; uniform vec3 uEarth, uMoss, uMoon, uPlayerCol, uStone, uMoonLevels; uniform vec2 uPlayer, uHalf;
+    uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
     varying vec2 vPos;
-    float gridLine(vec2 p, float cell, float width) {
-      vec2 g = abs(fract(p / cell - 0.5) - 0.5) / (fwidth(p / cell) * width);
-      return 1.0 - min(min(g.x, g.y), 1.0);
-    }
+    ${NOISE}
     void main() {
       vec2 p = vPos; float wave = 0.0;
       for (int i = 0; i < ${MAX_RIPPLES}; i++) {
         vec4 r = uRipples[i];
         if (r.w <= 0.0) continue;
-        vec2 d = p - r.xy; float dist = length(d), front = r.z * 16.0;
-        float band = exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
-        wave += band;
-        p -= normalize(d + 1e-4) * band * 0.35;
+        float dist = length(p - r.xy), front = r.z * 16.0;
+        wave += exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
       }
-      float minor = gridLine(p, 1.0, 1.2), major = gridLine(p, 4.0, 1.6);
-      vec2 inside = step(abs(vPos), uHalf);
-      float inArena = inside.x * inside.y;
-      float dp = length(vPos - uPlayer), pool = exp(-dp * dp * 0.015);
+      // Albedo: earth, darker and lighter in broad patches; moss and rot; leaf litter; stones; cracks.
+      float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
+      vec3 alb = uEarth * (0.55 + 0.9 * broad) * (0.85 + 0.3 * fine);
+      float moss = smoothstep(0.52, 0.72, fbm(p * 0.33 + 3.1));
+      alb = mix(alb, uMoss * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.85);
+      vec3 leaf = cells(p * 2.6);
+      float litter = step(0.55, leaf.z) * smoothstep(0.34, 0.18, leaf.x);
+      alb *= 1.0 + litter * (fract(leaf.z * 13.7) - 0.35) * 1.1;
+      vec3 stones = cells(p * 0.9 + 40.0);
+      float stone = step(0.86, stones.z) * smoothstep(0.2, 0.12, stones.x);
+      alb = mix(alb, uStone * 0.35 * (0.6 + fine), stone);
+      vec3 crackCells = cells(p * 0.45 + 11.0);
+      float crack = (1.0 - smoothstep(0.0, 0.035, crackCells.y)) * smoothstep(0.35, 0.6, fbm(p * 0.5 + 7.0));
+      alb *= 1.0 - crack * 0.75;
+
+      // Light: moonlight through the canopy (drifting dapple, strongest in the clearing), the wizard, the spells.
+      vec2 q = p / (uHalf * 1.15);
+      float clearing = exp(-dot(q, q) * 1.1);
+      float dapple = smoothstep(0.42, 0.72, fbm(p * 0.16 + vec2(uTime * 0.012, uTime * 0.005)));
+      vec3 light = uMoon * (uMoonLevels.x + (uMoonLevels.y + uMoonLevels.z * dapple) * clearing);
+      float dp = length(p - uPlayer);
+      light += uPlayerCol * (1.6 * exp(-dp * dp * 0.07) + 0.25 * exp(-dp * 0.25));
+      for (int i = 0; i < ${MAX_FLOOR_LIGHTS}; i++) {
+        vec4 l = uLights[i];
+        if (l.w <= 0.0) continue;
+        float d = length(p - l.xy) / l.z;
+        light += uLightCol[i] * l.w * exp(-d * d);
+      }
+      vec3 col = alb * light;
+      col += uMoon * wave * 0.05 * (0.5 + broad);
+
+      // Past the edge the ground falls into the dark under the trees.
       float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
-      float rim = exp(-abs(edge) * 2.5) * 0.6;
-      float pulse = 0.85 + 0.15 * sin(uTime * 1.3 + vPos.x * 0.15);
-      vec3 col = uFloor;
-      col += uGrid * (minor * 0.10 + major * 0.28) * (0.45 + pool * 1.4) * pulse * mix(0.25, 1.0, inArena);
-      col += (uGrid * wave * 0.5 + vec3(0.9, 0.95, 1.0) * wave * wave * 0.08) * mix(0.15, 1.0, inArena);
-      col += uWall * rim * 0.35;
-      float fade = exp(-max(edge, 0.0) * 0.12);
-      gl_FragColor = vec4(col * fade, 1.0);
+      col *= mix(1.0, 0.25, smoothstep(-2.0, 3.5, edge));
+      gl_FragColor = vec4(col, 1.0);
     }`,
 };
 
-/** Vignette, chromatic aberration and a red hurt wash, after tone mapping. */
+/** Low ground fog: drifting fbm veils a hand's height over the floor, moonlit, thicker under the trees. */
+const fogShader = {
+  uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) }, uVeil: { value: new THREE.Vector2(LOOK.FOG_VEIL, LOOK.FOG_EDGE) } },
+  vertexShader: /* glsl */ `
+    varying vec2 vPos;
+    void main() { vPos = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: /* glsl */ `
+    uniform float uTime; uniform vec3 uColor; uniform vec2 uHalf, uVeil; varying vec2 vPos;
+    ${NOISE}
+    void main() {
+      vec2 p = vPos * 0.12;
+      float f = fbm(p + vec2(uTime * 0.03, uTime * 0.012)) * fbm(p * 1.9 - vec2(uTime * 0.02, -uTime * 0.017) + 4.0);
+      float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
+      float a = smoothstep(0.12, 0.45, f) * uVeil.x + smoothstep(-4.0, 4.0, edge) * uVeil.y;
+      gl_FragColor = vec4(uColor, a);
+    }`,
+};
+
+/** Vignette, a cold grade in the shadows, film grain and a red hurt wash, after tone mapping. */
 const finalShader = {
-  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: 0.0015 }, uTime: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: 0.0012 }, uTime: { value: 0 }, uHurtCol: { value: new THREE.Color() }, uGradeCol: { value: new THREE.Color() }, uLook: { value: new THREE.Vector3(LOOK.VIGNETTE, LOOK.GRADE, LOOK.GRAIN) } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration; uniform float uTime; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration; uniform float uTime; uniform vec3 uHurtCol, uGradeCol, uLook; varying vec2 vUv;
     void main() {
-      vec2 c = vUv - 0.5; float d = length(c);
+      vec2 c = vUv - 0.5; float d = length(c * vec2(1.0, 0.8));
       float ab = uAberration * (1.0 + uHurt * 5.0) * d * 2.0;
       vec3 col = vec3(texture2D(tDiffuse, vUv + c * ab).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - c * ab).b);
-      col *= 1.0 - smoothstep(0.45, 0.95, d) * 0.65;
-      col = mix(col, vec3(1.0, 0.1, 0.18), smoothstep(0.25, 0.8, d) * uHurt * 0.7);
+      float lum = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(col, vec3(lum) * uGradeCol, uLook.y * (1.0 - smoothstep(0.05, 0.4, lum)));
+      col *= 1.0 - smoothstep(0.3, 0.85, d) * uLook.x;
+      col = mix(col, uHurtCol, smoothstep(0.25, 0.8, d) * uHurt * 0.7);
       float grain = fract(sin(dot(vUv * (uTime + 1.0), vec2(12.9898, 78.233))) * 43758.5453);
-      col += (grain - 0.5) * 0.025;
+      col += (grain - 0.5) * uLook.z;
       gl_FragColor = vec4(col, 1.0);
     }`,
 };
@@ -95,6 +159,33 @@ const LUNGE_U = 1.4;
  *  as a beetle at phone size, a boss (2+) grows about 12%. View only; hits still use the radius. */
 const LEGIBLE_U = 0.25;
 
+
+/** A soft round shadow (alpha falls off from the centre), made in code: no image files. */
+function blobTexture() {
+  const n = 64, data = new Uint8Array(n * n * 4);
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const d = Math.hypot(x - n / 2 + 0.5, y - n / 2 + 0.5) / (n / 2), a = Math.max(0, 1 - d) ** 1.6;
+    const v = Math.round(a * 255);
+    data.set([v, v, v, 255], (y * n + x) * 4); // alphaMap reads green
+  }
+  const t = new THREE.DataTexture(data, n, n);
+  t.needsUpdate = true;
+  return t;
+}
+
+/** The scenery round the clearing (content/arena.kdl): each kind one instanced draw of its rest pose, as it never moves. */
+function plantClearing(scene: THREE.Scene) {
+  const paint = { tree: token('--wood'), grave: token('--stone'), roots: token('--wood') } as const;
+  for (const kind of SCENERY) {
+    const spots = SCATTERS.filter((sc) => sc.model === kind).flatMap((sc) => sc.placements);
+    const im = new THREE.InstancedMesh(restGeometry(kind), paintMaterial(paint[kind], undefined, undefined, LOOK.SCENERY_RIM), spots.length);
+    spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0, p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
+    im.frustumCulled = false;
+    (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
+    scene.add(im);
+  }
+}
+
 export type Arena = ReturnType<typeof createArena>;
 
 export function createArena(el: HTMLElement, cssW: number, cssH: number) {
@@ -102,79 +193,80 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
   renderer.setSize(cssW, cssH);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = LOOK.EXPOSURE;
   Object.assign(renderer.domElement.style, { position: 'absolute', inset: '0', display: 'block' });
   el.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(token('--floor')).multiplyScalar(0.5);
-  scene.fog = new THREE.Fog(scene.background, 30, 70);
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
-  scene.add(new THREE.HemisphereLight(0x8aa8ff, 0x100818, 0.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-  sun.position.set(-8, 20, 6);
-  scene.add(sun);
+  lightNight(scene, renderer);
+  scene.fog = new THREE.Fog(token('--fog'), LOOK.FOG_NEAR_U, LOOK.FOG_FAR_U);
 
   const camera = new THREE.PerspectiveCamera(FOV_DEG, cssW / cssH, 0.5, 150);
   const camTarget = new THREE.Vector3();
 
-  // Floor and walls
+  // The clearing: procedural floor, ground fog, and the dead wood, graves and roots round its edge.
   const floorU = THREE.UniformsUtils.clone(floorShader.uniforms);
-  floorU.uGrid.value.set(token('--moss')); floorU.uFloor.value.set(token('--floor')); floorU.uWall.value.set(token('--moon'));
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...floorShader, uniforms: floorU, extensions: { derivatives: true } as never }));
+  floorU.uEarth.value.set(token('--floor')); floorU.uMoss.value.set(token('--moss')); floorU.uMoon.value.set(token('--moon'));
+  floorU.uPlayerCol.value.set(token('--player-glow')); floorU.uStone.value.set(token('--stone'));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...floorShader, uniforms: floorU }));
   scene.add(floor);
-  const walls = new THREE.Group();
-  const wallMat = glowMaterial(token('--moon'), 1.3), wallAlt = glowMaterial(token('--moon'), 1.3);
-  for (const [x, z, w, d, m] of [[0, -HALF_H, T.ARENA_W_U, 0.12, wallMat], [0, HALF_H, T.ARENA_W_U, 0.12, wallMat], [-HALF_W, 0, 0.12, T.ARENA_H_U, wallAlt], [HALF_W, 0, 0.12, T.ARENA_H_U, wallAlt]] as const) {
-    const bar = new THREE.Mesh(shared.box, m);
-    bar.scale.set(w, 0.25, d); bar.position.set(x, 0.12, z);
-    walls.add(bar);
-  }
-  const pylonMat = metalMaterial(token('--stone'));
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
-    const py = new THREE.Mesh(shared.octa, pylonMat);
-    py.scale.set(0.55, 1.4, 0.55); py.position.set(sx * HALF_W, 1.2, sz * HALF_H);
-    py.userData.spin = true;
-    walls.add(py);
-  }
-  scene.add(walls);
+  const fogU = THREE.UniformsUtils.clone(fogShader.uniforms);
+  fogU.uColor.value.set(token('--moon')).multiplyScalar(LOOK.FOG_BRIGHT);
+  const groundFog = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...fogShader, uniforms: fogU, transparent: true, depthWrite: false }));
+  groundFog.position.y = LOOK.FOG_Y_U;
+  groundFog.renderOrder = 1;
+  scene.add(groundFog);
+  plantClearing(scene);
 
-  // The ship
+  // The wizard, and the light he carries (lights the floor through floorU.uPlayer and the characters round him).
   const ship = buildShip(token('--player'), token('--player-glow'));
   scene.add(ship.obj);
-  // A pool of light under the ship so it reads at a glance among the swarm.
-  const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.9, 0.22));
-  shipHalo.scale.setScalar(1.1);
-  scene.add(shipHalo);
-  const shipLight = new THREE.PointLight(token('--player-glow'), 30, 12, 1.6);
+  const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
   scene.add(shipLight);
   const beamGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0);
-  const aimLine = new THREE.Mesh(beamGeo, glowMaterial(token('--player-glow'), 1.5, 0.25));
+  const aimLine = new THREE.Mesh(beamGeo, glowMaterial(token('--player-shot'), 1.2, 0.16));
   /** Sniper sight lines share one material; each painting enemy gets its own mesh. */
   const laserMat = glowMaterial(token('--laser'), 2.4, 0.6);
   scene.add(aimLine);
+  /** Warm flashes where spells land: a few pooled point lights so a hit lights the enemy it hits. Always in the scene
+   *  (intensity 0 when idle): adding or removing a light recompiles every lit material. */
+  const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--player-shot'), 0, 6, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
+  let flashNext = 0;
+  const flash = (x: number, z: number, peak: number, color = token('--player-shot')) => {
+    const f = flashes[flashNext]!; flashNext = (flashNext + 1) % LOOK.FLASH_LIGHTS;
+    f.l.position.set(x, 1.2, z); f.l.color.set(color); f.t = LOOK.FLASH_S; f.peak = peak;
+  };
 
-  // Instanced shots and pickups
-  const inst = (g: THREE.BufferGeometry, m: THREE.Material, n: number) => { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; };
-  const bolts = inst(new THREE.CapsuleGeometry(0.09, 0.7, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3), 600);
+  // Blob shadows under every character: the moon is too faint to cast, but in the dark a figure needs ground under it.
+  const shadows = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: LOOK.SHADOW, depthWrite: false }), 400);
+  shadows.renderOrder = 0;
+
+  // Instanced spells and pickups
+  function inst(g: THREE.BufferGeometry, m: THREE.Material, n: number) { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; }
+  const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
+  const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
   const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2), 800);
   const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.8, 0.25), 800);
-  const lobs = inst(new THREE.IcosahedronGeometry(0.4, 0), glowMaterial(token('--lob'), 3), 64);
-  const shards = inst(new THREE.OctahedronGeometry(0.22, 0), glowMaterial(token('--shard'), 2.4), 600);
-  const repairs = inst(new THREE.OctahedronGeometry(0.4, 0), glowMaterial(token('--repair'), 2.6), 16);
+  const lobs = inst(new THREE.IcosahedronGeometry(0.4, 1), glowMaterial(token('--lob'), 3), 64);
+  const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
+  const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
 
   const particles = createParticles(scene);
+  /** Bone dust and grave dirt: lit, not glowing. */
+  const dust = createParticles(scene, 800, false);
   const rings = createRings(scene);
 
-  // Post
+  // Post: bloom only catches magic (glow parts, spells, souls); everything lit sits well under its threshold.
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(cssW / 2, cssH / 2), 0.85, 0.4, 0.78);
+  const bloom = new UnrealBloomPass(new THREE.Vector2(cssW / 2, cssH / 2), LOOK.BLOOM, LOOK.BLOOM_RADIUS, LOOK.BLOOM_THRESHOLD);
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
   const final = new ShaderPass(finalShader);
+  final.uniforms.uHurtCol!.value.set(token('--danger'));
+  // The grade leans shadows towards moonlight: --moon at luminance 1.
+  const grade = new THREE.Color(token('--moon'));
+  final.uniforms.uGradeCol!.value.copy(grade.multiplyScalar(1 / (0.299 * grade.r + 0.587 * grade.g + 0.114 * grade.b)));
   composer.addPass(final);
 
   const enemies = new Map<number, EnemyView>();
@@ -183,6 +275,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const killed = new Set<number>();
   const strike = (id: number) => enemies.get(id)?.rig.play('attack');
   const warps = new Map<number, THREE.Object3D>();
+  const pitMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.9, depthWrite: false });
   const ripples: THREE.Vector4[] = floorU.uRipples.value;
   let rippleNext = 0, shake = 0, hurt = 0, time = 0, last: GameState | null = null;
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
@@ -210,7 +303,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const hue = (kind: string, s: GameState) => { const t = waveDef(s.wave).def.tint; return t ? token(t) : enemyColor(kind); };
 
   function makeEnemy(id: number, kind: string, s: GameState): EnemyView {
-    const d = enemyDef(kind), body = paintMaterial(hue(kind, s));
+    const d = enemyDef(kind), body = paintMaterial(hue(kind, s), token('--soulfire'));
     const rig = buildRig(d.model, body, id * 0.37);
     const arc = d.behaviours.find((b) => b.shieldArcDeg)?.shieldArcDeg;
     let shield: THREE.Mesh | undefined;
@@ -234,22 +327,25 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         for (let i = 0; i < 2; i++) particles.spark(e.x + nx * 0.6, e.y + nz * 0.6, nx * 6 + (Math.random() - 0.5) * 3, nz * 6 + (Math.random() - 0.5) * 3, token('--player-shot'), 0.07, 0.12);
         break;
       }
-      case 'hit': sfx('hit'); particles.burst(e.x, e.y, hue(e.kind, s), 4, 7, 0.08, 0.25); break;
+      case 'hit': sfx('hit'); particles.burst(e.x, e.y, token('--player-shot'), 4, 7, 0.07, 0.25); flash(e.x, e.y, LOOK.FLASH_HIT); break;
       case 'kill': {
         killed.add(e.id);
         const d = enemyDef(e.kind), col = hue(e.kind, s), big = d.tier === 'boss';
         sfx(big || d.tier === 'elite' ? 'big-kill' : 'kill');
-        particles.burst(e.x, e.y, col, big ? 260 : 16 + d.r * 30, big ? 22 : 9 + d.r * 5, big ? 0.3 : 0.14 + d.r * 0.05, big ? 1.6 : 0.8);
-        particles.burst(e.x, e.y, 0xffffff, big ? 60 : 6, big ? 16 : 6, 0.08, 0.4);
-        rings.ring(e.x, e.y, d.r * 0.5, d.r * (big ? 12 : 4), big ? 1.4 : 0.5, col);
-        if (big) rings.column(e.x, e.y, 2.5, 14, 1.2, col);
+        // The spell's fire flares on the body, bone dust falls, and the soul goes up out of it in soulfire.
+        flash(e.x, e.y, big ? LOOK.FLASH_BOSS : LOOK.FLASH_KILL);
+        dust.burst(e.x, e.y, col, big ? 200 : 10 + d.r * 24, big ? 14 : 4 + d.r * 4, big ? 0.22 : 0.08 + d.r * 0.04, big ? 1.6 : 0.9, 0.6, 0.9);
+        particles.burst(e.x, e.y, token('--player-shot'), big ? 80 : 8, big ? 16 : 6, 0.08, 0.4);
+        particles.burst(e.x, e.y, token('--soulfire'), big ? 60 : 5, 1.5, 0.12, big ? 2 : 1.1, 0.8, 4);
+        rings.ring(e.x, e.y, d.r * 0.5, d.r * (big ? 12 : 3.5), big ? 1.4 : 0.5, token('--player-shot'), { boost: 0.8 });
+        if (big) rings.column(e.x, e.y, 2.5, 14, 1.2, token('--soulfire'));
         ripple(e.x, e.y, big ? 2.5 : Math.min(1.2, 0.35 + d.r * 0.5));
         shake = Math.max(shake, big ? 1.4 : Math.min(0.5, d.r * 0.3));
         break;
       }
       case 'hurt': sfx('hurt'); if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(60); hurt = 1; shake = Math.max(shake, 0.8); particles.burst(e.x, e.y, token('--danger'), 30, 10, 0.12, 0.6); ripple(e.x, e.y, 1); break;
       case 'warp': sfx('warp'); break;
-      case 'arrive': { const d = enemyDef(e.kind); particles.burst(e.x, e.y, token('--warp'), 12 + d.r * 10, 5, 0.1, 0.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp')); break; }
+      case 'arrive': { const d = enemyDef(e.kind); dust.burst(e.x, e.y, token('--floor'), 14 + d.r * 16, 4, 0.1, 0.7, 0.2, 1.2); particles.burst(e.x, e.y, token('--warp'), 6 + d.r * 6, 3, 0.08, 0.6, 0.3, 1.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp'), { boost: 1.2 }); break; }
       case 'telegraph':
         strike(e.id);
         if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--telegraph'));
@@ -284,9 +380,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     ship.obj.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
     if (!dead && ship.dead) ship.revive();
     ship.update(dt);
-    shipLight.position.set(p.x, 2.2, p.y);
-    shipHalo.position.set(p.x, 0.04, p.y);
-    shipHalo.visible = !dead;
+    shipLight.position.set(p.x + Math.cos(Math.atan2(p.ay, p.ax)) * 0.5, 2.0, p.y + Math.sin(Math.atan2(p.ay, p.ax)) * 0.5);
     shipLight.visible = !dead;
     aimLine.visible = !dead && s.phase === 'fight';
     aimLine.position.set(p.x, 0.08, p.y); aimLine.rotation.y = -Math.atan2(p.ay, p.ax); aimLine.scale.set(5, 1, 0.05);
@@ -328,6 +422,13 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       if ((c.t -= dt) <= 0) { scene.remove(c.rig.obj); c.body.dispose(); corpses.splice(i, 1); }
     }
 
+    // Every opening grave and spell in flight also lights the ground under it (the first MAX_FLOOR_LIGHTS of them).
+    let nf = 0;
+    const floorLight = (x: number, z: number, radius: number, power: number, color: number) => {
+      if (nf >= MAX_FLOOR_LIGHTS) return;
+      floorU.uLights.value[nf]!.set(x, z, radius, power); floorU.uLightCol.value[nf++]!.set(color);
+    };
+
     // warp gates
     const gates = new Set<number>();
     for (const g of s.warps) {
@@ -335,20 +436,23 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       let o = warps.get(g.id);
       if (!o) {
         const r = radius(g);
+        // The ground opens: a black pit ringed in grave-light, widening until the dead climb out.
         o = new THREE.Group();
-        const ringMesh = new THREE.Mesh(shared.thinTorus, glowMaterial(token('--warp'), 3));
+        const ringMesh = new THREE.Mesh(shared.thinTorus, glowMaterial(token('--warp'), 2.2));
         ringMesh.rotation.x = Math.PI / 2;
-        o.add(ringMesh, new THREE.Mesh(shared.torus, glowMaterial(hue(g.kind, s), 2, 0.5)));
-        o.scale.setScalar(r * 1.6);
+        o.add(ringMesh, new THREE.Mesh(shared.disc, pitMat));
+        o.scale.setScalar(r * 1.3);
         o.position.set(g.x, 0.1, g.y);
         scene.add(o);
         warps.set(g.id, o);
         rings.column(g.x, g.y, r * 0.9, 6, T.WARP_S + 0.2, token('--warp'));
       }
       const k = 1 - g.t / T.WARP_S;
-      o.rotation.y += dt * 6;
-      o.children[1]!.rotation.x = Math.PI / 2; o.children[1]!.scale.setScalar(1 - k * 0.7);
-      o.children[0]!.scale.setScalar(0.4 + k);
+      o.rotation.y += dt * 1.5;
+      o.children[1]!.scale.setScalar(0.2 + k * 0.8);
+      o.children[0]!.scale.setScalar(0.3 + k * 0.8);
+      if (dt > 0 && Math.random() < dt * 30) dust.burst(g.x, g.y, token('--floor'), 1, 2.5, 0.07, 0.6, 0.1, 1.4);
+      floorLight(g.x, g.y, radius(g) * 2, 0.8 * k, token('--warp'));
     }
     for (const [id, o] of warps) if (!gates.has(id)) { scene.remove(o); warps.delete(id); }
 
@@ -359,18 +463,24 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         const t = 1 - b.life / T.LOB_FLIGHT_S;
         m4.compose(v3.set(b.x, 0.6 + 4 * LOB_ARC_U * t * (1 - t), b.y), q.setFromAxisAngle(up, time * 5), s3.set(1, 1, 1));
         lobs.setMatrixAt(nl++, m4);
+        floorLight(b.x, b.y, 1.6, 1.2, token('--lob'));
       } else if (b.hostile) {
         const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15;
         m4.compose(v3.set(b.x, 0.5, b.y), q.identity(), s3.setScalar(b.r * pulse));
         orbs.setMatrixAt(no, m4);
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
+        floorLight(b.x, b.y, 1.3, 0.9, token('--hostile-shot'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
-        bolts.setMatrixAt(nb++, m4);
+        bolts.setMatrixAt(nb, m4);
+        m4.compose(v3, q, s3.setScalar(0.34 + Math.sin(time * 30 + b.id) * 0.05));
+        boltHalos.setMatrixAt(nb++, m4);
+        floorLight(b.x, b.y, 2.2, 1.5, token('--player-shot'));
       }
     }
-    bolts.count = nb; orbs.count = no; halos.count = no; lobs.count = nl;
+    for (let i = nf; i < MAX_FLOOR_LIGHTS; i++) floorU.uLights.value[i]!.w = 0;
+    bolts.count = nb; boltHalos.count = nb; orbs.count = no; halos.count = no; lobs.count = nl;
     let ns = 0, nr = 0;
     for (const k of s.pickups) {
       const blink = k.life < 2 && Math.floor(time * 10) % 2 === 0 ? 0.001 : 1;
@@ -378,14 +488,21 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       if (k.kind === 'shard') shards.setMatrixAt(ns++, m4); else repairs.setMatrixAt(nr++, m4);
     }
     shards.count = ns; repairs.count = nr;
-    for (const im of [bolts, orbs, halos, lobs, shards, repairs]) im.instanceMatrix.needsUpdate = true;
+    // Blob shadows: the wizard and every standing or fallen character.
+    let nsh = 0;
+    const blob = (x: number, z: number, r: number) => { m4.compose(v3.set(x, 0.02, z), q.identity(), s3.set(r * 2.6, 1, r * 2.2)); shadows.setMatrixAt(nsh++, m4); };
+    if (!dead) blob(p.x, p.y, 0.55);
+    for (const e of s.enemies) blob(e.x, e.y, radius(e) + LEGIBLE_U);
+    shadows.count = nsh;
+    for (const im of [bolts, boltHalos, orbs, halos, lobs, shards, repairs, shadows]) im.instanceMatrix.needsUpdate = true;
 
     // effects
     particles.update(dt);
+    dust.update(dt);
     rings.update(dt);
     for (const r of ripples) if (r.w > 0) { r.z += dt; if (r.z > 1.4) r.w = 0; }
-    for (const o of walls.children) if (o.userData.spin) o.rotation.y += dt * 1.2;
-    floorU.uTime.value = time;
+    floorU.uTime.value = time; fogU.uTime.value = time;
+    for (const f of flashes) { f.t = Math.max(0, f.t - dt); f.l.intensity = f.peak * (f.t / LOOK.FLASH_S) ** 2; }
     shake = Math.max(0, shake - dt * SHAKE_DECAY_PER_S * Math.max(0.3, shake));
     hurt = Math.max(0, hurt - dt * 1.8);
     final.uniforms.uHurt!.value = hurt;

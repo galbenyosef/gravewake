@@ -61,7 +61,7 @@ const sym = (half: Pt[]): Pt[] => [...half, ...half.slice().reverse().map(([x, y
 /** A shape and its mirror image across the vertical axis (paired wings, legs, guns). */
 const pair = (pts: Pt[]): Pt[][] => [pts, pts.map(([x, y]) => [-x, y] as const)];
 const GLYPHS: Record<Model, readonly (readonly Pt[])[]> = {
-  pod: [ring(16, 0.7, 0, 0.05), ring(10, 0.22, 0, -0.55), ...pair(ring(8, 0.2, 0.88, 0.1))],
+  skeleton: [ring(16, 0.7, 0, 0.05), ring(10, 0.22, 0, -0.55), ...pair(ring(8, 0.2, 0.88, 0.1))],
   tick: [sym([[0, -1], [0.22, -0.8], [0.42, -0.25], [0.38, 0.45], [0, 0.95]]), ...pair([[0.4, -0.3], [0.85, -0.55]]), ...pair([[0.42, 0.05], [0.9, 0.05]]), ...pair([[0.38, 0.35], [0.8, 0.65]])],
   lance: [sym([[0, -1], [0.12, -0.3], [0.7, -0.15], [0.55, 0.3], [0.2, 0.35], [0.4, 0.9], [0, 0.7]])],
   hornet: [sym([[0, -0.95], [0.2, -0.75], [0.26, -0.3], [0.3, 0.25], [0.18, 0.8], [0, 1]]), ...pair([[0.24, -0.35], [0.95, -0.7], [0.98, -0.42], [0.28, -0.12]])],

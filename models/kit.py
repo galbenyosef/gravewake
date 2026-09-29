@@ -350,6 +350,13 @@ def spin(ob, clip, period, turns=1, axis=2, ccw=True):
     return key(ob, clip, frames, linear=True)
 
 
+def still(ob, clips=CLIPS):
+    """Scenery's clips: an imperceptible settle in each of `clips` (the glTF exporter drops a clip that doesn't move,
+    and the rig contract wants all three)."""
+    for c in clips:
+        key(ob, c, [(0, {}), (0.5, {'rot': (0.3, 0, 0)}), (1.0, {})])
+
+
 def burst_apart(parts, dur=0.7, fling=1.2, rise=0.6, seed=1):
     """A generic `die`: each part flies out from the centre, tumbles and shrinks to nothing; the rig sinks and squashes."""
     bpy.context.view_layer.update()
@@ -364,6 +371,29 @@ def burst_apart(parts, dur=0.7, fling=1.2, rise=0.6, seed=1):
             (dur, {'loc': tuple(d * fling + Vector((0, 0, -0.2))), 'rot': tuple(spin_axis), 'scale': 0.01}),
         ])
     key(RIG, 'die', [(0, {'scale': 1}), (dur * 0.15, {'scale': (1.15, 1.15, 0.85)}), (dur, {'scale': (1, 1, 0.6)})])
+
+
+def crumble(parts, dur=1.0, floor=-0.9, scatter=0.35, seed=1):
+    """An undead `die`: the bones give way. Each part drops to the floor (`floor`, model z), skids a little outward and
+    tumbles flat, lies there, then sinks into the earth. Parts hung from another listed part drop relative to it."""
+    bpy.context.view_layer.update()
+    drops = {}
+    for i, ob in enumerate(parts):
+        c = Vector(ob.matrix_world.translation)
+        d = Vector((c.x, c.y, 0))
+        d = d.normalized() if d.length > 1e-3 else Vector((math.cos(i * 2.4 + seed), math.sin(i * 2.4 + seed), 0))
+        drop = Vector((d.x * scatter * (0.5 + (i * 37 % 10) / 20), d.y * scatter * (0.5 + (i * 53 % 10) / 20), floor + 0.12 - c.z))
+        drops[ob.name] = drop
+        own = drop - drops.get(ob.parent.name, Vector()) if ob.parent is not None and ob.parent.name in drops else drop
+        tumble = ((i * 97 + seed * 31) % 120 - 60, (i * 61 + seed * 17) % 140 - 70, (i * 43) % 60 - 30)
+        key(ob, 'die', [
+            (0, {}),
+            (dur * 0.08, {'loc': (0, 0, 0.06)}),
+            (dur * 0.35, {'loc': tuple(own), 'rot': tumble}),
+            (dur * 0.7, {'loc': tuple(own), 'rot': tumble}),
+            (dur, {'loc': tuple(own + Vector((0, 0, -0.35))), 'rot': tumble, 'scale': 0.5}),
+        ])
+    key(RIG, 'die', [(0, {}), (dur, {})])
 
 
 # ---------- paint and export ----------

@@ -1,0 +1,14 @@
+// The clearing's scenery, the same every run: each `scatter` walks one or more edges of the arena and drops a model in
+// slots `step` u apart. Distances are u; `out` is how far past the edge a slot sits (negative is inside), `spread` adds
+// up to that much more at random; `jitter` slides a slot along the edge; `scale` +- `vary`/2 sizes it; `chance` is the
+// odds a slot is filled; `face="in"` turns the model's front (+X) towards the centre, otherwise it faces anywhere.
+// `extend` runs the row that far past the edge's ends. Models are scenery in models/ (tree, grave, roots).
+
+// Dead trees: a ragged row well past each edge (up close they'd crowd the fight), two leaning in at the near corners.
+scatter "far-trees" model="tree" along="top" out=4.5 spread=4 step=4.2 jitter=2.5 extend=8 scale=2.1 vary=0.8 seed=11
+scatter "side-trees" model="tree" along="sides" out=4 spread=3 step=4.5 jitter=2.5 extend=3 scale=2.1 vary=0.8 seed=12
+scatter "corner-trees" model="tree" along="bottom" out=4.5 step=34 scale=2.2 seed=13
+
+// The edge itself: a broken line of graves facing into the clearing, and roots between them.
+scatter "graves" model="grave" along="all" out=0.9 spread=0.8 step=2.4 jitter=1 scale=0.9 vary=0.35 chance=0.5 face="in" seed=21
+scatter "roots" model="roots" along="all" out=0.8 spread=1 step=3.1 jitter=1.4 scale=1.2 vary=0.7 chance=0.4 seed=22

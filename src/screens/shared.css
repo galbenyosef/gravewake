@@ -18,14 +18,14 @@
   --body-font: Georgia, serif;
 
   /* The clearing (tokens.ts): near-black earth, rot, cold moonlight. Saturated colour is only for magic. */
-  --floor: #0c0d0f;
-  --moss: #262d22;
+  --floor: #3e372f;
+  --moss: #34402c;
   --moon: #7d97c9;
   --fog: #0a0e15;
-  --wood: #4d463d;
+  --wood: #2f2a25;
   --stone: #6b6d70;
   --player: #3b3548;
-  --player-glow: #ff8c2e;
+  --player-glow: #ffae6b;
   --player-shot: #ffb347;
   --hostile-shot: #8dff5c;
   --lob: #ff4a26;

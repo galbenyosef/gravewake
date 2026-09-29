@@ -8,10 +8,9 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ENEMIES } from '../content';
 import { enemyColor, token } from '../tokens';
-import { buildRig, buildShip, CLIPS, loadModels, paintMaterial, type Rig, type RigName } from '../view/models';
+import { buildRig, buildShip, CLIPS, lightNight, loadModels, paintMaterial, type Rig, type RigName } from '../view/models';
 
 const W = 844, H = 390;
 /** How often the attack and die panels replay, s. */
@@ -40,14 +39,12 @@ function viewer() {
   el.appendChild(labels);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(token('--floor')).multiplyScalar(0.5);
-  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.55;
-  scene.add(new THREE.HemisphereLight(0x8aa8ff, 0x100818, 0.6));
-  const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-  sun.position.set(-8, 20, 6);
-  scene.add(sun);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(token('--moss')).multiplyScalar(0.25) }));
+  lightNight(scene, renderer);
+  // A pool of the wizard's light on the ground, so each model is seen the way it is in a fight: moonlit, and warm near him.
+  const glow = new THREE.PointLight(token('--player-glow'), 10, 6, 1.4);
+  glow.position.set(1.5, 2.2, 2.5);
+  scene.add(glow);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: token('--floor') }));
   const camera = new THREE.PerspectiveCamera(24, W / H, 0.1, 50);
   camera.position.set(0, 8.5, 9.5);
   camera.lookAt(0, 0.1, 0);
@@ -62,12 +59,14 @@ function viewer() {
 
   function show(name: RigName, still: boolean) {
     stage.clear();
-    const col = name === 'ship' ? token('--player') : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
+    const scenery: Record<string, string> = { tree: '--wood', roots: '--wood', grave: '--stone' };
+    const col = name === 'ship' ? token('--player') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
     rigs = CLIPS.map((c, i) => {
-      const rig = name === 'ship' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col));
+      const rig = name === 'ship' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
       const holder = new THREE.Group();
       holder.add(rig.obj, floor.clone());
       rig.obj.position.y = 0.9;
+      if (scenery[name]) { rig.obj.scale.setScalar(0.4); rig.obj.position.y = 0; }
       holder.position.x = (i - 1) * 3.4;
       stage.add(holder);
       if (c !== 'idle') rig.pose(c, 0);
@@ -122,7 +121,7 @@ export default {
 } satisfies Meta<Args>;
 
 export const Ship = model('ship');
-export const Pod = model('pod');
+export const Skeleton = model('skeleton');
 export const Tick = model('tick');
 export const Lance = model('lance');
 export const Hornet = model('hornet');
@@ -136,3 +135,6 @@ export const Crab = model('crab');
 export const Angel = model('angel');
 export const Walker = model('walker');
 export const Rail = model('rail');
+export const Tree = model('tree');
+export const Grave = model('grave');
+export const Roots = model('roots');

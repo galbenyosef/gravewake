@@ -33,13 +33,13 @@ describe('content', () => {
     expect(UPGRADE_IDS.length).toBeGreaterThanOrEqual(6);
   });
   it('refuses two movement words', () => {
-    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="pod" {\n chase 1\n orbit 2 3\n}', { enemy: EnemySchema })).toThrow(/enemy "x": children: more than one movement word/);
+    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="skeleton" {\n chase 1\n orbit 2 3\n}', { enemy: EnemySchema })).toThrow(/enemy "x": children: more than one movement word/);
   });
   it('refuses split without spawns', () => {
-    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="pod" {\n split 2\n}', { enemy: EnemySchema })).toThrow(/enemy "x": spawns:/);
+    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="skeleton" {\n split 2\n}', { enemy: EnemySchema })).toThrow(/enemy "x": spawns:/);
   });
   it('names unknown behaviour words', () => {
-    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="pod" {\n sneeze 1\n}', { enemy: EnemySchema })).toThrow(/unknown behaviour "sneeze" \(known: chase, keep-away/);
+    expect(() => loadKdl('enemy "x" name="X" blurb="b" hp=1 r=1 score=1 model="skeleton" {\n sneeze 1\n}', { enemy: EnemySchema })).toThrow(/unknown behaviour "sneeze" \(known: chase, keep-away/);
   });
 });
 

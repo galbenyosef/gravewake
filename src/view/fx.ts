@@ -4,8 +4,12 @@ import * as THREE from 'three';
 
 const DRAG_PER_S = 2.2;
 
-export function createParticles(scene: THREE.Scene, max = 2400) {
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+/** Glowing sparks (`additive`, colours boosted over the bloom threshold) or lit debris: bone dust, dirt. */
+export function createParticles(scene: THREE.Scene, max = 2400, additive = true) {
+  const mat = additive
+    ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+    : new THREE.MeshLambertMaterial({ color: 0xffffff });
+  const boost = additive ? 2.2 : 1;
   const mesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(1, 0), mat, max);
   mesh.frustumCulled = false;
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -17,7 +21,7 @@ export function createParticles(scene: THREE.Scene, max = 2400) {
 
   /** `count` sparks from (x, y, z) outward at up to `speed` u/s, `sz` u big, living ~`dur` s. */
   function burst(x: number, z: number, color: number, count: number, speed: number, sz = 0.12, dur = 0.6, y = 0.4, up = 0.4) {
-    c.set(color).multiplyScalar(2.2);
+    c.set(color).multiplyScalar(boost);
     for (let k = 0; k < count; k++) {
       const i = next; next = (next + 1) % max;
       const a = Math.random() * Math.PI * 2, sp = speed * (0.25 + Math.random() * 0.75);
@@ -34,7 +38,7 @@ export function createParticles(scene: THREE.Scene, max = 2400) {
     p[i * 3] = x; p[i * 3 + 1] = y; p[i * 3 + 2] = z;
     v[i * 3] = vx; v[i * 3 + 1] = 0; v[i * 3 + 2] = vz;
     total[i] = life[i] = dur; size[i] = sz;
-    mesh.setColorAt(i, c.set(color).multiplyScalar(2.2));
+    mesh.setColorAt(i, c.set(color).multiplyScalar(boost));
   }
   function update(dt: number) {
     const drag = Math.exp(-DRAG_PER_S * dt);

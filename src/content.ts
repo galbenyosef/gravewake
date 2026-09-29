@@ -7,10 +7,15 @@ import { EFFECTS } from './upgrades';
 import enemiesKdl from '../content/enemies.kdl?raw';
 import wavesKdl from '../content/waves.kdl?raw';
 import upgradesKdl from '../content/upgrades.kdl?raw';
+import arenaKdl from '../content/arena.kdl?raw';
+import { rand } from './rng';
+import { T } from './tuning';
 
 /** Characters the shell can build: each is models/<name>.py, exported to models/<name>.glb (view/models.ts loads them). */
-export const MODELS = ['pod', 'tick', 'lance', 'hornet', 'urchin', 'bastion', 'nest', 'wraith', 'geode', 'jelly', 'crab', 'angel', 'walker', 'rail'] as const;
+export const MODELS = ['skeleton', 'tick', 'lance', 'hornet', 'urchin', 'bastion', 'nest', 'wraith', 'geode', 'jelly', 'crab', 'angel', 'walker', 'rail'] as const;
 export type Model = (typeof MODELS)[number];
+/** Scenery models round the clearing (models/<name>.py like the characters; content/arena.kdl places them). */
+export const SCENERY = ['tree', 'grave', 'roots'] as const;
 
 const pos = z.number().positive();
 
@@ -97,3 +102,38 @@ export function waveDef(n: number): { def: WaveDef; loop: number } {
 
 /** The boss a wave brings, if any. */
 export const bossOf = (w: WaveDef) => w.spawns.map((s) => ENEMIES[s.kind]!).find((e) => e.tier === 'boss')?.id ?? null;
+
+const EDGES = { top: ['top'], bottom: ['bottom'], sides: ['left', 'right'], all: ['top', 'bottom', 'left', 'right'] } as const;
+const nonneg = z.number().nonnegative();
+export const ScatterSchema = z.strictObject({
+  id: z.string(),
+  model: z.enum(SCENERY),
+  along: z.enum(['top', 'bottom', 'sides', 'all']),
+  /** Past the edge, u (negative is inside); `spread` adds up to that much more. */
+  out: z.number(), spread: nonneg.default(0),
+  /** Slot spacing along the edge, how far a slot may slide, and how far the row runs past the edge's ends, u. */
+  step: pos, jitter: nonneg.default(0), extend: nonneg.default(0),
+  scale: pos, vary: nonneg.default(0),
+  chance: z.number().min(0).max(1).default(1),
+  face: z.enum(['in', 'any']).default('any'),
+  seed: z.number().int(),
+  children: z.array(z.never()).max(0),
+}).transform(({ children: _c, ...sc }) => {
+  // The same slots every run: a seeded walk along each edge. `yaw` is where the model's +X faces, radians from +x
+  // towards +z (like an enemy's facing).
+  const rng = { seed: sc.seed }, r = () => rand(rng), hw = T.ARENA_W_U / 2, hh = T.ARENA_H_U / 2;
+  const placements: { x: number; z: number; scale: number; yaw: number }[] = [];
+  for (const edge of EDGES[sc.along]) {
+    const horiz = edge === 'top' || edge === 'bottom', half = (horiz ? hw : hh) + sc.extend, sign = edge === 'top' || edge === 'left' ? -1 : 1;
+    for (let t = -half; t <= half + 1e-6; t += sc.step) {
+      const along = t + (r() - 0.5) * sc.jitter, away = sign * ((horiz ? hh : hw) + sc.out + r() * sc.spread), keep = r() < sc.chance;
+      const scale = sc.scale + (r() - 0.5) * sc.vary, turn = r();
+      if (!keep) continue;
+      const [x, zz] = horiz ? [along, away] : [away, along];
+      placements.push({ x, z: zz, scale, yaw: sc.face === 'in' ? Math.atan2(-zz, -x) + (turn - 0.5) * 0.7 : turn * Math.PI * 2 });
+    }
+  }
+  return { ...sc, placements };
+});
+export type ScatterDef = z.output<typeof ScatterSchema>;
+export const SCATTERS = Object.values(loadKdl(arenaKdl, { scatter: ScatterSchema }).scatter);

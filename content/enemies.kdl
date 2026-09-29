@@ -6,7 +6,7 @@ enemy "mite" name="Mite" tier="minion" hp=1 r=0.28 score=5 model="tick" blurb="F
     chase 6.5
 }
 
-enemy "drone" name="Drone" hp=3 r=0.5 score=10 model="pod" blurb="The swarm's rank and file. Slow, steady, many." {
+enemy "drone" name="Drone" hp=3 r=0.5 score=10 model="skeleton" blurb="The swarm's rank and file. Slow, steady, many." {
     chase 3.2
 }
 

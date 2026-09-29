@@ -12,6 +12,8 @@ Homes:
 | Game CSS properties, custom elements | `src/screens/shared.ts` (the only module calling `defineProp` / `defineElement`) |
 | Shared prefabs | `src/screens/shared.kdl`, styled in `src/screens/shared.css` |
 | Palette (UI and 3D) | `:root` of `src/screens/shared.css`, read by the shell through `src/tokens.ts` |
+| Look numbers (light, fog, rim, bloom, flashes) | `LOOK` in `src/view/look.ts`: how much of the palette's hues you see; the render's tuning.ts |
+| Scenery layout | `scatter` nodes in `content/arena.kdl` (expanded to placements by `ScatterSchema` in `src/content.ts`) |
 | Behaviour words | `BEHAVIOURS` in `src/enemies.ts` |
 | Upgrade effect words | `EFFECTS` in `src/upgrades.ts` |
 | Content kinds | zod schemas in `src/content.ts`, data in `content/*.kdl` |
@@ -108,7 +110,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--pop` | overshoot easing |
 | `--title-font` | Cinzel (`@fontsource/cinzel`, weight 600) |
 | `--body-font` | Georgia, serif |
-| `--floor` | the clearing's earth, and the night sky behind the fog |
+| `--floor` | the clearing's earth (its albedo: the night decides how dark it looks), grave dirt |
 | `--moss` | rot and moss patches on the floor |
 | `--moon` | moonlight: key light, the cold rim on every model's edge, the move stick |
 | `--fog` | ground fog and the distance |
@@ -144,6 +146,45 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--enemy-sniper` | sniper |
 | `--enemy-seraph` | seraph |
 | `--enemy-colossus` | colossus |
+
+
+## Look
+
+`LOOK` in `src/view/look.ts`. Hues come from the palette; these numbers say how much of them you see.
+
+| Name | Use |
+|---|---|
+| `EXPOSURE` | tone-mapping exposure, the whole frame |
+| `MOON_KEY` | moon key light intensity (--moon) |
+| `MOON_FILL` | moonlit hemisphere fill |
+| `ENV` | environment reflections on metal |
+| `RIM` | cold fresnel rim on every character's silhouette |
+| `RIM_POWER` | the rim's falloff (higher is a thinner edge) |
+| `SCENERY_RIM` | scenery's weaker rim |
+| `FLOOR_AMBIENT` | moonlight on the floor everywhere |
+| `FLOOR_MOON` | extra moonlight in the clearing |
+| `FLOOR_DAPPLE` | moonlight through gaps in the dead canopy |
+| `FOG_Y_U` | ground fog height, u |
+| `FOG_VEIL` | ground fog thickness in the open |
+| `FOG_EDGE` | ground fog thickness under the trees |
+| `FOG_BRIGHT` | how moonlit the fog is |
+| `FOG_NEAR_U` | distance fog start, u from the camera |
+| `FOG_FAR_U` | distance fog end |
+| `PLAYER_LIGHT` | the wizard's light intensity (--player-glow) |
+| `PLAYER_LIGHT_U` | its reach, u |
+| `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
+| `FLASH_LIGHTS` | pooled point lights for spell impacts |
+| `FLASH_S` | how long an impact flash lasts, s |
+| `FLASH_HIT` | a hit's flash |
+| `FLASH_KILL` | a kill's flash |
+| `FLASH_BOSS` | a boss kill's flash |
+| `BLOOM` | bloom strength (only magic should cross the threshold) |
+| `BLOOM_RADIUS` | bloom radius |
+| `BLOOM_THRESHOLD` | bloom threshold |
+| `SHADOW` | blob shadow darkness under characters |
+| `VIGNETTE` | vignette depth |
+| `GRADE` | how far the shadows lean towards moonlight |
+| `GRAIN` | film grain |
 
 ## Behaviour words
 
@@ -191,7 +232,7 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | Model | Use |
 |---|---|
 | `ship` | the player's fighter: swept wings, wingtip guns that recoil on each shot, twin engines |
-| `pod` | Drone: helmet-bot with one big eye and thruster ears; lunges when close |
+| `skeleton` | Drone: big-skulled, chunky-boned soldier with a rusted pauldron and a notched sword; hacks overhead, falls into a bone pile |
 | `tick` | Mite: beetle with a glowing abdomen, skittering legs, snapping mandibles |
 | `lance` | Lancer: armoured hull, drill-lance that spins, pauldrons that fold back on the charge |
 | `hornet` | Wasp: striped abdomen and glowing stinger that curls to fire, four fluttering wings |
@@ -205,6 +246,9 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | `rail` | Sniper: tripod railgun with glowing coils; the barrel slams back on the shot |
 | `angel` | Seraph: armoured heart in a turning ring of six blade wings that flare to fire |
 | `walker` | Colossus: siege titan on stomping legs, twin shoulder cannons that recoil |
+| `tree` | scenery: a dead oak on clawing roots, bare crown (stands on z = 0, 1 unit about a metre) |
+| `grave` | scenery: a leaning, bitten headstone on a plinth, a mound and a broken iron cross |
+| `roots` | scenery: a snapped, rotten stump and the roots it throws across the ground |
 
 ## Model rig
 
@@ -246,6 +290,8 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `key` | `key(part, clip, [(s, {loc, rot, scale}), ...])`: key a clip relative to rest; one per part per clip |
 | `loop` | `loop(part, period, n, steps, phase, loc=, rot=, scale=)`: a sine idle loop |
 | `spin` | `spin(part, clip, period, turns, axis)`: a constant spin |
+| `still` | `still(part, clips)`: scenery's clips, an imperceptible settle in each (the exporter drops a clip that doesn't move) |
+| `crumble` | `crumble(parts, dur, floor, scatter)`: the undead `die`: bones drop to the floor, skid, lie, then sink into the earth |
 | `burst_apart` | `burst_apart(parts, dur, fling, rise)`: the generic `die`: parts fly out, tumble, shrink |
 | `export` | `export(__file__)`: paint the vertices (value only; hue comes from CSS) and write the .glb |
 
@@ -256,6 +302,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
+| `scatter` | `scatter "id" model= along=top/bottom/sides/all out= step= scale= seed= [spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in `content/arena.kdl` |
 
 ## Content helpers
 
