@@ -47,80 +47,83 @@ const NOISE = /* glsl */ `
   }`;
 
 /**
- * The clearing's floor, all procedural: dark earth with rot and moss, leaf litter and stones, root-cracks; lit only by
- * cold moonlight falling through a dead canopy (dapple), the wizard's own light, and the spells in flight.
+ * The clearing's floor, all procedural, on a lit standard material so the moon's shadows (trees, the dead, the canopy)
+ * fall on it: dark earth with rot and moss, leaf litter, sunk stones, root-furrows and standing water, given relief by a
+ * height from the same noise. The spells in flight add their own light (uLights, cheap: no point light each).
  */
-const floorShader = {
-  uniforms: {
-    uTime: { value: 0 }, uEarth: { value: new THREE.Color() }, uMoss: { value: new THREE.Color() }, uMoon: { value: new THREE.Color() },
-    uPlayerCol: { value: new THREE.Color() }, uStone: { value: new THREE.Color() }, uMoonLevels: { value: new THREE.Vector3(LOOK.FLOOR_AMBIENT, LOOK.FLOOR_MOON, LOOK.FLOOR_DAPPLE) }, uMoonDir: { value: MOON_DIR.clone().normalize() }, uRelief: { value: LOOK.FLOOR_RELIEF }, uPlayerPool: { value: LOOK.PLAYER_POOL }, uPlayer: { value: new THREE.Vector2() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
+function floorMaterial() {
+  const uniforms = {
+    uTime: { value: 0 }, uEarth: { value: new THREE.Color(token('--floor')) }, uMoss: { value: new THREE.Color(token('--moss')) },
+    uStone: { value: new THREE.Color(token('--stone')) }, uRelief: { value: LOOK.FLOOR_RELIEF }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
+    uMoon: { value: new THREE.Color(token('--moon')) },
     uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uLights: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
     uLightCol: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Color()) },
-  },
-  vertexShader: /* glsl */ `
-    varying vec2 vPos;
-    void main() { vPos = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: /* glsl */ `
-    uniform float uTime, uRelief, uPlayerPool; uniform vec3 uEarth, uMoss, uMoon, uPlayerCol, uStone, uMoonLevels, uMoonDir; uniform vec2 uPlayer, uHalf;
-    uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
-    varying vec2 vPos;
-    ${NOISE}
-    void main() {
-      vec2 p = vPos; float wave = 0.0;
-      for (int i = 0; i < ${MAX_RIPPLES}; i++) {
-        vec4 r = uRipples[i];
-        if (r.w <= 0.0) continue;
-        float dist = length(p - r.xy), front = r.z * 16.0;
-        wave += exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
-      }
-      // Albedo: earth, darker and lighter in broad patches; moss and rot; leaf litter; stones; cracks.
-      float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
-      vec3 alb = uEarth * (0.55 + 0.9 * broad) * (0.85 + 0.3 * fine);
-      float moss = smoothstep(0.52, 0.72, fbm(p * 0.33 + 3.1));
-      alb = mix(alb, uMoss * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.85);
-      vec3 leaf = cells(p * 2.6);
-      float litter = step(0.55, leaf.z) * smoothstep(0.34, 0.18, leaf.x);
-      alb *= 1.0 + litter * (fract(leaf.z * 13.7) - 0.35) * 1.1;
-      vec3 stones = cells(p * 0.9 + 40.0);
-      float stone = step(0.86, stones.z) * smoothstep(0.2, 0.12, stones.x);
-      alb = mix(alb, uStone * 0.35 * (0.6 + fine), stone);
-      vec3 crackCells = cells(p * 0.45 + 11.0);
-      float crack = (1.0 - smoothstep(0.0, 0.035, crackCells.y)) * smoothstep(0.35, 0.6, fbm(p * 0.5 + 7.0));
-      alb *= 1.0 - crack * 0.75;
-
-      // Relief: a height from the same noise (mounds, stones proud, cracks sunk) lit per pixel, so the moon rakes
-      // across the ground and a spell lights the near side of every stone.
-      float h = 0.5 * broad + stone * 0.25 * smoothstep(0.2, 0.0, stones.x) - crack * 0.1;
-      vec3 P = vec3(p.x, h * uRelief, p.y);
-      vec3 n = normalize(cross(dFdy(P), dFdx(P)));
-      n *= sign(n.y);
-
-      // Light: moonlight through the canopy (drifting dapple, strongest in the clearing), the wizard, the spells.
-      vec2 q = p / (uHalf * 1.15);
-      float clearing = exp(-dot(q, q) * 1.1);
-      float dapple = smoothstep(0.42, 0.72, fbm(p * 0.16 + vec2(uTime * 0.012, uTime * 0.005)));
-      float moonLit = max(dot(n, uMoonDir), 0.0);
-      vec3 light = uMoon * (uMoonLevels.x + (uMoonLevels.y + uMoonLevels.z * dapple) * clearing * (0.3 + 1.4 * moonLit));
-      vec3 toP = vec3(uPlayer.x - p.x, 1.6, uPlayer.y - p.y);
-      float dp = length(toP.xz);
-      light += uPlayerCol * (uPlayerPool * exp(-dp * dp * 0.07) + 0.25 * exp(-dp * 0.25)) * (0.4 + 0.9 * max(dot(n, normalize(toP)), 0.0));
-      for (int i = 0; i < ${MAX_FLOOR_LIGHTS}; i++) {
-        vec4 l = uLights[i];
-        if (l.w <= 0.0) continue;
-        vec3 toL = vec3(l.x - p.x, 0.6, l.y - p.y);
-        float d = length(toL.xz) / l.z;
-        light += uLightCol[i] * l.w * exp(-d * d) * (0.35 + 0.9 * max(dot(n, normalize(toL)), 0.0));
-      }
-      vec3 col = alb * light;
-      col += uMoon * wave * 0.012 * (0.5 + broad);
-
-      // Past the edge the ground falls into the dark under the trees.
-      float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
-      col *= mix(1.0, 0.25, smoothstep(-2.0, 3.5, edge));
-      gl_FragColor = vec4(col, 1.0);
-    }`,
-};
+  };
+  const m = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, envMapIntensity: 0.6 });
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPos = position.xz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+        uniform float uTime, uRelief; uniform vec3 uEarth, uMoss, uStone, uMoon; uniform vec2 uHalf;
+        uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
+        varying vec2 vPos;
+        ${NOISE}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec2 p = vPos; float wave = 0.0;
+        for (int i = 0; i < ${MAX_RIPPLES}; i++) {
+          vec4 r = uRipples[i];
+          if (r.w <= 0.0) continue;
+          float dist = length(p - r.xy), front = r.z * 16.0;
+          wave += exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
+        }
+        // Albedo: earth in broad patches, moss and rot, leaf litter, sunk stones, root-furrows, standing water.
+        vec2 warp = p + 1.6 * vec2(fbm(p * 0.15), fbm(p * 0.15 + 5.2));
+        float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
+        vec3 alb = uEarth * (0.5 + 1.0 * broad) * (0.85 + 0.3 * fine);
+        float moss = smoothstep(0.5, 0.72, fbm(warp * 0.33 + 3.1));
+        alb = mix(alb, uMoss * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.85);
+        vec3 leaf = cells(p * 2.6);
+        float litter = step(0.55, leaf.z) * smoothstep(0.34, 0.18, leaf.x);
+        alb *= 1.0 + litter * (fract(leaf.z * 13.7) - 0.35) * 1.0;
+        vec3 stones = cells(p * 0.8 + 40.0);
+        float stone = step(0.82, stones.z) * smoothstep(0.28, 0.16, stones.x);
+        alb = mix(alb, uStone * 0.3 * (0.6 + fine), stone);
+        // Furrows: where old roots ran, soft dark grooves winding through (domain-warped, not a crack net).
+        float furrow = smoothstep(0.06, 0.0, abs(fbm(warp * 0.35 + 11.0) - 0.5)) * smoothstep(0.3, 0.6, fbm(p * 0.2 + 2.0));
+        alb *= 1.0 - furrow * 0.6;
+        float low = 0.5 * broad + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15;
+        float wet = smoothstep(0.34, 0.26, low) * smoothstep(0.45, 0.65, fbm(p * 0.4 + 8.0));
+        alb *= 1.0 - 0.45 * wet;
+        float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
+        alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
+        diffuseColor.rgb = alb;`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.4, wet);')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          // Relief from the height: the moon rakes across stones, mounds and furrows (three's perturbNormalArb).
+          float h = low * uRelief * (1.0 - 0.8 * wet);
+          vec3 dpdx = dFdx(-vViewPosition), dpdy = dFdy(-vViewPosition);
+          vec3 r1 = cross(dpdy, normal), r2 = cross(normal, dpdx);
+          float det = dot(dpdx, r1);
+          vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
+          normal = normalize(abs(det) * normal - grad);
+        }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        vec3 spell = vec3(0.0);
+        for (int i = 0; i < ${MAX_FLOOR_LIGHTS}; i++) {
+          vec4 l = uLights[i];
+          if (l.w <= 0.0) continue;
+          float d = length(p - l.xy) / l.z;
+          spell += uLightCol[i] * l.w * exp(-d * d);
+        }
+        totalEmissiveRadiance += alb * spell + uMoon * wave * 0.012 * (0.5 + broad);`);
+  };
+  return { material: m, uniforms };
+}
 
 /** Low ground fog: drifting fbm veils a hand's height over the floor, moonlit, thicker under the trees. */
 const fogShader = {
@@ -171,6 +174,34 @@ const LEGIBLE_U = LOOK.CHARACTER_PAD_U;
 const TRAILED_BOLTS = 40;
 
 
+/**
+ * The dead canopy over the clearing, seen only by the moon: a high plane cut by noise into branches and gaps, casting a
+ * slow-drifting dapple of shadow on the floor and everyone crossing it. Thin over the middle, thick over the edges.
+ */
+function canopy() {
+  const n = 256, data = new Uint8Array(n * n * 4);
+  const h = (x: number, y: number) => { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); };
+  const vn = (x: number, y: number) => {
+    const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy, ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+    const w = (a: number, b: number) => h(((ix + a) % 16 + 16) % 16, ((iy + b) % 16 + 16) % 16); // tiles every 16 cells
+    return (w(0, 0) * (1 - ux) + w(1, 0) * ux) * (1 - uy) + (w(0, 1) * (1 - ux) + w(1, 1) * ux) * uy;
+  };
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    const u = (x / n) * 16, v = (y / n) * 16;
+    const f = 0.5 * vn(u, v) + 0.3 * vn(u * 2, v * 2) + 0.2 * vn(u * 4, v * 4);
+    const dx = x / n - 0.5, dy = y / n - 0.5, thin = Math.exp(-(dx * dx + dy * dy) * 9);
+    const leaf = f > 0.5 + 0.18 * thin ? 255 : 0;
+    data.set([leaf, leaf, leaf, 255], (y * n + x) * 4);
+  }
+  const tex = new THREE.DataTexture(data, n, n);
+  tex.needsUpdate = true;
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(110, 80).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, transparent: true, opacity: 0 }));
+  plane.position.y = LOOK.CANOPY_Y_U;
+  plane.castShadow = true;
+  plane.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, alphaMap: tex, alphaTest: 0.5 });
+  return plane;
+}
+
 /** A soft round shadow (alpha falls off from the centre), made in code: no image files. */
 function blobTexture() {
   const n = 64, data = new Uint8Array(n * n * 4);
@@ -192,6 +223,7 @@ function plantClearing(scene: THREE.Scene) {
   for (const scs of groups.values()) {
     const { model, paint, glow } = scs[0]!, spots = scs.flatMap((sc) => sc.placements);
     const im = new THREE.InstancedMesh(restGeometry(model), paintMaterial(token(paint), token(glow ?? paint), undefined, LOOK.SCENERY_RIM), spots.length);
+    im.castShadow = true; im.receiveShadow = true;
     spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0, p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
     im.frustumCulled = false;
     (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
@@ -211,17 +243,26 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   el.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  lightNight(scene, renderer);
+  const moon = lightNight(scene, renderer);
+  // Moon shadows over the whole clearing: trees, graves, the dead and the wizard all cast them.
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  moon.castShadow = true;
+  moon.position.copy(MOON_DIR).normalize().multiplyScalar(40);
+  moon.shadow.mapSize.set(LOOK.SHADOW_MAP, LOOK.SHADOW_MAP);
+  Object.assign(moon.shadow.camera, { left: -30, right: 30, top: 24, bottom: -24, near: 1, far: 90 });
+  moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.03;
+  scene.add(moon.target);
+  scene.add(canopy());
   scene.fog = new THREE.Fog(token('--fog'), LOOK.FOG_NEAR_U, LOOK.FOG_FAR_U);
 
   const camera = new THREE.PerspectiveCamera(FOV_DEG, cssW / cssH, 0.5, 150);
   const camTarget = new THREE.Vector3();
 
   // The clearing: procedural floor, ground fog, and the dead wood, graves and roots round its edge.
-  const floorU = THREE.UniformsUtils.clone(floorShader.uniforms);
-  floorU.uEarth.value.set(token('--floor')); floorU.uMoss.value.set(token('--moss')); floorU.uMoon.value.set(token('--moon'));
-  floorU.uPlayerCol.value.set(token('--player-glow')); floorU.uStone.value.set(token('--stone'));
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...floorShader, uniforms: floorU }));
+  const { material: floorMat, uniforms: floorU } = floorMaterial();
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), floorMat);
+  floor.receiveShadow = true;
   scene.add(floor);
   const fogU = THREE.UniformsUtils.clone(fogShader.uniforms);
   fogU.uColor.value.set(token('--moon')).multiplyScalar(LOOK.FOG_BRIGHT);
@@ -233,6 +274,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // The wizard, and the light he carries (lights the floor through floorU.uPlayer and the characters round him).
   const ship = buildShip(token('--player'), token('--player-glow'));
+  ship.obj.traverse((o) => { o.castShadow = true; });
   scene.add(ship.obj);
   const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
   scene.add(shipLight);
@@ -251,7 +293,6 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   };
 
   // Blob shadows under every character: the moon is too faint to cast, but in the dark a figure needs ground under it.
-  const shadowTurn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(MOON_DIR.x, MOON_DIR.z));
   const shadows = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: LOOK.SHADOW, depthWrite: false }), 400);
   shadows.renderOrder = 0;
 
@@ -315,7 +356,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     if (now - slowSince < SLOW_WINDOW_MS || tier >= 2) return;
     tier++; slowSince = 0;
     if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); }
-    else bloom.enabled = false;
+    else { bloom.enabled = false; moon.castShadow = false; }
   }
 
   const ripple = (x: number, z: number, strength: number) => { ripples[rippleNext]!.set(x, z, 0, strength); rippleNext = (rippleNext + 1) % MAX_RIPPLES; };
@@ -326,6 +367,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   function makeEnemy(id: number, kind: string, s: GameState): EnemyView {
     const d = enemyDef(kind), body = paintMaterial(hue(kind, s), token('--soulfire'));
     const rig = buildRig(d.model, body, id * 0.37);
+    rig.obj.traverse((o) => { o.castShadow = true; });
     const arc = d.behaviours.find((b) => b.shieldArcDeg)?.shieldArcDeg;
     let shield: THREE.Mesh | undefined;
     if (arc) { shield = buildShield(arc, token('--shield')); scene.add(shield); }
@@ -413,7 +455,6 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       const bx = p.x - (p.vx / speed) * 0.45, bz = p.y - (p.vy / speed) * 0.45;
       particles.spark(bx, bz, -p.vx * 0.3 + (Math.random() - 0.5), -p.vy * 0.3 + (Math.random() - 0.5), token('--player-glow'), 0.1, 0.3, 0.35);
     }
-    floorU.uPlayer.value.set(p.x, p.y);
 
     // enemies
     const seen = new Set<number>();
@@ -516,8 +557,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     shards.count = ns; repairs.count = nr;
     // Blob shadows: the wizard and every standing or fallen character.
     let nsh = 0;
-    // Cast away from the moon (it's high on the far side): stretched towards the camera and a little right.
-    const blob = (x: number, z: number, r: number) => { m4.compose(v3.set(x - MOON_DIR.x * r * LOOK.SHADOW_CAST, 0.02, z - MOON_DIR.z * r * LOOK.SHADOW_CAST), shadowTurn, s3.set(r * 2.4, 1, r * 3.2)); shadows.setMatrixAt(nsh++, m4); };
+    // Contact shadow: the dark where a figure meets the ground (the moon casts the long one).
+    const blob = (x: number, z: number, r: number) => { m4.compose(v3.set(x, 0.02, z), q.identity(), s3.set(r * 1.9, 1, r * 1.9)); shadows.setMatrixAt(nsh++, m4); };
     if (!dead) blob(p.x, p.y, 0.55);
     for (const e of s.enemies) blob(e.x, e.y, radius(e) + LEGIBLE_U);
     shadows.count = nsh;

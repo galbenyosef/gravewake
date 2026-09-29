@@ -148,6 +148,7 @@ export function lightNight(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
   const key = new THREE.DirectionalLight(moon, LOOK.MOON_KEY);
   key.position.copy(MOON_DIR).multiplyScalar(20);
   scene.add(key);
+  return key;
 }
 
 /** A model's rest pose as one geometry (its parts fused, transforms baked): scenery that never moves, drawn instanced. */

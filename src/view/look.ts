@@ -19,10 +19,6 @@ export const LOOK = {
   /** Models' procedural surface: how much the grain and stains vary the paint, and how deep its bump is. */
   SURFACE_GRAIN: 0.6,
   SURFACE_BUMP: 0.06,
-  /** Moonlight on the floor: everywhere, in the clearing, and through gaps in the canopy (the dapple). */
-  FLOOR_AMBIENT: 0.1,
-  FLOOR_MOON: 0.25,
-  FLOOR_DAPPLE: 1.6,
   /** How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
   FLOOR_RELIEF: 1.2,
   /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
@@ -36,8 +32,6 @@ export const LOOK = {
   /** The wizard's light (--player-glow): intensity and reach, u. */
   PLAYER_LIGHT: 24,
   PLAYER_LIGHT_U: 11,
-  /** The pool of his light on the floor. */
-  PLAYER_POOL: 2.4,
   /** How many spells in flight light the floor (a shader loop: phones pay per light). */
   FLOOR_LIGHTS: 20,
   /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
@@ -50,14 +44,15 @@ export const LOOK = {
   BLOOM: 0.75,
   BLOOM_RADIUS: 0.4,
   BLOOM_THRESHOLD: 0.8,
-  /** Blob shadows under characters. */
-  SHADOW: 0.75,
+  /** Contact shadows under characters (the moon casts the real ones), and the moon's shadow map size (px). */
+  SHADOW: 0.5,
+  SHADOW_MAP: 2048,
+  /** Height of the dead canopy whose shadow dapples the clearing, u. */
+  CANOPY_Y_U: 14,
   /** The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */
   VIGNETTE: 0.6,
   GRADE: 0.25,
   GRAIN: 0.03,
   /** Saturation kept in everything that isn't bright (magic stays saturated; the world is squashed towards grey). */
   SATURATION: 0.7,
-  /** How far a character's shadow is cast away from the moon, in character radii. */
-  SHADOW_CAST: 0.45,
 } as const;

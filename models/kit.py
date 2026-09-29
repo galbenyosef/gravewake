@@ -51,22 +51,23 @@ def _bevel(bm, width, segments=1):
         bmesh.ops.bevel(bm, geom=list(bm.edges) + list(bm.verts), offset=width, segments=segments, affect='EDGES', clamp_overlap=True)
 
 
-def _skin(bm, rings, seg):
-    """Quads between consecutive rings of `seg` verts (a 1-vert ring is a pole), caps on open ends; normals outward."""
+def _skin(bm, rings, seg, caps=True):
+    """Quads between consecutive rings of `seg` verts (a 1-vert ring is a pole), caps on open ends (unless `caps` is
+    off: a torus closes on itself); normals outward."""
     for lo, hi in zip(rings, rings[1:]):
         for i in range(seg):
             j = (i + 1) % seg
             if len(lo) == 1 and len(hi) > 1: bm.faces.new((lo[0], hi[j], hi[i]))
             elif len(hi) == 1 and len(lo) > 1: bm.faces.new((lo[i], lo[j], hi[0]))
             elif len(lo) > 1: bm.faces.new((lo[i], lo[j], hi[j], hi[i]))
-    for cap, flip in ((rings[0], True), (rings[-1], False)):
+    for cap, flip in ((rings[0], True), (rings[-1], False)) if caps else ():
         if len(cap) > 1:
             f = bm.faces.new(cap)
             if flip: f.normal_flip()
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
 
 
-def lathe(name, profile, mat='body', seg=16):
+def lathe(name, profile, mat='body', seg=16, caps=True):
     """A body of revolution around Z: `profile` is [(radius, z), ...] bottom to top; radius 0 closes a pole."""
     bm = bmesh.new()
     rings = []
@@ -75,7 +76,7 @@ def lathe(name, profile, mat='body', seg=16):
             rings.append([bm.verts.new((0, 0, z))])
         else:
             rings.append([bm.verts.new((math.cos(a) * r, math.sin(a) * r, z)) for a in (i / seg * math.tau for i in range(seg))])
-    _skin(bm, rings, seg)
+    _skin(bm, rings, seg, caps)
     return _obj(name, bm, mat)
 
 
@@ -136,7 +137,7 @@ def cone(name, r1, r2, depth, mat='body', seg=10, bevel=0.0):
 
 def torus(name, R, r, mat='glow', seg=24, sides=6):
     """A ring in the XY plane."""
-    return lathe(name, [(R + math.cos(a) * r, math.sin(a) * r) for a in (i / sides * math.tau for i in range(sides + 1))], mat, seg)
+    return lathe(name, [(R + math.cos(a) * r, math.sin(a) * r) for a in (i / sides * math.tau for i in range(sides + 1))], mat, seg, caps=False)
 
 
 # ---------- shaping ----------

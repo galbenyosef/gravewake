@@ -166,9 +166,6 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `SCENERY_RIM` | scenery's weaker rim |
 | `SURFACE_GRAIN` | how much models' procedural grain and stains vary their paint |
 | `SURFACE_BUMP` | depth of that grain's bump |
-| `FLOOR_AMBIENT` | moonlight on the floor everywhere |
-| `FLOOR_MOON` | extra moonlight in the clearing |
-| `FLOOR_DAPPLE` | moonlight through gaps in the dead canopy |
 | `FLOOR_RELIEF` | height of the floor's procedural relief, so light rakes across stones and cracks |
 | `FOG_Y_U` | ground fog height, u |
 | `FOG_VEIL` | ground fog thickness in the open |
@@ -178,7 +175,6 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `FOG_FAR_U` | distance fog end |
 | `PLAYER_LIGHT` | the wizard's light intensity (--player-glow) |
 | `PLAYER_LIGHT_U` | its reach, u |
-| `PLAYER_POOL` | the pool of his light on the floor |
 | `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
 | `FLASH_LIGHTS` | pooled point lights for spell impacts |
 | `FLASH_S` | how long an impact flash lasts, s |
@@ -188,12 +184,13 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `BLOOM` | bloom strength (only magic should cross the threshold) |
 | `BLOOM_RADIUS` | bloom radius |
 | `BLOOM_THRESHOLD` | bloom threshold |
-| `SHADOW` | blob shadow darkness under characters |
+| `SHADOW` | contact-shadow darkness under characters (the moon casts the real shadows) |
+| `SHADOW_MAP` | the moon's shadow map size, px |
+| `CANOPY_Y_U` | height of the dead canopy whose moon shadow dapples the clearing, u |
 | `VIGNETTE` | vignette depth |
 | `GRADE` | how far the shadows lean towards moonlight |
 | `GRAIN` | film grain |
 | `SATURATION` | saturation kept in everything that isn't bright (the world squashed towards grey, magic untouched) |
-| `SHADOW_CAST` | how far a character's shadow falls away from the moon, in radii |
 
 ## Behaviour words
 
