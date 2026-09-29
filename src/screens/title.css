@@ -17,3 +17,7 @@
 @keyframes title-buttons-in { from { opacity: 0; translate: 0 20px } }
 .title-best { font-family: var(--title-font); font-size: 12px; letter-spacing: 4px; font-color: var(--gold) }
 .title-hint { font-size: 13px; font-color: var(--dim) }
+/* The credit: a quiet link to the article about how the game was made (package.json homepage). */
+.title-credit { height: var(--touch-size); padding: 0 12px; align-items: center; justify-content: center }
+.title-credit-text { font-family: var(--title-font); font-size: 10px; letter-spacing: 3px; font-color: var(--dim) }
+.title-credit:hover .title-credit-text { font-color: var(--accent) }

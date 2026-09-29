@@ -14,6 +14,7 @@ export function drawTitle() {
   if (screen !== 'title') return titleUi.show(null);
   titleUi.show(use('title', {
     best: meta.best ? `BEST ${meta.best.toLocaleString('en-US')} · WAVE ${meta.bestWave}` : 'NO ONE HAS COME BACK YET',
+    credit: Actions.openArticle,
     hint: 'Left thumb walks · right thumb aims and casts  (WASD + mouse on desktop)',
   }, { buttons: [btn('ENTER', () => Actions.start(), 'primary'), btn('BESTIARY', Actions.openCodex), btn(meta.muted ? 'SOUND OFF' : 'SOUND ON', Actions.toggleMute)] }));
 }

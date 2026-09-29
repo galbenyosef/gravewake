@@ -4,6 +4,7 @@ import * as Meta from './meta';
 import { botInput } from './bot';
 import { game, ui } from './store';
 import type { Input } from './world';
+import { homepage } from '../package.json';
 
 /** One frame of the world. On the title the bot flies an attract-mode run behind the menu. */
 export function frame(dt: number, input: Input) {
@@ -47,4 +48,6 @@ export const toggleMute = () => { const { meta } = game.getState(); game.setStat
 export const setPortrait = (portrait: boolean) => { if (ui.getState().portrait !== portrait) ui.setState({ portrait }); };
 
 export const openCodex = () => { ui.setState({ screen: 'codex' }); };
+/** The article about how the game was made: package.json's homepage, one place for the game and the README. */
+export const openArticle = () => { window.open(homepage, '_blank', 'noopener'); };
 export const closeCodex = () => { ui.setState({ screen: 'title' }); };

@@ -10,5 +10,8 @@ prefab "title" {
         panel class="title-buttons" slot="buttons"
         text class="title-best" bind="best"
         text class="title-hint" bind="hint"
+        panel class="title-credit" tap="credit" {
+            text class="title-credit-text" "VIBECODED BY LIORA LABS  ·  READ HOW IT WAS MADE"
+        }
     }
 }

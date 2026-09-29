@@ -1,6 +1,9 @@
 {
   "name": "gravewake",
   "version": "0.1.0",
+  "description": "GRAVEWAKE: a dark fantasy twin-stick shooter for phones, vibecoded by Liora Labs.",
+  "homepage": "https://lioralabs.dev/blog/agentic-speed-human-control",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
