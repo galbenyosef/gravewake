@@ -140,6 +140,50 @@
   --look-grain: 0.03;
   /* Saturation kept in everything that isn't bright (magic stays saturated; the world is squashed towards grey). */
   --look-saturation: 0.7;
+  /* Model paint (view/models.ts): each slot's brightest linear luminance beside --look-body-lum (trim is dark metal,
+     cloth darker still, glow sits over the bloom threshold); a body's resting self-glow, enough to read on the dark
+     floor and under the bloom threshold; how much a wound adds to it; a hit's flash; the wizard's own glow. */
+  --look-trim-lum: 0.12;
+  --look-cloth-lum: 0.035;
+  --look-glow-lum: 1;
+  --look-body-glow: 0.2;
+  --look-wound-glow: 0.4;
+  --look-hit-glow: 3;
+  --look-wizard-glow: 0.3;
+  /* Scenery's faint self-glow. */
+  --look-scenery-glow: 0.05;
+  /* Where the moon hangs: a direction towards it, x y z (high and from the far side, so what faces the camera stays
+     in shade and the moon only catches tops and edges). */
+  --look-moon-dir: -0.35 1 -0.55;
+  /* How long an attack or idle clip takes to hand over to the other. */
+  --look-clip-blend-s: 0.08;
+  /* A melee enemy this close to the wizard (past its own edge) lunges: plays its attack clip. */
+  --look-lunge-u: 1.4;
+  /* The warm halo round the wizard: its radius. */
+  --look-wizard-halo-u: 1.3;
+  /* An impact flash's reach. */
+  --look-flash-u: 6;
+  /* How dark a kill's stain starts. */
+  --look-stain: 0.7;
+  /* How bright the moonlit motes are, times --moon. */
+  --look-mote: 0.25;
+  /* Ripples through the floor at once. */
+  --look-ripples: 8;
+  /* How high a hurled skull arcs at the top of its flight. */
+  --look-hurl-arc-u: 3.2;
+  /* Screen shake dies away at this rate. */
+  --look-shake-decay-per-s: 5;
+  /* Spells that leave an ember trail each frame (the rest don't: a full barrage would flood the particle pool). */
+  --look-trailed-spells: 40;
+  /* Sparks: how fast they slow, and how far over the bloom threshold a glowing one burns. */
+  --look-spark-drag-per-s: 2.2;
+  --look-spark-glow: 2.2;
+  /* The final grade's colour fringe at the frame's edge (more when hurt), and the red wash a hurt adds there. */
+  --look-aberration: 0.0012;
+  --look-hurt-wash: 0.7;
+  /* The touch sticks: how far a thumb travels for a full push, and the knob's radius. */
+  --look-stick-reach-px: 56;
+  --look-stick-knob-px: 22;
 }
 
 text { font-family: var(--body-font); font-color: var(--text); font-size: 16px }

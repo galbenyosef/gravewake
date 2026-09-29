@@ -209,6 +209,31 @@ Plain numbers, the unit the name's last word (`u`, `s`, `deg`, `rad`, `px`, `per
 | `--look-grade` | how far the shadows lean towards moonlight |
 | `--look-grain` | film grain |
 | `--look-saturation` | saturation kept in everything that isn't bright (the world squashed towards grey, magic untouched) |
+| `--look-trim-lum` | the brightest `trim` paint may be (dark metal) |
+| `--look-cloth-lum` | the brightest `cloth` paint may be |
+| `--look-glow-lum` | `glow` paint's luminance (over the bloom threshold) |
+| `--look-body-glow` | a body's resting self-glow: reads on the dark floor, stays under the bloom threshold |
+| `--look-wound-glow` | how much a wounded enemy's self-glow grows by the time it's nearly dead |
+| `--look-hit-glow` | a hit enemy's flash |
+| `--look-wizard-glow` | the wizard's self-glow |
+| `--look-scenery-glow` | scenery's faint self-glow |
+| `--look-moon-dir` | `x y z` towards the moon: high and from the far side, so the moon only catches tops and edges |
+| `--look-clip-blend-s` | how long an attack or idle clip takes to hand over to the other, s |
+| `--look-lunge-u` | a melee enemy this close past its own edge plays its attack clip |
+| `--look-wizard-halo-u` | radius of the warm halo round the wizard |
+| `--look-flash-u` | an impact flash's reach |
+| `--look-stain` | how dark a kill's stain starts |
+| `--look-mote` | how bright the moonlit motes are, times `--moon` |
+| `--look-ripples` | ripples through the floor at once |
+| `--look-hurl-arc-u` | how high a hurled skull arcs |
+| `--look-shake-decay-per-s` | how fast screen shake dies away |
+| `--look-trailed-spells` | spells that leave an ember trail each frame (the rest don't: the particle pool) |
+| `--look-spark-drag-per-s` | how fast sparks slow |
+| `--look-spark-glow` | how far over the bloom threshold a glowing spark burns |
+| `--look-aberration` | the colour fringe at the frame's edge (more when hurt) |
+| `--look-hurt-wash` | the red wash a hurt adds at the frame's edge |
+| `--look-stick-reach-px` | how far a thumb travels for a full stick push, design px |
+| `--look-stick-knob-px` | the stick knob's radius, design px |
 
 ## Behaviour words
 

@@ -1,15 +1,16 @@
 // Pooled 3D effects the arena spawns from game events: additive particles (one InstancedMesh) and rings/lines
 // (shockwaves, landing zones, dash lanes). Stepped with the game clock's dt, so stories replay them exactly.
 import * as THREE from 'three';
+import { LOOK } from './look';
 
-const DRAG_PER_S = 2.2;
+const DRAG_PER_S = LOOK.SPARK_DRAG_PER_S;
 
 /** Glowing sparks (`additive`, colours boosted over the bloom threshold) or lit debris: bone dust, dirt. */
 export function createParticles(scene: THREE.Scene, max = 2400, additive = true) {
   const mat = additive
     ? new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
     : new THREE.MeshLambertMaterial({ color: 0xffffff });
-  const boost = additive ? 2.2 : 1;
+  const boost = additive ? LOOK.SPARK_GLOW : 1;
   const mesh = new THREE.InstancedMesh(new THREE.OctahedronGeometry(1, 0), mat, max);
   mesh.frustumCulled = false;
   mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);

@@ -7,10 +7,11 @@
 import { Graphics } from 'pixi.js';
 import { layers, view } from './stage';
 import { token } from './tokens';
+import { LOOK } from './view/look';
 import { IDLE, type Input } from './world';
 
 /** Stick travel for a full push, design px. */
-const STICK_R_PX = 56;
+const STICK_R_PX = LOOK.STICK_REACH_PX;
 
 type Stick = { id: number; ox: number; oy: number; x: number; y: number } | null;
 let move: Stick = null, aim: Stick = null;
@@ -94,6 +95,6 @@ function drawSticks() {
     if (!s) continue;
     const v = vec(s);
     gfx.circle(s.ox, s.oy, STICK_R_PX).fill({ color: col, alpha: 0.08 }).stroke({ color: col, alpha: 0.5, width: 2 });
-    gfx.circle(s.ox + v.x * STICK_R_PX, s.oy + v.y * STICK_R_PX, 22).fill({ color: col, alpha: 0.35 }).stroke({ color: col, alpha: 0.9, width: 2 });
+    gfx.circle(s.ox + v.x * STICK_R_PX, s.oy + v.y * STICK_R_PX, LOOK.STICK_KNOB_PX).fill({ color: col, alpha: 0.35 }).stroke({ color: col, alpha: 0.9, width: 2 });
   }
 }

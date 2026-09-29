@@ -13,14 +13,12 @@ import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
 import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
-import { BODY_GLOW, MOON_DIR, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
+import { MOON_DIR, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
 import { LOOK } from './look';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
 const { CAMERA_TILT_RAD: TILT_RAD, CAMERA_FOLLOW: FOLLOW, CAMERA_FOV_DEG: FOV_DEG, CAMERA_DIST_U: CAM_DIST_U } = LOOK;
-const MAX_RIPPLES = 8;
-const LOB_ARC_U = 3.2;
-const SHAKE_DECAY_PER_S = 5;
+const MAX_RIPPLES = LOOK.RIPPLES;
 
 /** Floor lights: the ground under each spell, enemy bolt and lobbed round is lit by it (the brightest few). */
 const MAX_FLOOR_LIGHTS = LOOK.FLOOR_LIGHTS;
@@ -221,10 +219,10 @@ const fogShader = {
 
 /** Vignette, a cold grade in the shadows, film grain and a red hurt wash, after tone mapping. */
 const finalShader = {
-  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: 0.0012 }, uTime: { value: 0 }, uHurtCol: { value: new THREE.Color() }, uGradeCol: { value: new THREE.Color() }, uLook: { value: new THREE.Vector4(LOOK.VIGNETTE, LOOK.GRADE, LOOK.GRAIN, LOOK.SATURATION) } },
+  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: LOOK.ABERRATION }, uHurtWash: { value: LOOK.HURT_WASH }, uTime: { value: 0 }, uHurtCol: { value: new THREE.Color() }, uGradeCol: { value: new THREE.Color() }, uLook: { value: new THREE.Vector4(LOOK.VIGNETTE, LOOK.GRADE, LOOK.GRAIN, LOOK.SATURATION) } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration; uniform float uTime; uniform vec3 uHurtCol, uGradeCol; uniform vec4 uLook; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration, uHurtWash; uniform float uTime; uniform vec3 uHurtCol, uGradeCol; uniform vec4 uLook; varying vec2 vUv;
     void main() {
       vec2 c = vUv - 0.5; float d = length(c * vec2(1.0, 0.8));
       float ab = uAberration * (1.0 + uHurt * 5.0) * d * 2.0;
@@ -233,7 +231,7 @@ const finalShader = {
       col = mix(vec3(lum), col, mix(uLook.w, 1.0, smoothstep(0.35, 0.8, lum)));
       col = mix(col, vec3(lum) * uGradeCol, uLook.y * (1.0 - smoothstep(0.05, 0.4, lum)));
       col *= 1.0 - smoothstep(0.3, 0.85, d) * uLook.x;
-      col = mix(col, uHurtCol, smoothstep(0.25, 0.8, d) * uHurt * 0.7);
+      col = mix(col, uHurtCol, smoothstep(0.25, 0.8, d) * uHurt * uHurtWash);
       float grain = fract(sin(dot(vUv * (uTime + 1.0), vec2(12.9898, 78.233))) * 43758.5453);
       col += (grain - 0.5) * uLook.z;
       gl_FragColor = vec4(col, 1.0);
@@ -243,11 +241,7 @@ const finalShader = {
 type EnemyView = { rig: Rig; body: THREE.MeshStandardMaterial; shield?: THREE.Mesh; laser?: THREE.Mesh };
 /** A killed enemy playing its `die` clip where it fell, `t` s left. */
 type Corpse = { rig: Rig; body: THREE.Material; t: number };
-/** A melee enemy within this many u of its own edge from the ship lunges (its attack clip). */
-const LUNGE_U = 1.4;
 const LEGIBLE_U = LOOK.CHARACTER_PAD_U;
-/** Spells that leave an ember trail each frame (the rest don't: a full barrage would flood the particle pool). */
-const TRAILED_BOLTS = 40;
 
 
 /**
@@ -319,7 +313,7 @@ function plantClearing(scene: THREE.Scene) {
     im.castShadow = true; im.receiveShadow = true;
     spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, bermHeight(p.x, p.z), p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
     im.frustumCulled = false;
-    (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
+    (im.material as THREE.MeshStandardMaterial).emissiveIntensity = LOOK.SCENERY_GLOW;
     scene.add(im);
   }
 }
@@ -379,7 +373,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   scene.add(ship.obj);
   // A faint warm halo on the ground round him: the one warm pool the eye can always find.
   const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.5, LOOK.WIZARD_HALO));
-  shipHalo.scale.setScalar(1.3);
+  shipHalo.scale.setScalar(LOOK.WIZARD_HALO_U);
   scene.add(shipHalo);
   const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
   scene.add(shipLight);
@@ -388,7 +382,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const laserMat = glowMaterial(token('--laser'), 2.4, 0.6);
   /** Warm flashes where spells land: a few pooled point lights so a hit lights the enemy it hits. Always in the scene
    *  (intensity 0 when idle): adding or removing a light recompiles every lit material. */
-  const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--player-shot'), 0, 6, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
+  const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--player-shot'), 0, LOOK.FLASH_U, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
   let flashNext = 0;
   const flash = (x: number, z: number, peak: number, color = token('--player-shot')) => {
     const f = flashes[flashNext]!; flashNext = (flashNext + 1) % LOOK.FLASH_LIGHTS;
@@ -401,7 +395,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // Scorch: a kill burns a dark mark into the ground that fades over SCORCH_S (a shrinking disc: instanced, one draw).
   const SCORCH_N = LOOK.STAINS, SCORCH_S = LOOK.STAIN_S;
-  const scorches = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: 0.7, depthWrite: false }), SCORCH_N);
+  const scorches = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: LOOK.STAIN, depthWrite: false }), SCORCH_N);
   const scorchLife = Array.from({ length: SCORCH_N }, () => ({ x: 0, z: 0, r: 0, t: 0 }));
   let scorchNext = 0;
   const scorch = (x: number, z: number, r: number) => { scorchLife[scorchNext] = { x, z, r, t: SCORCH_S }; scorchNext = (scorchNext + 1) % SCORCH_N; };
@@ -421,7 +415,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
 
   const particles = createParticles(scene);
-  const moteColor = new THREE.Color(token('--moon')).multiplyScalar(0.25).getHex();
+  const moteColor = new THREE.Color(token('--moon')).multiplyScalar(LOOK.MOTE).getHex();
   /** Bone dust and grave dirt: lit, not glowing. */
   const dust = createParticles(scene, 800, false);
   const rings = createRings(scene);
@@ -576,8 +570,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       o.position.set(e.x, (r + LEGIBLE_U) * 0.9, e.y);
       o.rotation.y = -e.facing;
       o.scale.setScalar((r + LEGIBLE_U) * (0.3 + 0.7 * grow) * (1 + (e.flash > 0 ? 0.12 : 0)));
-      v.body.emissiveIntensity = e.flash > 0 ? 3 : BODY_GLOW + (1 - e.hp / e.maxHp) * 0.4;
-      if (fresh && !v.rig.attacking && Math.hypot(e.x - p.x, e.y - p.y) < r + LUNGE_U) v.rig.play('attack');
+      v.body.emissiveIntensity = e.flash > 0 ? LOOK.HIT_GLOW : LOOK.BODY_GLOW + (1 - e.hp / e.maxHp) * LOOK.WOUND_GLOW;
+      if (fresh && !v.rig.attacking && Math.hypot(e.x - p.x, e.y - p.y) < r + LOOK.LUNGE_U) v.rig.play('attack');
       v.rig.update(dt);
       if (v.shield) { v.shield.position.set(e.x, r * 0.9, e.y); v.shield.rotation.y = -e.facing; v.shield.scale.setScalar(r); }
       if (e.laser !== undefined) {
@@ -635,7 +629,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const b of s.shots) {
       if (b.lob) {
         const t = 1 - b.life / T.LOB_FLIGHT_S;
-        m4.compose(v3.set(b.x, 0.6 + 4 * LOB_ARC_U * t * (1 - t), b.y), q.setFromAxisAngle(up, time * 5), s3.set(1, 1, 1));
+        m4.compose(v3.set(b.x, 0.6 + 4 * LOOK.HURL_ARC_U * t * (1 - t), b.y), q.setFromAxisAngle(up, time * 5), s3.set(1, 1, 1));
         lobs.setMatrixAt(nl, m4);
         m4.compose(v3, q, s3.setScalar(0.9 + Math.sin(time * 25 + b.id) * 0.12));
         lobFire.setMatrixAt(nl++, m4);
@@ -650,7 +644,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         cores.setMatrixAt(no, m4);
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
-        if (dt > 0 && no < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--hostile-shot'), 0.05, 0.3, 0.5);
+        if (dt > 0 && no < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--hostile-shot'), 0.05, 0.3, 0.5);
         floorLight(b.x, b.y, 1.4, 1.1, token('--hostile-shot'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
@@ -658,7 +652,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         m4.compose(v3, q, s3.setScalar(0.34 + Math.sin(time * 30 + b.id) * 0.05));
         boltHalos.setMatrixAt(nb++, m4);
         // A trail of embers behind each spell.
-        if (dt > 0 && nb < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--player-shot'), 0.05, 0.25, 0.45);
+        if (dt > 0 && nb < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--player-shot'), 0.05, 0.25, 0.45);
         floorLight(b.x, b.y, 2.4, 3.2, token('--player-shot'));
       }
     }
@@ -698,7 +692,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const r of ripples) if (r.w > 0) { r.z += dt; if (r.z > 1.4) r.w = 0; }
     floorU.uTime.value = time; fogU.uTime.value = time;
     for (const f of flashes) { f.t = Math.max(0, f.t - dt); f.l.intensity = f.peak * (f.t / LOOK.FLASH_S) ** 2; }
-    shake = Math.max(0, shake - dt * SHAKE_DECAY_PER_S * Math.max(0.3, shake));
+    shake = Math.max(0, shake - dt * LOOK.SHAKE_DECAY_PER_S * Math.max(0.3, shake));
     hurt = Math.max(0, hurt - dt * 1.8);
     final.uniforms.uHurt!.value = hurt;
     final.uniforms.uTime!.value = time % 100;

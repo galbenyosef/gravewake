@@ -13,7 +13,7 @@ import { PROPS } from './decl/css';
 import { BEHAVIOURS } from './enemies';
 import { EFFECTS } from './upgrades';
 import { TOKENS } from './tokens';
-import { LOOK, lookToken } from './view/look';
+import { LOOK_KEYS, lookToken } from './view/look';
 import './screens/shared'; // registers the game's properties
 
 /** The backticked first-column names of the table under `## title`. */
@@ -33,7 +33,7 @@ describe('the catalog matches the code', () => {
   const looks = Object.keys(TOKENS).filter((k) => k.startsWith('--look-'));
   it('palette', () => same('Palette', Object.keys(TOKENS).filter((k) => !k.startsWith('--look-'))));
   it('look', () => same('Look', looks));
-  it('every look token is read by the shell', () => expect(Object.keys(LOOK).map(lookToken).sort()).toEqual([...looks].sort()));
+  it('every look token is read by the shell', () => expect(LOOK_KEYS.map(lookToken).sort()).toEqual([...looks].sort()));
   it('behaviour words', () => same('Behaviour words', Object.keys(BEHAVIOURS)));
   it('effect words', () => same('Effect words', Object.keys(EFFECTS)));
   it('content kinds', () => same('Content kinds', all(contentTs, /loadKdl\(\w+, \{ ([^}]+) \}/g).flatMap((kinds) => kinds.split(',').map((k) => k.split(':')[0]!.trim()))));

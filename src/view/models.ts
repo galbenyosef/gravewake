@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MODELS, SCENERY } from '../content';
-import { LOOK } from './look';
+import { LOOK, MOON_DIR_XYZ } from './look';
 import { token } from '../tokens';
 
 /** The rig contract with models/kit.py (src/models.test.ts checks every .glb against it). */
@@ -20,7 +20,7 @@ export type Slot = (typeof SLOTS)[number];
 export type RigName = (typeof RIGS)[number];
 
 /** How long an attack or idle clip takes to hand over to the other, s. */
-const BLEND_S = 0.08;
+const BLEND_S = LOOK.CLIP_BLEND_S;
 
 const URLS = import.meta.glob<string>('../../models/*.glb', { query: '?url', import: 'default', eager: true });
 const templates = new Map<string, { scene: THREE.Object3D; clips: Record<Clip, THREE.AnimationClip> }>();
@@ -63,13 +63,9 @@ function fuse(g: GLTF, name: string) {
   }
 }
 
-/** A body's resting self-glow (emissiveIntensity): enough to read on the dark floor, under the bloom threshold so
- *  only `glow` parts bloom and the paint stays visible. The arena raises it with damage and flashes it on a hit. */
-export const BODY_GLOW = 0.2;
-
 /** Body paint's brightest linear luminance: a pale palette colour (mint, lemon) is darkened to it, so it keeps its hue
  *  under the arena's lights instead of washing out to white. Trim is darker metal; glow sits over the bloom threshold. */
-const BODY_LUM = LOOK.BODY_LUM, TRIM_LUM = 0.12, GLOW_LUM = 1.0, CLOTH_LUM = 0.035;
+const { BODY_LUM, TRIM_LUM, GLOW_LUM, CLOTH_LUM } = LOOK;
 /** `color` scaled to at most luminance `lum` (to exactly `lum` when `exact`). */
 function atLum(color: number, lum: number, exact = false) {
   const c = new THREE.Color(color), l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
@@ -83,7 +79,7 @@ function atLum(color: number, lum: number, exact = false) {
  * `emissiveIntensity` is the body's glow: the arena flashes it on a hit.
  */
 export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM, rimColor = token('--moon')) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED !== 0 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: LOOK.BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED !== 0 });
   const uniforms = {
     uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) }, uCloth: { value: atLum(body, CLOTH_LUM, true) },
     uRim: { value: new THREE.Color(rimColor).multiplyScalar(rim) },
@@ -136,7 +132,7 @@ const SURFACE_NOISE = /* glsl */ `
 
 /** Moonlight's direction (towards the moon): high and from the far side, so what faces the camera stays in shade and
  *  the moon only catches tops and edges. */
-export const MOON_DIR = new THREE.Vector3(-0.35, 1, -0.55);
+export const MOON_DIR = new THREE.Vector3(...MOON_DIR_XYZ);
 
 /** What metal and water reflect: a black sky going to a faint moonlit haze at the horizon, and the moon itself. */
 function nightSky(moon: THREE.Color) {
@@ -265,7 +261,7 @@ export function buildShield(deg: number, color: number) {
 export function buildShip(color: number, glow: number) {
   // His edges catch his own fire, not the moon: the one warm silhouette on the field.
   const paint = paintMaterial(color, glow, glow, LOOK.RIM, glow);
-  paint.emissiveIntensity = 0.3;
+  paint.emissiveIntensity = LOOK.WIZARD_GLOW;
   const rig = buildRig('wizard', paint);
   rig.obj.scale.setScalar(LOOK.WIZARD_SCALE);
   return rig;
