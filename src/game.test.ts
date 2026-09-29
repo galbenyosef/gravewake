@@ -4,7 +4,8 @@ import { ENEMIES, ENEMY_IDS, EnemySchema, UPGRADE_IDS, WaveSchema, WAVES } from 
 import { loadKdl } from './content-load';
 import { boss, maxHp, newRun, pickUpgrade, step } from './game';
 import { T } from './tuning';
-import { IDLE, type Enemy, type GameState, type Input } from './world';
+import { BEHAVIOURS } from './enemies';
+import { IDLE, type Enemy, type GameEvent, type GameState, type Input, type World } from './world';
 
 const DT = 1 / 60;
 const run = (s: GameState, secs: number, input: Input | ((s: GameState) => Input) = IDLE) => {
@@ -163,6 +164,30 @@ describe('the roster behaves', () => {
     const s0 = arena([['drone', 0, 0]]);
     const s = step({ ...s0, mult: 3 }, IDLE, DT);
     expect([s.mult, s.player.hp, s.player.invuln > 0]).toEqual([1, T.PLAYER_HP - 1, true]);
+  });
+});
+
+describe('behaviour words', () => {
+  it('snipe paints a tracking laser, locks, then fires one fast shot along the locked line', () => {
+    const b = BEHAVIOURS.snipe!(1, 1, 40), m = b.mem(() => 0);
+    const e = arena([['drone', 10, 0]]).enemies[0]!;
+    const s = newRun(1), shots: [number, number][] = [], events: GameEvent[] = [];
+    const w = { s, emit: (x: GameEvent) => events.push(x), shoot: (_x: number, _y: number, a: number, v: number) => shots.push([a, v]) } as unknown as World;
+    const tick = (secs: number) => { for (let t = 0; t < secs; t += DT) b.tick!(m, w, e, DT, ''); };
+    tick(0.95); // cooling
+    expect(e.laser).toBeUndefined();
+    s.player = { ...s.player, x: -10, y: 0 };
+    tick(0.4);
+    expect(e.laser).toBeCloseTo(Math.PI); // on the ship
+    s.player = { ...s.player, y: 5 }; // the ship moves: the laser follows until the lock
+    tick(0.4);
+    const locked = e.laser!;
+    expect(locked).toBeCloseTo(Math.atan2(5, -20));
+    expect(events.filter((x) => x.type === 'telegraph' && x.what === 'snipe')).toHaveLength(1);
+    s.player = { ...s.player, y: -5 }; // moving after the lock doesn't drag the aim
+    tick(0.5);
+    expect(shots).toEqual([[locked, 40]]);
+    expect(e.laser).toBeUndefined();
   });
 });
 

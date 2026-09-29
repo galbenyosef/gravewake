@@ -1,6 +1,7 @@
 // The shapes of a run: plain data only, so a run can be copied, compared, snapshotted into a story and replayed by the
 // sim. game.ts owns the rules that change it; enemies.ts owns the behaviour words; this module owns only the types and
 // the World handle a behaviour gets for one tick.
+import { T } from './tuning';
 
 export type Vec2 = { x: number; y: number };
 
@@ -22,6 +23,8 @@ export type Enemy = {
   parent: number;
   /** Size multiplier from its wave's `spawn scale=` (absent = 1): collision and mesh both. */
   scale?: number;
+  /** Radians of the laser it is painting on the ship (a `snipe` word), absent when not aiming. */
+  laser?: number;
 };
 
 export type Shot = {
@@ -77,7 +80,7 @@ export type GameEvent =
   | { type: 'hurt'; x: number; y: number }
   | { type: 'warp'; x: number; y: number; kind: string }
   | { type: 'arrive'; id: number; kind: string; x: number; y: number }
-  | { type: 'telegraph'; id: number; what: 'dash' | 'lob' | 'blink'; x: number; y: number; tx: number; ty: number; dur: number }
+  | { type: 'telegraph'; id: number; what: 'dash' | 'lob' | 'blink' | 'snipe'; x: number; y: number; tx: number; ty: number; dur: number }
   | { type: 'blast'; x: number; y: number; r: number }
   | { type: 'block'; x: number; y: number }
   | { type: 'heal'; id: number; x: number; y: number }
@@ -137,5 +140,11 @@ export type World = {
 
 export const dist = (ax: number, ay: number, bx: number, by: number) => Math.hypot(bx - ax, by - ay);
 export const clamp = (v: number, lo: number, hi: number) => (v < lo ? lo : v > hi ? hi : v);
+/** Where a ray from (x, y) along `a` radians meets the arena wall (a laser's far end). */
+export function rayToWall(x: number, y: number, a: number, halfW = T.ARENA_W_U / 2, halfH = T.ARENA_H_U / 2): [number, number] {
+  const dx = Math.cos(a), dy = Math.sin(a);
+  const t = Math.min(dx ? ((dx > 0 ? halfW : -halfW) - x) / dx : Infinity, dy ? ((dy > 0 ? halfH : -halfH) - y) / dy : Infinity);
+  return [x + dx * Math.max(0, t), y + dy * Math.max(0, t)];
+}
 /** Shortest signed difference between two angles, in (-PI, PI]. */
 export const angleDiff = (a: number, b: number) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d <= -Math.PI) d += Math.PI * 2; return d; };

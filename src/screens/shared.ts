@@ -69,6 +69,7 @@ const GLYPHS: Record<Model, readonly (readonly [number, number])[][]> = {
   crown: [[[-1, 0.7], [-1, -0.4], [-0.5, 0.1], [0, -0.8], [0.5, 0.1], [1, -0.4], [1, 0.7]]],
   core: [star(6, 0.55), ring(12, 0.35)],
   titan: [ring(8), star(8, 0.6), ring(8, 0.3)],
+  needle: [[[-1, 0], [-0.2, -0.3], [0.3, -0.06], [1, -0.06], [1, 0.06], [0.3, 0.06], [-0.2, 0.3]], ring(12, 0.28, 0).map(([x, y]) => [x - 0.3, y] as const)],
 };
 
 /** An enemy's glyph in its palette colour, fitted to the box: `enemy-glyph kind=(bind)"kind"`. */

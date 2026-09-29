@@ -123,6 +123,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--shield` | shield arcs and blocks |
 | `--heal` | mend pulses |
 | `--ice` | a wave tint: every enemy in the wave, icy blue |
+| `--laser` | sniper sight lines and their lock flash |
 | `--enemy-mite` | mite |
 | `--enemy-drone` | drone |
 | `--enemy-lancer` | lancer |
@@ -153,6 +154,7 @@ Under an `enemy` node in `content/enemies.kdl`, one per line. At most one moveme
 | `burst` | `burst interval count arc`: aimed fan (360 = ring) |
 | `spiral` | `spiral interval arms`: rotating bullet pattern |
 | `mortar` | `mortar interval blast`: lobbed round with a landing zone |
+| `snipe` | `snipe interval paint speed`: holds still, paints a laser on the ship, locks, fires one fast shot |
 | `shield` | `shield arc`: frontal shield that eats shots, turns slowly |
 | `explode` | `explode blast`: detonates on death or contact |
 | `split` | `split count`: bursts into `spawns` on death |

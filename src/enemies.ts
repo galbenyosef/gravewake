@@ -5,7 +5,7 @@
 // An enemy has at most one word that moves it (chase, keep-away, orbit, dash, blink, anchor); the others shoot, guard or
 // react. Arguments are numbers in the units named below (u = world units, s = seconds, deg = degrees).
 import { T } from './tuning';
-import { angleDiff, clamp, dist, type Enemy, type World } from './world';
+import { angleDiff, clamp, dist, rayToWall, type Enemy, type World } from './world';
 
 export type Behaviour = {
   /** Fresh scratch for a new enemy; `rand` staggers timers so a squad doesn't fire in lockstep. */
@@ -167,6 +167,29 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
       const [tx, ty] = inArena(p.x + p.vx * lead, p.y + p.vy * lead, 0.5);
       w.lob(e.x, e.y, tx, ty, blast);
       w.emit({ type: 'telegraph', id: e.id, what: 'lob', x: e.x, y: e.y, tx, ty, dur: T.LOB_FLIGHT_S });
+    },
+  }),
+
+  /** Every `interval` s, hold still and paint a laser on the ship for `paint` s (tracking, then locked for the last
+   *  SNIPE_LOCK_S so a sidestep dodges), then fire one shot along it at `speed` u/s. */
+  snipe: (interval, paint, speed) => ({
+    // timer, mode (0 cooling, 1 painting, 2 locked)
+    mem: (r) => [r() * interval * 0.5, 0],
+    tick: (m, w, e, dt) => {
+      m[0]! += dt;
+      if (m[1] === 0) { if (m[0]! > interval) { m[0] = 0; m[1] = 1; } return; }
+      e.vx = 0; e.vy = 0;
+      if (m[1] === 1) {
+        e.laser = e.facing = aimAt(e, w);
+        if (m[0]! < paint - T.SNIPE_LOCK_S) return;
+        m[1] = 2;
+        const [tx, ty] = rayToWall(e.x, e.y, e.laser);
+        w.emit({ type: 'telegraph', id: e.id, what: 'snipe', x: e.x, y: e.y, tx, ty, dur: T.SNIPE_LOCK_S });
+      } else if (m[0]! >= paint) {
+        w.shoot(e.x, e.y, e.laser!, speed);
+        w.emit({ type: 'enemy-fire', x: e.x, y: e.y });
+        delete e.laser; m[0] = 0; m[1] = 0;
+      }
     },
   }),
 

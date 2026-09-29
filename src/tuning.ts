@@ -47,6 +47,8 @@ export const T = {
   /** How long a blink destination is marked before the blinker lands on it. */
   BLINK_MARK_S: 0.55,
   BURST_SHOT_U_PER_S: 7,
+  /** A sniper's laser stops tracking this long before the shot: the window to sidestep a round too fast to react to. */
+  SNIPE_LOCK_S: 0.3,
   /** How far a spiral pattern turns between volleys: about 20 degrees reads as a spiral, not a ring. */
   SPIRAL_TURN_RAD: 0.35,
   SPIRAL_SHOT_U_PER_S: 6,

@@ -86,6 +86,8 @@ const MODELS: Record<Model, Build> = {
   titan: (b, g) => group(part(geo.octa, b, { s: 1, spin: [0, 0.3, 0] }), part(geo.sphere, g, { s: 0.42, body: false }),
     part(geo.torus, b, { s: 1.25, r: [Math.PI / 2, 0, 0], spin: [0, 0, 0.7] }), part(geo.thinTorus, g, { s: 1.5, r: [1.2, 0, 0], spin: [0.5, 1, 0], body: false }),
     around(8, (a) => part(geo.cone4, b, { s: [0.16, 0.55, 0.16], p: [Math.cos(a) * 1.05, 0, Math.sin(a) * 1.05], r: [Math.PI / 2, 0, -a + Math.PI / 2] }))),
+  needle: (b, g) => group(part(geo.octa, b, { s: [1.1, 0.34, 0.34] }), part(geo.box, b, { s: [1.3, 0.1, 0.1], p: [1, 0, 0] }),
+    part(geo.sphere, g, { s: 0.14, p: [1.65, 0, 0], body: false }), part(geo.thinTorus, g, { s: 0.55, r: [0, Math.PI / 2, 0], body: false })),
 };
 
 /** An enemy of `model` at radius `r`: a Group whose scale is r. Its body material is `body` (the caller disposes it). */

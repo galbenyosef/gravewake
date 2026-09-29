@@ -12,7 +12,7 @@ import { enemyDef, radius, waveDef } from '../content';
 import { sfx } from '../audio';
 import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
-import type { GameEvent, GameState } from '../world';
+import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
 import { bodyMaterial, buildEnemy, buildShield, buildShip, glowMaterial, shared, type Part } from './models';
 
@@ -86,7 +86,7 @@ const finalShader = {
     }`,
 };
 
-type EnemyView = { obj: THREE.Group; body: THREE.MeshStandardMaterial; parts: Part[]; shield?: THREE.Mesh };
+type EnemyView = { obj: THREE.Group; body: THREE.MeshStandardMaterial; parts: Part[]; shield?: THREE.Mesh; laser?: THREE.Mesh };
 
 export type Arena = ReturnType<typeof createArena>;
 
@@ -143,7 +143,10 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   scene.add(shipHalo);
   const shipLight = new THREE.PointLight(token('--player-glow'), 30, 12, 1.6);
   scene.add(shipLight);
-  const aimLine = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0), glowMaterial(token('--player-glow'), 1.5, 0.25));
+  const beamGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0);
+  const aimLine = new THREE.Mesh(beamGeo, glowMaterial(token('--player-glow'), 1.5, 0.25));
+  /** Sniper sight lines share one material; each painting enemy gets its own mesh. */
+  const laserMat = glowMaterial(token('--laser'), 2.4, 0.6);
   scene.add(aimLine);
 
   // Instanced shots and pickups
@@ -208,6 +211,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   }
   function dropEnemy(v: EnemyView) {
     scene.remove(v.obj); v.body.dispose();
+    if (v.laser) scene.remove(v.laser);
     if (v.shield) { scene.remove(v.shield); (v.shield.material as THREE.Material).dispose(); v.shield.geometry.dispose(); }
   }
 
@@ -237,6 +241,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       case 'telegraph':
         if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--telegraph'));
         else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--lob'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--lob'), { fill: true }); }
+        else if (e.what === 'snipe') rings.line(e.x, e.y, e.tx, e.ty, 0.32, e.dur, token('--laser'));
         else { rings.ring(e.tx, e.ty, 1.4, 0.4, e.dur, token('--blink'), { blink: true }); rings.column(e.tx, e.ty, 0.5, 5, e.dur + 0.2, token('--blink')); }
         break;
       case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--hostile-shot'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--lob')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
@@ -288,6 +293,14 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       v.body.emissiveIntensity = e.flash > 0 ? 3 : 0.35 + (1 - e.hp / e.maxHp) * 0.4 + Math.sin(time * 4 + e.id) * 0.08;
       for (const part of v.parts) { const w = part.userData.spin!; part.rotation.x += w.x * dt; part.rotation.y += w.y * dt; part.rotation.z += w.z * dt; }
       if (v.shield) { v.shield.position.set(e.x, r * 0.9, e.y); v.shield.rotation.y = -e.facing; v.shield.scale.setScalar(r); }
+      if (e.laser !== undefined) {
+        if (!v.laser) { v.laser = new THREE.Mesh(beamGeo, laserMat); scene.add(v.laser); }
+        const [tx, ty] = rayToWall(e.x, e.y, e.laser);
+        v.laser.visible = true;
+        v.laser.position.set(e.x, r * 0.9, e.y);
+        v.laser.rotation.y = -e.laser;
+        v.laser.scale.set(Math.hypot(tx - e.x, ty - e.y), 1, 0.05 + Math.sin(time * 40) * 0.015);
+      } else if (v.laser) v.laser.visible = false;
     }
     for (const [id, v] of enemies) if (!seen.has(id)) { dropEnemy(v); enemies.delete(id); }
 
