@@ -116,6 +116,14 @@ describe('the roster behaves', () => {
     expect(front.enemies[0]!.hp).toBe(ENEMIES.bulwark!.hp);
     expect(back.enemies[0]!.hp).toBeLessThan(ENEMIES.bulwark!.hp);
   });
+  it('bulwarks press in but never pin a cornered ship', () => {
+    const s0 = arena([['bulwark', 10, 3], ['bulwark', 13, 7]]);
+    const corner = { ...s0, player: { ...s0.player, x: T.ARENA_W_U / 2 - 1, y: T.ARENA_H_U / 2 - 1 } };
+    const s = run(corner, 15);
+    expect(s.player.hp).toBe(T.PLAYER_HP);
+    const p = s.player, near = Math.min(...s.enemies.map((e) => Math.hypot(e.x - p.x, e.y - p.y)));
+    expect(near).toBeLessThan(6); // it still closes in
+  });
   it('bombers explode on contact', () => {
     const s0 = arena([['bomber', 0.5, 0]]);
     const s = step(s0, IDLE, DT);

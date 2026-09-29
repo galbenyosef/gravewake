@@ -24,8 +24,8 @@ enemy "splitter" name="Splitter" hp=8 r=0.8 score=40 model="prism" spawns="mite"
     split 4
 }
 
-enemy "bulwark" name="Bulwark" tier="elite" hp=22 r=0.95 score=90 model="cube" blurb="A shield wall that turns slowly. Get round the back." {
-    chase 1.6
+enemy "bulwark" name="Bulwark" tier="elite" hp=22 r=0.95 score=90 model="cube" blurb="A shield wall that presses in but never rams. It turns slowly: get round the back." {
+    keep-away 4 1.6
     shield 120
 }
 

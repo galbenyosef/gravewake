@@ -50,6 +50,10 @@ export const Bulwark: Story = {
     game.setState({ run: { ...s0, enemies: s0.enemies.map((e) => (e === b ? { ...e, facing: Math.atan2(s0.player.y - e.y, s0.player.x - e.x) } : e)) } });
     const events = watch(10);
     await expect(events.some((e) => e.type === 'hit')).toBe(false);
+    // Left alone, they walk up to the ship and hold off, shields up, instead of ramming it.
+    const later = watch(9000), { player: p, enemies } = game.getState().run;
+    await expect(has(later, 'hurt')).toBe(false);
+    await expect(Math.min(...enemies.map((e) => Math.hypot(e.x - p.x, e.y - p.y)))).toBeLessThan(6);
   },
 };
 export const Bomber: Story = enemy('bomber', 4, (_s, ev) => expect(has(ev, 'blast')).toBe(true), 3000);
