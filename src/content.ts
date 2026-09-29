@@ -27,7 +27,7 @@ export const EnemySchema = z.strictObject({
   hp: pos,
   /** Collision radius and visual size, u. */
   r: pos,
-  /** Contact damage to the ship. */
+  /** Contact damage to the wizard. */
   touch: z.number().int().nonnegative().default(1),
   score: z.number().int().nonnegative(),
   model: z.enum(MODELS),

@@ -14,7 +14,7 @@ export type Behaviour = {
   /** Damage it lets through from a shot arriving from (fx, fy). */
   guard?: (m: number[], w: World, e: Enemy, dmg: number, fx: number, fy: number) => number;
   death?: (m: number[], w: World, e: Enemy, spawns: string) => void;
-  /** Touching the ship destroys it (and so triggers its death words). */
+  /** Touching the wizard destroys it (and so triggers its death words). */
   kamikaze?: boolean;
   /** A shield's width in degrees, for the shell to draw the arc. */
   shieldArcDeg?: number;
@@ -32,7 +32,7 @@ function toward(e: Enemy, x: number, y: number): [number, number, number] {
   const dx = x - e.x, dy = y - e.y, d = Math.hypot(dx, dy) || 1;
   return [dx / d, dy / d, d];
 }
-/** Ease velocity toward (vx, vy): enemies have mass, the ship's steering is what feels tight. */
+/** Ease velocity toward (vx, vy): enemies have mass, the wizard's steering is what feels tight. */
 function steer(e: Enemy, vx: number, vy: number, dt: number, accel: number = T.ENEMY_ACCEL_PER_S) {
   const a = Math.min(1, accel * dt);
   e.vx += (vx - e.vx) * a;
@@ -50,14 +50,14 @@ const inArena = (x: number, y: number, pad: number): [number, number] =>
   [clamp(x, -T.ARENA_W_U / 2 + pad, T.ARENA_W_U / 2 - pad), clamp(y, -T.ARENA_H_U / 2 + pad, T.ARENA_H_U / 2 - pad)];
 
 export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
-  /** Home on the ship at `speed` u/s. */
+  /** Home on the wizard at `speed` u/s. */
   chase: (speed) => ({
     mem: none,
     moves: true,
     tick: (_m, w, e, dt) => { const [ux, uy] = toward(e, w.s.player.x, w.s.player.y); steer(e, ux * speed, uy * speed, dt); },
   }),
 
-  /** Hold `range` u from the ship, strafing sideways while in the band; `speed` u/s. */
+  /** Hold `range` u from the wizard, strafing sideways while in the band; `speed` u/s. */
   'keep-away': (range, speed) => ({
     mem: (r) => [r() < 0.5 ? 1 : -1],
     moves: true,
@@ -69,7 +69,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** Circle the ship at `radius` u, `speed` u/s along the circle. */
+  /** Circle the wizard at `radius` u, `speed` u/s along the circle. */
   orbit: (radius, speed) => ({
     mem: (r) => [r() < 0.5 ? 1 : -1],
     moves: true,
@@ -106,7 +106,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** Every `interval` s, mark a spot `range` u from the ship, then vanish and reappear there. */
+  /** Every `interval` s, mark a spot `range` u from the wizard, then vanish and reappear there. */
   blink: (interval, range) => ({
     // timer, mode (0 drifting, 1 marked), target x, y
     mem: (r) => [-r() * interval, 0, 0, 0],
@@ -137,7 +137,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     tick: (m, w, e, dt) => { if (every(m, 0, dt, interval)) { w.shoot(e.x, e.y, aimAt(e, w), speed); w.emit({ type: 'enemy-fire', id: e.id, x: e.x, y: e.y }); } },
   }),
 
-  /** A fan of `count` shots across `arc` degrees aimed at the ship, every `interval` s (360 is a ring). */
+  /** A fan of `count` shots across `arc` degrees aimed at the wizard, every `interval` s (360 is a ring). */
   burst: (interval, count, arc) => ({
     mem: (r) => [r() * interval * 0.5],
     tick: (m, w, e, dt) => {
@@ -158,19 +158,19 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** Every `interval` s, lob a round at where the ship is heading; it lands after the flight time, hurting within `blast` u. */
-  mortar: (interval, blast) => ({
+  /** Every `interval` s, hurl a burning skull at where the wizard is heading; it lands after the flight time, hurting within `blast` u. */
+  hurl: (interval, blast) => ({
     mem: (r) => [r() * interval * 0.5],
     tick: (m, w, e, dt) => {
       if (!every(m, 0, dt, interval)) return;
-      const p = w.s.player, lead = T.LOB_FLIGHT_S * T.LOB_LEAD;
+      const p = w.s.player, lead = T.HURL_FLIGHT_S * T.HURL_LEAD;
       const [tx, ty] = inArena(p.x + p.vx * lead, p.y + p.vy * lead, 0.5);
       w.lob(e.x, e.y, tx, ty, blast);
-      w.emit({ type: 'telegraph', id: e.id, what: 'lob', x: e.x, y: e.y, tx, ty, dur: T.LOB_FLIGHT_S });
+      w.emit({ type: 'telegraph', id: e.id, what: 'lob', x: e.x, y: e.y, tx, ty, dur: T.HURL_FLIGHT_S });
     },
   }),
 
-  /** Every `interval` s, hold still and paint a laser on the ship for `paint` s (tracking, then locked for the last
+  /** Every `interval` s, hold still and paint a laser on the wizard for `paint` s (tracking, then locked for the last
    *  SNIPE_LOCK_S so a sidestep dodges), then fire one shot along it at `speed` u/s. */
   snipe: (interval, paint, speed) => ({
     // timer, mode (0 cooling, 1 painting, 2 locked)
@@ -193,7 +193,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** A frontal shield `arc` degrees wide that eats shots; it turns toward the ship at a limited rate, so flank it. */
+  /** A frontal shield `arc` degrees wide that eats shots; it turns toward the wizard at a limited rate, so flank it. */
   shield: (arc) => ({
     mem: none,
     shieldArcDeg: arc,
@@ -208,7 +208,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** Detonates on death or on touching the ship, hurting the ship within `blast` u. */
+  /** Detonates on death or on touching the wizard, hurting the wizard within `blast` u. */
   explode: (blast) => ({
     mem: none,
     kamikaze: true,

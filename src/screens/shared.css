@@ -25,20 +25,20 @@
   --wood: #24201c;
   --stone: #6b6d70;
   --bone: #8a8373;
-  --player: #2b2535;
-  --player-glow: #ffae6b;
-  --player-shot: #ffb347;
-  --hostile-shot: #86e89a;
-  --lob: #ff4a26;
-  --shard: #a6d6ff;
-  --repair: #ff2f48;
-  --warp: #58ff9e;
-  --telegraph: #ff2b2b;
+  --wizard: #2b2535;
+  --wizard-glow: #ffae6b;
+  --spell: #ffb347;
+  --curse: #86e89a;
+  --skullfire: #ff4a26;
+  --soul: #a6d6ff;
+  --vial: #ff2f48;
+  --gravelight: #58ff9e;
+  --charge: #ff2b2b;
   --blink: #7fb4ff;
   --shield: #9ec3ff;
   --heal: #6dff8a;
   --ice: #cfe8ff;
-  --laser: #ff2a3a;
+  --sightline: #ff2a3a;
   --trim: #3c3a3f;
   --soulfire: #5cc8ff;
 
@@ -102,9 +102,9 @@
   /* Distance fog (--fog) from and to, u from the camera. */
   --look-fog-near-u: 30;
   --look-fog-far-u: 62;
-  /* The wizard's light (--player-glow): intensity and reach. */
-  --look-player-light: 24;
-  --look-player-light-u: 11;
+  /* The wizard's light (--wizard-glow): intensity and reach. */
+  --look-wizard-light: 24;
+  --look-wizard-light-u: 11;
   /* How many spells in flight light the floor (a shader loop: phones pay per light). */
   --look-floor-lights: 20;
   /* Scenery lights on the floor (grave-lanterns): how many at most, and how bright. */

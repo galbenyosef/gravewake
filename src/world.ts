@@ -11,9 +11,9 @@ export type Enemy = {
   x: number; y: number;
   vx: number; vy: number;
   hp: number; maxHp: number;
-  /** Seconds since it stepped out of its warp gate. */
+  /** Seconds since it climbed out of its grave. */
   age: number;
-  /** Radians; what a shield or a gun points along. */
+  /** Radians; what a shield or a bow points along. */
   facing: number;
   /** Seconds of hit flash left (the shell brightens the mesh). */
   flash: number;
@@ -23,7 +23,7 @@ export type Enemy = {
   parent: number;
   /** Size multiplier from its wave's `spawn scale=` (absent = 1): collision and mesh both. */
   scale?: number;
-  /** Radians of the laser it is painting on the ship (a `snipe` word), absent when not aiming. */
+  /** Radians of the laser it is painting on the wizard (a `snipe` word), absent when not aiming. */
   laser?: number;
 };
 
@@ -44,7 +44,7 @@ export type Shot = {
   hit: number[];
 };
 
-export type Pickup = { id: number; kind: 'shard' | 'repair'; x: number; y: number; life: number };
+export type Pickup = { id: number; kind: 'soul' | 'vial'; x: number; y: number; life: number };
 
 /** A gate opening: `kind` steps out at (x, y) when `t` (seconds left) runs out. */
 export type Warp = { id: number; kind: string; x: number; y: number; t: number; parent: number; scale?: number };
@@ -52,7 +52,7 @@ export type Warp = { id: number; kind: string; x: number; y: number; t: number; 
 export type Player = {
   x: number; y: number;
   vx: number; vy: number;
-  /** Aim direction (unit vector) of the last shot, for the ship's heading. */
+  /** Aim direction (unit vector) of the last shot, for the wizard's heading. */
   ax: number; ay: number;
   hp: number;
   invuln: number;
@@ -131,7 +131,7 @@ export type World = {
   s: GameState;
   rand: () => number;
   emit: (e: GameEvent) => void;
-  /** Open a warp gate for `kind` that delivers it at (x, y) after the warp time; `parent` is the summoner. */
+  /** Open a grave for `kind` that delivers it at (x, y) after GRAVE_OPEN_S; `parent` is the summoner. */
   summon: (kind: string, x: number, y: number, parent: number, scale?: number) => void;
   /** Put `kind` straight into play (a bloat's children don't wait for a grave). */
   spawn: (kind: string, x: number, y: number, parent: number) => Enemy;

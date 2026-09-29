@@ -13,7 +13,7 @@ import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
 import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
-import { MOON_DIR, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
+import { MOON_DIR, buildRig, buildShield, buildWizard, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
 import { LOOK } from './look';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
@@ -368,23 +368,23 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   scene.add(contactShadows());
 
   // The wizard, and the light he carries (lights the floor through floorU.uPlayer and the characters round him).
-  const ship = buildShip(token('--player'), token('--player-glow'));
-  ship.obj.traverse((o) => { o.castShadow = true; });
-  scene.add(ship.obj);
+  const wizard = buildWizard(token('--wizard'), token('--wizard-glow'));
+  wizard.obj.traverse((o) => { o.castShadow = true; });
+  scene.add(wizard.obj);
   // A faint warm halo on the ground round him: the one warm pool the eye can always find.
-  const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.5, LOOK.WIZARD_HALO));
-  shipHalo.scale.setScalar(LOOK.WIZARD_HALO_U);
-  scene.add(shipHalo);
-  const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
-  scene.add(shipLight);
+  const wizardHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), glowMaterial(token('--wizard-glow'), 0.5, LOOK.WIZARD_HALO));
+  wizardHalo.scale.setScalar(LOOK.WIZARD_HALO_U);
+  scene.add(wizardHalo);
+  const wizardLight = new THREE.PointLight(token('--wizard-glow'), LOOK.WIZARD_LIGHT, LOOK.WIZARD_LIGHT_U, 1.4);
+  scene.add(wizardLight);
   const beamGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0);
   /** Sniper sight lines share one material; each painting enemy gets its own mesh. */
-  const laserMat = glowMaterial(token('--laser'), 2.4, 0.6);
+  const laserMat = glowMaterial(token('--sightline'), 2.4, 0.6);
   /** Warm flashes where spells land: a few pooled point lights so a hit lights the enemy it hits. Always in the scene
    *  (intensity 0 when idle): adding or removing a light recompiles every lit material. */
-  const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--player-shot'), 0, LOOK.FLASH_U, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
+  const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--spell'), 0, LOOK.FLASH_U, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
   let flashNext = 0;
-  const flash = (x: number, z: number, peak: number, color = token('--player-shot')) => {
+  const flash = (x: number, z: number, peak: number, color = token('--spell')) => {
     const f = flashes[flashNext]!; flashNext = (flashNext + 1) % LOOK.FLASH_LIGHTS;
     f.l.position.set(x, 1.2, z); f.l.color.set(color); f.t = LOOK.FLASH_S; f.peak = peak;
   };
@@ -402,17 +402,17 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // Instanced spells and pickups
   function inst(g: THREE.BufferGeometry, m: THREE.Material, n: number) { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; }
-  const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
-  const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
+  const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--spell'), 3.2), 600);
+  const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--spell'), 0.9, 0.22), 600);
   // Enemy spells: a white-hot core in a necrotic wisp, drawn out behind it along its flight.
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.0, 0.65), 800);
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--curse'), 1.0, 0.65), 800);
   const cores = inst(new THREE.SphereGeometry(1, 8, 6), glowMaterial(0xffffff, 1.25), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.06), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--curse'), 0.5, 0.06), 800);
   // Hurled rounds: a burning skull-stone (a dark lump inside a ball of fire) that sheds sparks.
-  const lobs = inst(new THREE.IcosahedronGeometry(0.3, 1), new THREE.MeshStandardMaterial({ color: token('--bone'), roughness: 0.9, emissive: token('--lob'), emissiveIntensity: 0.6 }), 64);
-  const lobFire = inst(new THREE.SphereGeometry(0.55, 10, 8), glowMaterial(token('--lob'), 1.4, 0.45), 64);
-  const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
-  const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
+  const lobs = inst(new THREE.IcosahedronGeometry(0.3, 1), new THREE.MeshStandardMaterial({ color: token('--bone'), roughness: 0.9, emissive: token('--skullfire'), emissiveIntensity: 0.6 }), 64);
+  const lobFire = inst(new THREE.SphereGeometry(0.55, 10, 8), glowMaterial(token('--skullfire'), 1.4, 0.45), 64);
+  const souls = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--soul'), 2.4), 600);
+  const vials = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--vial'), 2.2), 16);
 
   const particles = createParticles(scene);
   const moteColor = new THREE.Color(token('--moon')).multiplyScalar(LOOK.MOTE).getHex();
@@ -487,13 +487,13 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   function onEvent(e: GameEvent, s: GameState) {
     switch (e.type) {
       case 'fire': {
-        sfx('fire');
-        ship.play('attack');
+        sfx('cast');
+        wizard.play('attack');
         const nx = Math.cos(e.angle), nz = Math.sin(e.angle);
-        for (let i = 0; i < 2; i++) particles.spark(e.x + nx * 0.6, e.y + nz * 0.6, nx * 6 + (Math.random() - 0.5) * 3, nz * 6 + (Math.random() - 0.5) * 3, token('--player-shot'), 0.07, 0.12);
+        for (let i = 0; i < 2; i++) particles.spark(e.x + nx * 0.6, e.y + nz * 0.6, nx * 6 + (Math.random() - 0.5) * 3, nz * 6 + (Math.random() - 0.5) * 3, token('--spell'), 0.07, 0.12);
         break;
       }
-      case 'hit': sfx('hit'); particles.burst(e.x, e.y, token('--player-shot'), 4, 7, 0.07, 0.25); flash(e.x, e.y, LOOK.FLASH_HIT); break;
+      case 'hit': sfx('hit'); particles.burst(e.x, e.y, token('--spell'), 4, 7, 0.07, 0.25); flash(e.x, e.y, LOOK.FLASH_HIT); break;
       case 'kill': {
         killed.add(e.id);
         const d = enemyDef(e.kind), col = hue(e.kind, s), big = d.tier === 'boss';
@@ -501,9 +501,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         // The spell's fire flares on the body, bone dust falls, and the soul goes up out of it in soulfire.
         flash(e.x, e.y, big ? LOOK.FLASH_BOSS : LOOK.FLASH_KILL);
         dust.burst(e.x, e.y, col, big ? 200 : 10 + d.r * 24, big ? 14 : 4 + d.r * 4, big ? 0.22 : 0.08 + d.r * 0.04, big ? 1.6 : 0.9, 0.6, 0.9);
-        particles.burst(e.x, e.y, token('--player-shot'), big ? 80 : 8, big ? 16 : 6, 0.08, 0.4);
+        particles.burst(e.x, e.y, token('--spell'), big ? 80 : 8, big ? 16 : 6, 0.08, 0.4);
         particles.burst(e.x, e.y, token('--soulfire'), big ? 60 : 5, 1.5, 0.12, big ? 2 : 1.1, 0.8, 4);
-        if (big) rings.ring(e.x, e.y, d.r * 0.5, d.r * 12, 1.4, token('--player-shot'), { boost: 0.4 });
+        if (big) rings.ring(e.x, e.y, d.r * 0.5, d.r * 12, 1.4, token('--spell'), { boost: 0.4 });
         scorch(e.x, e.y, 0.5 + d.r * 0.8);
         if (big) rings.column(e.x, e.y, 2.5, 14, 1.2, token('--soulfire'));
         ripple(e.x, e.y, big ? 2.5 : Math.min(1.2, 0.35 + d.r * 0.5));
@@ -511,24 +511,24 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         break;
       }
       case 'hurt': sfx('hurt'); if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(60); hurt = 1; shake = Math.max(shake, 0.8); particles.burst(e.x, e.y, token('--danger'), 30, 10, 0.12, 0.6); ripple(e.x, e.y, 1); break;
-      case 'warp': sfx('warp'); break;
-      case 'arrive': { const d = enemyDef(e.kind); dust.burst(e.x, e.y, token('--floor'), 14 + d.r * 16, 4, 0.1, 0.7, 0.2, 1.2); particles.burst(e.x, e.y, token('--warp'), 6 + d.r * 6, 3, 0.08, 0.6, 0.3, 1.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp'), { boost: 1.2 }); break; }
+      case 'warp': sfx('grave-open'); break;
+      case 'arrive': { const d = enemyDef(e.kind); dust.burst(e.x, e.y, token('--floor'), 14 + d.r * 16, 4, 0.1, 0.7, 0.2, 1.2); particles.burst(e.x, e.y, token('--gravelight'), 6 + d.r * 6, 3, 0.08, 0.6, 0.3, 1.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--gravelight'), { boost: 1.2 }); break; }
       case 'telegraph':
         strike(e.id);
-        if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--telegraph'));
-        else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--lob'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--lob'), { fill: true }); }
-        else if (e.what === 'snipe') rings.line(e.x, e.y, e.tx, e.ty, 0.32, e.dur, token('--laser'));
+        if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--charge'));
+        else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--skullfire'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--skullfire'), { fill: true }); }
+        else if (e.what === 'snipe') rings.line(e.x, e.y, e.tx, e.ty, 0.32, e.dur, token('--sightline'));
         else { rings.ring(e.tx, e.ty, 1.4, 0.4, e.dur, token('--blink'), { blink: true }); rings.column(e.tx, e.ty, 0.5, 5, e.dur + 0.2, token('--blink')); }
         break;
-      case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--hostile-shot'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--lob')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
+      case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--curse'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--skullfire')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
       case 'block': particles.burst(e.x, e.y, token('--shield'), 6, 8, 0.07, 0.25); break;
       case 'heal': strike(e.by); particles.burst(e.x, e.y, token('--heal'), 3, 1.5, 0.1, 0.8, 0.6, 2); break;
-      case 'enemy-fire': sfx('enemy-fire'); strike(e.id); break;
-      case 'pickup': sfx('pickup'); particles.burst(e.x, e.y, e.kind === 'shard' ? token('--shard') : token('--repair'), e.kind === 'shard' ? 3 : 20, 3, 0.07, 0.3); break;
+      case 'enemy-fire': sfx('enemy-cast'); strike(e.id); break;
+      case 'pickup': sfx('pickup'); particles.burst(e.x, e.y, e.kind === 'soul' ? token('--soul') : token('--vial'), e.kind === 'soul' ? 3 : 20, 3, 0.07, 0.3); break;
       case 'wave': sfx('wave'); break;
-      case 'cleared': ripple(s.player.x, s.player.y, 2); rings.ring(s.player.x, s.player.y, 0.5, 30, 1.6, token('--player-glow')); break;
-      case 'upgrade': sfx('upgrade'); rings.ring(s.player.x, s.player.y, 0.5, 3, 0.6, token('--shard')); break;
-      case 'dead': sfx('dead'); ship.play('die'); particles.burst(s.player.x, s.player.y, token('--player-glow'), 300, 18, 0.2, 1.8); rings.ring(s.player.x, s.player.y, 0.5, 20, 1.5, token('--danger')); ripple(s.player.x, s.player.y, 3); shake = 1.6; break;
+      case 'cleared': ripple(s.player.x, s.player.y, 2); rings.ring(s.player.x, s.player.y, 0.5, 30, 1.6, token('--wizard-glow')); break;
+      case 'upgrade': sfx('boon'); rings.ring(s.player.x, s.player.y, 0.5, 3, 0.6, token('--soul')); break;
+      case 'dead': sfx('dead'); wizard.play('die'); particles.burst(s.player.x, s.player.y, token('--wizard-glow'), 300, 18, 0.2, 1.8); rings.ring(s.player.x, s.player.y, 0.5, 20, 1.5, token('--danger')); ripple(s.player.x, s.player.y, 3); shake = 1.6; break;
     }
   }
 
@@ -539,24 +539,24 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     killed.clear();
     if (fresh) { for (const e of s.events) onEvent(e, s); last = s; }
 
-    // ship
+    // wizard
     const p = s.player, dead = s.phase === 'dead';
-    ship.obj.visible = !(p.invuln > 0 && !dead && Math.floor(time * 14) % 2 === 0);
-    ship.obj.position.set(p.x, 0.35 + Math.sin(time * 3) * 0.05, p.y);
-    ship.obj.rotation.set(0, -Math.atan2(p.ay, p.ax), 0);
-    ship.obj.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
-    if (!dead && ship.dead) ship.revive();
-    ship.update(dt);
+    wizard.obj.visible = !(p.invuln > 0 && !dead && Math.floor(time * 14) % 2 === 0);
+    wizard.obj.position.set(p.x, 0.35 + Math.sin(time * 3) * 0.05, p.y);
+    wizard.obj.rotation.set(0, -Math.atan2(p.ay, p.ax), 0);
+    wizard.obj.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
+    if (!dead && wizard.dead) wizard.revive();
+    wizard.update(dt);
     // The light sits in the staff's witchfire, ahead and to the right of him.
     const aimA = Math.atan2(p.ay, p.ax);
-    shipLight.position.set(p.x + Math.cos(aimA) * 0.7 - Math.sin(aimA) * 0.35, 2.3, p.y + Math.sin(aimA) * 0.7 + Math.cos(aimA) * 0.35);
-    shipLight.visible = !dead;
-    shipHalo.visible = !dead;
-    shipHalo.position.set(p.x, 0.05, p.y);
+    wizardLight.position.set(p.x + Math.cos(aimA) * 0.7 - Math.sin(aimA) * 0.35, 2.3, p.y + Math.sin(aimA) * 0.7 + Math.cos(aimA) * 0.35);
+    wizardLight.visible = !dead;
+    wizardHalo.visible = !dead;
+    wizardHalo.position.set(p.x, 0.05, p.y);
     const speed = Math.hypot(p.vx, p.vy);
     if (!dead && speed > 1 && dt > 0) {
       const bx = p.x - (p.vx / speed) * 0.45, bz = p.y - (p.vy / speed) * 0.45;
-      particles.spark(bx, bz, -p.vx * 0.3 + (Math.random() - 0.5), -p.vy * 0.3 + (Math.random() - 0.5), token('--player-glow'), 0.1, 0.3, 0.35);
+      particles.spark(bx, bz, -p.vx * 0.3 + (Math.random() - 0.5), -p.vy * 0.3 + (Math.random() - 0.5), token('--wizard-glow'), 0.1, 0.3, 0.35);
     }
 
     // enemies
@@ -597,7 +597,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       floorU.uLights.value[nf]!.set(x, z, radius, power); floorU.uLightCol.value[nf++]!.set(color);
     };
 
-    // warp gates
+    // opening graves
     const gates = new Set<number>();
     for (const g of s.warps) {
       gates.add(g.id);
@@ -606,21 +606,21 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         const r = radius(g);
         // The ground opens: a black pit ringed in grave-light, widening until the dead climb out.
         o = new THREE.Group();
-        const ringMesh = new THREE.Mesh(shared.thinTorus, glowMaterial(token('--warp'), 2.2));
+        const ringMesh = new THREE.Mesh(shared.thinTorus, glowMaterial(token('--gravelight'), 2.2));
         ringMesh.rotation.x = Math.PI / 2;
         o.add(ringMesh, new THREE.Mesh(shared.disc, pitMat));
         o.scale.setScalar(r * 1.3);
         o.position.set(g.x, 0.1, g.y);
         scene.add(o);
         warps.set(g.id, o);
-        rings.column(g.x, g.y, r * 0.9, 6, T.WARP_S + 0.2, token('--warp'));
+        rings.column(g.x, g.y, r * 0.9, 6, T.GRAVE_OPEN_S + 0.2, token('--gravelight'));
       }
-      const k = 1 - g.t / T.WARP_S;
+      const k = 1 - g.t / T.GRAVE_OPEN_S;
       o.rotation.y += dt * 1.5;
       o.children[1]!.scale.setScalar(0.2 + k * 0.8);
       o.children[0]!.scale.setScalar(0.3 + k * 0.8);
       if (dt > 0 && Math.random() < dt * 30) dust.burst(g.x, g.y, token('--floor'), 1, 2.5, 0.07, 0.6, 0.1, 1.4);
-      floorLight(g.x, g.y, radius(g) * 2, 0.8 * k, token('--warp'));
+      floorLight(g.x, g.y, radius(g) * 2, 0.8 * k, token('--gravelight'));
     }
     for (const [id, o] of warps) if (!gates.has(id)) { scene.remove(o); warps.delete(id); }
 
@@ -628,13 +628,13 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     let nb = 0, no = 0, nl = 0;
     for (const b of s.shots) {
       if (b.lob) {
-        const t = 1 - b.life / T.LOB_FLIGHT_S;
+        const t = 1 - b.life / T.HURL_FLIGHT_S;
         m4.compose(v3.set(b.x, 0.6 + 4 * LOOK.HURL_ARC_U * t * (1 - t), b.y), q.setFromAxisAngle(up, time * 5), s3.set(1, 1, 1));
         lobs.setMatrixAt(nl, m4);
         m4.compose(v3, q, s3.setScalar(0.9 + Math.sin(time * 25 + b.id) * 0.12));
         lobFire.setMatrixAt(nl++, m4);
-        if (dt > 0) particles.spark(b.x, b.y, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8, token('--lob'), 0.09, 0.4, v3.y);
-        floorLight(b.x, b.y, 1.8, 2.4, token('--lob'));
+        if (dt > 0) particles.spark(b.x, b.y, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8, token('--skullfire'), 0.09, 0.4, v3.y);
+        floorLight(b.x, b.y, 1.8, 2.4, token('--skullfire'));
       } else if (b.hostile) {
         const pulse = (0.85 + 0.3 * ((b.id * 0.618) % 1)) * (1 + Math.sin(time * 20 + b.id) * 0.15), sp = Math.hypot(b.vx, b.vy) || 1;
         q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx));
@@ -644,16 +644,16 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         cores.setMatrixAt(no, m4);
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
-        if (dt > 0 && no < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--hostile-shot'), 0.05, 0.3, 0.5);
-        floorLight(b.x, b.y, 1.4, 1.1, token('--hostile-shot'));
+        if (dt > 0 && no < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--curse'), 0.05, 0.3, 0.5);
+        floorLight(b.x, b.y, 1.4, 1.1, token('--curse'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
         bolts.setMatrixAt(nb, m4);
         m4.compose(v3, q, s3.setScalar(0.34 + Math.sin(time * 30 + b.id) * 0.05));
         boltHalos.setMatrixAt(nb++, m4);
         // A trail of embers behind each spell.
-        if (dt > 0 && nb < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--player-shot'), 0.05, 0.25, 0.45);
-        floorLight(b.x, b.y, 2.4, 3.2, token('--player-shot'));
+        if (dt > 0 && nb < LOOK.TRAILED_SPELLS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--spell'), 0.05, 0.25, 0.45);
+        floorLight(b.x, b.y, 2.4, 3.2, token('--spell'));
       }
     }
     for (let i = nf; i < MAX_FLOOR_LIGHTS; i++) floorU.uLights.value[i]!.w = 0;
@@ -662,9 +662,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const k of s.pickups) {
       const blink = k.life < 2 && Math.floor(time * 10) % 2 === 0 ? 0.001 : 1;
       m4.compose(v3.set(k.x, 0.4 + Math.sin(time * 4 + k.id) * 0.1, k.y), q.setFromAxisAngle(up, time * 3 + k.id), s3.setScalar(blink));
-      if (k.kind === 'shard') shards.setMatrixAt(ns++, m4); else repairs.setMatrixAt(nr++, m4);
+      if (k.kind === 'soul') souls.setMatrixAt(ns++, m4); else vials.setMatrixAt(nr++, m4);
     }
-    shards.count = ns; repairs.count = nr;
+    souls.count = ns; vials.count = nr;
     // Blob shadows: the wizard and every standing or fallen character.
     let nsh = 0;
     // Contact shadow: the dark where a figure meets the ground (the moon casts the long one).
@@ -681,7 +681,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       scorches.setMatrixAt(nsc++, m4);
     }
     scorches.count = nsc;
-    for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, lobFire, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
+    for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, lobFire, souls, vials, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
 
     // effects
     // Motes: dust and spores adrift in the moonlight over the clearing.
@@ -722,7 +722,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       const v = new THREE.Vector3(x, 0.35, y).project(camera), r = renderer.domElement.getBoundingClientRect();
       return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
     },
-    /** Jump the view to `s`: the camera on the ship (a story's first frame shouldn't pan in from the centre), no corpses. */
+    /** Jump the view to `s`: the camera on the wizard (a story's first frame shouldn't pan in from the centre), no corpses. */
     snap(s: GameState) {
       camTarget.set(s.player.x * FOLLOW, 0, s.player.y * FOLLOW); last = null;
       for (const c of corpses) { scene.remove(c.rig.obj); c.body.dispose(); }

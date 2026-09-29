@@ -3,7 +3,7 @@
 import { MASTER_VOLUME, SOUNDS } from './content';
 import { game } from './store';
 
-export const SFX = ['tap', 'fire', 'hit', 'kill', 'big-kill', 'hurt', 'pickup', 'warp', 'blast', 'wave', 'upgrade', 'dead', 'enemy-fire'] as const;
+export const SFX = ['tap', 'cast', 'hit', 'kill', 'big-kill', 'hurt', 'pickup', 'grave-open', 'blast', 'wave', 'boon', 'dead', 'enemy-cast'] as const;
 export type Sfx = (typeof SFX)[number];
 for (const n of SFX) if (!SOUNDS[n]) throw new Error(`audio: no sound "${n}" in content/sounds.kdl`);
 

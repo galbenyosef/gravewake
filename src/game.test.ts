@@ -68,7 +68,7 @@ describe('waves', () => {
   it('opens gates, which deliver enemies after the warp', () => {
     let s = run(newRun(1), 0.1);
     expect(s.warps.length).toBeGreaterThan(0);
-    s = run(s, T.WARP_S);
+    s = run(s, T.GRAVE_OPEN_S);
     expect(s.enemies.length).toBeGreaterThan(0);
   });
   it('clears into the upgrade picker, and a pick starts the next wave', () => {

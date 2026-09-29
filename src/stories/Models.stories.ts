@@ -10,7 +10,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ENEMIES } from '../content';
 import { enemyColor, token } from '../tokens';
-import { buildRig, buildShip, CLIPS, lightNight, loadModels, paintMaterial, type Rig, type RigName } from '../view/models';
+import { buildRig, buildWizard, CLIPS, lightNight, loadModels, paintMaterial, type Rig, type RigName } from '../view/models';
 
 const W = 844, H = 390;
 /** How often the attack and die panels replay, s. */
@@ -41,7 +41,7 @@ function viewer() {
   const scene = new THREE.Scene();
   lightNight(scene, renderer);
   // A pool of the wizard's light on the ground, so each model is seen the way it is in a fight: moonlit, and warm near him.
-  const glow = new THREE.PointLight(token('--player-glow'), 10, 6, 1.4);
+  const glow = new THREE.PointLight(token('--wizard-glow'), 10, 6, 1.4);
   glow.position.set(1.5, 2.2, 2.5);
   scene.add(glow);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: token('--floor') }));
@@ -60,9 +60,9 @@ function viewer() {
   function show(name: RigName, still: boolean) {
     stage.clear();
     const scenery: Record<string, string> = { tree: '--wood', roots: '--wood', grave: '--stone', rocks: '--stone', bones: '--bone', grass: '--moss', altar: '--stone', ruin: '--stone', lantern: '--wood', statue: '--stone', snag: '--wood' };
-    const col = name === 'wizard' ? token('--player') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
+    const col = name === 'wizard' ? token('--wizard') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
     rigs = CLIPS.map((c, i) => {
-      const rig = name === 'wizard' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
+      const rig = name === 'wizard' ? buildWizard(token('--wizard'), token('--wizard-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
       const holder = new THREE.Group();
       holder.add(rig.obj, floor.clone());
       rig.obj.position.y = 0.9;

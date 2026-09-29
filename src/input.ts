@@ -25,8 +25,8 @@ export type InputHooks = {
   enabled: () => boolean;
   /** True when a point (CSS px in the canvas) lands on a tappable UI node: that touch belongs to the UI. */
   blocked: (x: number, y: number) => boolean;
-  /** The ship's position in CSS px (for mouse aim). */
-  ship: () => { x: number; y: number };
+  /** The wizard's position in CSS px (for mouse aim). */
+  wizard: () => { x: number; y: number };
 };
 
 let hooks: InputHooks | null = null;
@@ -84,14 +84,14 @@ export function readInput(): Input {
   const kx = (k('d', 'arrowright') ? 1 : 0) - (k('a', 'arrowleft') ? 1 : 0), ky = (k('s', 'arrowdown') ? 1 : 0) - (k('w', 'arrowup') ? 1 : 0);
   if (kx || ky) { const l = Math.hypot(kx, ky); mx = kx / l; my = ky / l; }
   if (aim) a = vec(aim);
-  else if (mouse.down) { const s = hooks.ship(), dx = mouse.x - s.x, dy = mouse.y - s.y, l = Math.hypot(dx, dy) || 1; a = { x: dx / l, y: dy / l }; }
+  else if (mouse.down) { const s = hooks.wizard(), dx = mouse.x - s.x, dy = mouse.y - s.y, l = Math.hypot(dx, dy) || 1; a = { x: dx / l, y: dy / l }; }
   drawSticks();
   return { mx, my, aim: a };
 }
 
 function drawSticks() {
   gfx.clear();
-  for (const [s, col] of [[move, token('--moon')], [aim, token('--player-shot')]] as const) {
+  for (const [s, col] of [[move, token('--moon')], [aim, token('--spell')]] as const) {
     if (!s) continue;
     const v = vec(s);
     gfx.circle(s.ox, s.oy, STICK_R_PX).fill({ color: col, alpha: 0.08 }).stroke({ color: col, alpha: 0.5, width: 2 });

@@ -51,7 +51,7 @@ enemy "wraith" name="Wraith" hp=5 r=0.55 score=55 model="wraith" blurb="Blinks b
 
 enemy "catapult" name="Bone Catapult" hp=7 r=0.7 score=50 model="catapult" blurb="Hurls burning skulls where you are going. Watch the rings." {
     keep-away 11 2.2
-    mortar 2.6 2.2
+    hurl 2.6 2.2
 }
 
 enemy "deadeye" name="Deadeye" hp=5 r=0.6 score=70 model="archer" blurb="Draws at the treeline and paints you red. When the line freezes, move." {
@@ -69,6 +69,6 @@ enemy "lich" name="The Lich" tier="boss" hp=260 r=2 score=2000 model="lich" spaw
 enemy "colossus" name="Bone Colossus" tier="boss" hp=420 r=2.3 score=3500 model="colossus" spawns="bloat" blurb="Walks you down firing rings; falls apart into bloats." {
     chase 1.3
     burst 1.5 14 360
-    mortar 4 3
+    hurl 4 3
     split 3
 }

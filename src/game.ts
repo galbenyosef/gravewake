@@ -88,16 +88,16 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   });
   const w: World = {
     s, rand, emit, hurtPlayer,
-    summon: (kind, x, y, parent, scale) => { s.warps.push({ id: s.nextId++, kind, x, y, t: T.WARP_S, parent, ...(scale !== undefined && scale !== 1 && { scale }) }); emit({ type: 'warp', x, y, kind }); },
+    summon: (kind, x, y, parent, scale) => { s.warps.push({ id: s.nextId++, kind, x, y, t: T.GRAVE_OPEN_S, parent, ...(scale !== undefined && scale !== 1 && { scale }) }); emit({ type: 'warp', x, y, kind }); },
     spawn: (kind, x, y, parent) => makeEnemy(kind, x, y, parent),
     shoot: (x, y, a, speed) => { s.shots.push(shot(x, y, Math.cos(a) * speed, Math.sin(a) * speed, {})); },
-    lob: (x, y, tx, ty, blast) => { s.shots.push(shot(x, y, (tx - x) / T.LOB_FLIGHT_S, (ty - y) / T.LOB_FLIGHT_S, { life: T.LOB_FLIGHT_S, lob: true, tx, ty, blast })); },
+    lob: (x, y, tx, ty, blast) => { s.shots.push(shot(x, y, (tx - x) / T.HURL_FLIGHT_S, (ty - y) / T.HURL_FLIGHT_S, { life: T.HURL_FLIGHT_S, lob: true, tx, ty, blast })); },
   };
 
   s.time += dt;
   s.waveTime += dt;
 
-  // --- the ship ---
+  // --- the wizard ---
   const p = s.player, st = s.stats;
   const mlen = Math.hypot(input.mx, input.my);
   const mk = mlen < T.STICK_DEADZONE ? 0 : Math.min(1, mlen) / mlen;
@@ -200,21 +200,21 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
     const score = Math.round(d.score * s.mult);
     s.score += score; s.kills++;
     emit({ type: 'kill', id: e.id, x: e.x, y: e.y, kind: e.kind, score });
-    const shards = d.tier === 'boss' ? T.BOSS_SHARDS : d.tier === 'elite' ? T.ELITE_SHARDS : 1;
-    for (let i = 0; i < shards; i++) s.pickups.push({ id: s.nextId++, kind: 'shard', x: e.x + (rand() - 0.5) * radius(e) * 2, y: e.y + (rand() - 0.5) * radius(e) * 2, life: T.SHARD_LIFE_S });
-    if (rand() < T.REPAIR_DROP_CHANCE) s.pickups.push({ id: s.nextId++, kind: 'repair', x: e.x, y: e.y, life: T.SHARD_LIFE_S });
+    const shards = d.tier === 'boss' ? T.BOSS_SOULS : d.tier === 'elite' ? T.ELITE_SOULS : 1;
+    for (let i = 0; i < shards; i++) s.pickups.push({ id: s.nextId++, kind: 'soul', x: e.x + (rand() - 0.5) * radius(e) * 2, y: e.y + (rand() - 0.5) * radius(e) * 2, life: T.SOUL_LIFE_S });
+    if (rand() < T.VIAL_DROP_CHANCE) s.pickups.push({ id: s.nextId++, kind: 'vial', x: e.x, y: e.y, life: T.SOUL_LIFE_S });
   }
   s.enemies = s.enemies.filter((e) => e.hp > 0);
 
   // --- pickups drift in and are collected ---
-  const vacuum = s.phase === 'cleared', reach = T.MAGNET_U * st.magnet;
+  const vacuum = s.phase === 'cleared', reach = T.LURE_U * st.magnet;
   for (const k of s.pickups) {
     k.life -= dt;
     const d = dist(k.x, k.y, p.x, p.y);
-    if (vacuum || d < reach) { const v = (T.SHARD_SPEED_U_PER_S * dt) / (d || 1); k.x += (p.x - k.x) * Math.min(1, v); k.y += (p.y - k.y) * Math.min(1, v); }
-    if (dist(k.x, k.y, p.x, p.y) < T.SHARD_R_U + T.PLAYER_R_U) {
+    if (vacuum || d < reach) { const v = (T.SOUL_SPEED_U_PER_S * dt) / (d || 1); k.x += (p.x - k.x) * Math.min(1, v); k.y += (p.y - k.y) * Math.min(1, v); }
+    if (dist(k.x, k.y, p.x, p.y) < T.SOUL_R_U + T.PLAYER_R_U) {
       k.life = 0;
-      if (k.kind === 'shard') { s.mult = Math.min(T.MULT_MAX, s.mult + T.MULT_PER_SHARD); s.score += Math.round(T.SHARD_SCORE * s.mult); }
+      if (k.kind === 'soul') { s.mult = Math.min(T.MULT_MAX, s.mult + T.MULT_PER_SOUL); s.score += Math.round(T.SOUL_SCORE * s.mult); }
       else p.hp = Math.min(maxHp(s), p.hp + 1);
       emit({ type: 'pickup', kind: k.kind, x: k.x, y: k.y });
     }
@@ -243,7 +243,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   return s;
 }
 
-/** A gate on the arena's rim, at least SPAWN_MIN_DIST_U from the ship; bosses take the far side. */
+/** A gate on the arena's rim, at least SPAWN_MIN_DIST_U from the wizard; bosses take the far side. */
 function gatePoint(s: GameState, rand: () => number, d: EnemyDef, r: number): [number, number] {
   const pad = r + 0.6;
   if (d.tier === 'boss') return [s.player.x > 0 ? -HALF_W / 2 : HALF_W / 2, 0];

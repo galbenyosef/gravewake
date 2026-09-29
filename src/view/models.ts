@@ -1,4 +1,4 @@
-// The characters: one glTF per model (content.ts MODELS names them, plus the ship), built by the Blender scripts in
+// The characters: one glTF per model (content.ts MODELS names them, plus the wizard), built by the Blender scripts in
 // models/ (`npm run models`) and loaded once at boot. A model is a rig of named parts, value-painted in its vertex
 // colours, with three clips (idle loops, attack and die play once). Its materials are named `body`, `trim` and `glow`.
 // At load each part's pieces are fused into one mesh that remembers its slot per vertex, and one paint material
@@ -174,7 +174,7 @@ export function restGeometry(name: RigName) {
   tpl.scene.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) geos.push(m.geometry.clone().applyMatrix4(m.matrixWorld)); });
   return mergeGeometries(geos);
 }
-/** Unlit, over-bright, so bloom picks it up: walls, shots, gates, shields. */
+/** Unlit, over-bright, so bloom picks it up: spells, opening graves, shields. */
 export function glowMaterial(color: number, boost = 2.5, opacity = 1) {
   return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(boost), transparent: opacity < 1, opacity, blending: opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: opacity >= 1 });
 }
@@ -237,7 +237,7 @@ export function buildRig(name: RigName, paint: THREE.MeshStandardMaterial, phase
       mixer.update(0);
     },
     duration: (clip: Clip) => tpl.clips[clip].duration,
-    /** Back from a `die` to the idle loop (the ship on a new run). */
+    /** Back from a `die` to the idle loop (the wizard on a new run). */
     revive() {
       if (!dead) return;
       dead = false; striking = 0;
@@ -257,8 +257,8 @@ export function buildShield(deg: number, color: number) {
   return m;
 }
 
-/** The player's ship: the `ship` model in the hull colour, glowing in its glow colour. */
-export function buildShip(color: number, glow: number) {
+/** The player: the `wizard` model in his robe colour, glowing in his glow colour. */
+export function buildWizard(color: number, glow: number) {
   // His edges catch his own fire, not the moon: the one warm silhouette on the field.
   const paint = paintMaterial(color, glow, glow, LOOK.RIM, glow);
   paint.emissiveIntensity = LOOK.WIZARD_GLOW;
@@ -267,7 +267,7 @@ export function buildShip(color: number, glow: number) {
   return rig;
 }
 
-/** Geometry the arena shares (warp gates). */
+/** Geometry the arena shares (opening graves). */
 export const shared = {
   disc: new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2),
   thinTorus: new THREE.TorusGeometry(1, 0.05, 6, 48),

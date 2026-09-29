@@ -118,20 +118,20 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--wood` | dead trees and roots (`tree`, `roots`) |
 | `--stone` | gravestones and stones (`grave`, `rocks`), stones in the floor |
 | `--bone` | old bones lying in the clearing (`bones`) |
-| `--player` | the wizard's robe |
-| `--player-glow` | the wizard's light: staff flame, the light pool round him, his trail |
-| `--player-shot` | spells, their light on the ground, the aim stick |
-| `--hostile-shot` | enemy spells (necrotic) |
-| `--lob` | hurled rounds and landing zones |
-| `--shard` | souls (score pickups) |
-| `--repair` | blood vials (hull pickups) |
-| `--warp` | graves opening (enemy arrival) |
-| `--telegraph` | charge lanes |
+| `--wizard` | the wizard's robe |
+| `--wizard-glow` | the wizard's light: staff flame, the light pool round him, his trail |
+| `--spell` | spells, their light on the ground, the aim stick |
+| `--curse` | enemy spells (necrotic) |
+| `--skullfire` | hurled skulls: their fire, landing zones and blasts |
+| `--soul` | souls (score pickups) |
+| `--vial` | blood vials (vigour pickups) |
+| `--gravelight` | graves opening (enemy arrival) |
+| `--charge` | ghoul charge lanes |
 | `--blink` | blink marks |
 | `--shield` | shield wards and blocks |
 | `--heal` | mend pulses |
 | `--ice` | a wave tint: every enemy in the wave, hoarfrost |
-| `--laser` | sniper sight lines and their lock flash |
+| `--sightline` | deadeye sight lines and their lock flash |
 | `--trim` | iron on every model (the `trim` material), painted in the model; hue from here |
 | `--soulfire` | the `glow` material of every undead: eyes, runes, grave-light |
 | `--enemy-crawler` | crawler |
@@ -184,8 +184,8 @@ Plain numbers, the unit the name's last word (`u`, `s`, `deg`, `rad`, `px`, `per
 | `--look-fog-bright` | how moonlit the fog is |
 | `--look-fog-near-u` | distance fog start, u from the camera |
 | `--look-fog-far-u` | distance fog end |
-| `--look-player-light` | the wizard's light intensity (--player-glow) |
-| `--look-player-light-u` | its reach, u |
+| `--look-wizard-light` | the wizard's light intensity (--wizard-glow) |
+| `--look-wizard-light-u` | its reach, u |
 | `--look-static-lights` | scenery lights on the floor (grave-lanterns), at most this many |
 | `--look-lantern-light` | how bright a scenery light is on the floor |
 | `--look-floor-lights` | spells in flight that light the floor (phones pay per light) |
@@ -241,22 +241,22 @@ Under an `enemy` node in `content/enemies.kdl`, one per line. At most one moveme
 
 | Word | Use |
 |---|---|
-| `chase` | M `chase speed`: home on the ship |
+| `chase` | M `chase speed`: home on the wizard |
 | `keep-away` | M `keep-away range speed`: hold a distance, strafing |
-| `orbit` | M `orbit radius speed`: circle the ship |
+| `orbit` | M `orbit radius speed`: circle the wizard |
 | `dash` | M `dash windup speed`: creep, telegraph a lane, charge |
-| `blink` | M `blink interval range`: mark a spot near the ship, teleport there |
+| `blink` | M `blink interval range`: mark a spot near the wizard, teleport there |
 | `anchor` | M `anchor`: stationary, slowly turning |
 | `shoot` | `shoot interval speed`: aimed shot |
 | `burst` | `burst interval count arc`: aimed fan (360 = ring) |
 | `spiral` | `spiral interval arms`: rotating bullet pattern |
-| `mortar` | `mortar interval blast`: lobbed round with a landing zone |
-| `snipe` | `snipe interval paint speed`: holds still, paints a laser on the ship, locks, fires one fast shot |
+| `hurl` | `hurl interval blast`: a burning skull hurled where the wizard is going, with a landing zone |
+| `snipe` | `snipe interval paint speed`: holds still, paints a sight line on the wizard, locks, fires one fast shot |
 | `shield` | `shield arc`: frontal shield that eats shots, turns slowly |
 | `explode` | `explode blast`: detonates on death or contact |
 | `split` | `split count`: bursts into `spawns` on death |
 | `heal` | `heal radius rate`: mends nearby enemies |
-| `summon` | `summon interval max`: opens gates for `spawns` |
+| `summon` | `summon interval max`: opens graves for `spawns` |
 
 ## Effect words
 
@@ -315,8 +315,8 @@ The contract between a model script and the game. `models/kit.py` enforces it on
 | Name | Use |
 |---|---|
 | `idle` | clip, loops; the arena offsets it per enemy so a swarm doesn't breathe in step |
-| `attack` | clip, one shot: on the enemy's `enemy-fire`, `telegraph` or `heal` event, or when it's within 1.4 u of the ship (a lunge); the ship's on each shot |
-| `die` | clip, one shot, ends collapsed: the arena keeps a killed enemy where it fell until it finishes; the ship's on death |
+| `attack` | clip, one shot: on the enemy's `enemy-fire`, `telegraph` or `heal` event, or when it's within `--look-lunge-u` of the wizard (a lunge); the wizard's on each spell |
+| `die` | clip, one shot, ends collapsed: the arena keeps a killed enemy where it fell until it finishes; the wizard's on death |
 | `body` | material: the enemy's palette colour (or its wave tint) times the vertex paint; the hit flash lights it |
 | `trim` | material: armour metal in `--trim`, shared by every model |
 | `glow` | material: unlit, over the bloom threshold, in the palette colour |

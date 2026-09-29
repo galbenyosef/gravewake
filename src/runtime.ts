@@ -48,7 +48,7 @@ export async function boot(el: HTMLElement): Promise<() => void> {
       b.rootTarget = pixi.stage; // Pixi only sets it while dispatching its own events; this runs outside them
       return b.hitTest(x, y)?.eventMode === 'static';
     },
-    ship: () => { const p = game.getState().run.player; return a.toScreen(p.x, p.y); },
+    wizard: () => { const p = game.getState().run.player; return a.toScreen(p.x, p.y); },
   });
   // A phone call or app switch pauses the fight.
   const hidden = () => { if (document.hidden) Actions.pause(); };

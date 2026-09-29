@@ -145,7 +145,7 @@ export function createRings(scene: THREE.Scene, max = 64) {
       f.mesh.rotation.y = -Math.atan2(tz - z, tx - x);
       f.mesh.scale.set(len, 1, w);
     },
-    /** A column of light rising from the floor (warp gates, blink marks). */
+    /** A column of light rising from the floor (opening graves, blink marks). */
     column(x: number, z: number, r: number, h: number, dur: number, color: number) {
       const f = take('column', color, dur, 1.6);
       f.r0 = r; f.r1 = h;
