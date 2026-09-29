@@ -277,6 +277,7 @@ The contract between a model script and the game. `models/kit.py` enforces it on
 | `body` | material: the enemy's palette colour (or its wave tint) times the vertex paint; the hit flash lights it |
 | `trim` | material: armour metal in `--trim`, shared by every model |
 | `glow` | material: unlit, over the bloom threshold, in the palette colour |
+| `cloth` | material: robes, rags, hoods: the body colour darkened, rough, with a woven grain; separates cloth from bone |
 
 ## Modelling kit
 

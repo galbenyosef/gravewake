@@ -23,7 +23,7 @@ describe('models', () => {
     expect(files.filter((f) => f.endsWith('.glb')).map((f) => f.slice(0, -4)).sort()).toEqual([...RIGS].sort());
   });
   for (const name of RIGS) {
-    it(`${name}: body/trim/glow materials, idle/attack/die clips, one rig root`, () => {
+    it(`${name}: body/trim/glow/cloth materials, idle/attack/die clips, one rig root`, () => {
       const g = gltf(name);
       expect(g.materials.map((m) => m.name).filter((m) => !(SLOTS as readonly string[]).includes(m))).toEqual([]);
       expect(g.materials.map((m) => m.name)).toContain('body');

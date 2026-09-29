@@ -1,6 +1,6 @@
 // The model viewer: every character close up, in its palette colour, on a turntable, three times over: idle, attack
 // and die, each clip looping in its own panel. Not the game (no stage): its own small Three scene, lit like the arena.
-// The play function proves the rig contract (three clips, only body/trim/glow materials) on the loaded model.
+// The play function proves the rig contract (three clips, only body/trim/glow/cloth materials) on the loaded model.
 import type { Meta, StoryObj } from '@storybook/html-vite';
 import { expect } from 'storybook/test';
 import * as THREE from 'three';

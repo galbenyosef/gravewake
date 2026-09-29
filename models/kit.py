@@ -4,8 +4,9 @@
 #
 # The rig contract the game relies on (src/view/models.ts reads it; src/models.test.ts checks every .glb):
 #   - Blender +X is the model's forward, +Z up, one unit = the enemy's collision radius.
-#   - Materials are named only `body` (tinted by the enemy's palette colour, flashes on a hit), `trim` (armour metal,
-#     tinted by --trim) or `glow` (unlit, blooms, in the palette colour). Colour is value-painted into the vertices
+#   - Materials are named only `body` (tinted by the enemy's palette colour, flashes on a hit: bone, flesh, stone),
+#     `trim` (armour metal, tinted by --trim), `glow` (unlit, blooms, in the palette colour) or `cloth` (robes, rags,
+#     hoods: the body colour darkened, rough, woven). Colour is value-painted into the vertices
 #     here (top light, cavity shadow, edge highlight, brush noise, warm lights and cool shadows); hue comes from CSS.
 #   - Animations are NLA tracks named `idle` (loops), `attack` (one shot) and `die` (one shot, ends collapsed).
 #   - Everything hangs under one empty called `rig`, so a clip can move the whole character.
@@ -14,7 +15,7 @@ from mathutils import Vector, Matrix, Euler, noise
 from mathutils.bvhtree import BVHTree
 
 FPS = 30
-MATERIALS = {'body': (0.8, 0.8, 0.8, 1), 'trim': (0.25, 0.25, 0.3, 1), 'glow': (1, 1, 1, 1)}
+MATERIALS = {'body': (0.8, 0.8, 0.8, 1), 'trim': (0.25, 0.25, 0.3, 1), 'glow': (1, 1, 1, 1), 'cloth': (0.3, 0.3, 0.3, 1)}
 CLIPS = ('idle', 'attack', 'die')
 D = math.radians
 
@@ -522,7 +523,7 @@ def export(script, sharp_deg=40, seed=0):
     meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
     for o in meshes:
         bad = [m.name for m in o.data.materials if m.name not in MATERIALS]
-        if bad: raise SystemExit(f'{o.name}: materials must be body/trim/glow, got {bad}')
+        if bad: raise SystemExit(f'{o.name}: materials must be body/trim/glow/cloth, got {bad}')
     zs = [(o.matrix_world @ v.co).z for o in meshes for v in o.data.vertices]
     verts, polys = [], []
     for o in meshes:

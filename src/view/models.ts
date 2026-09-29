@@ -14,7 +14,7 @@ import { token } from '../tokens';
 
 /** The rig contract with models/kit.py (src/models.test.ts checks every .glb against it). */
 export const CLIPS = ['idle', 'attack', 'die'] as const;
-export const SLOTS = ['body', 'trim', 'glow'] as const;
+export const SLOTS = ['body', 'trim', 'glow', 'cloth'] as const;
 export const RIGS = [...MODELS, 'wizard', ...SCENERY] as const;
 export type Clip = (typeof CLIPS)[number];
 export type Slot = (typeof SLOTS)[number];
@@ -39,7 +39,7 @@ export async function loadModels() {
   }));
 }
 
-/** Each part's pieces (one per material) as one mesh with a `slot` attribute (0 body, 1 trim, 2 glow). */
+/** Each part's pieces (one per material) as one mesh with a `slot` attribute (0 body, 1 trim, 2 glow, 3 cloth). */
 function fuse(g: GLTF, name: string) {
   const assoc = g.parser.associations;
   const slotted = (mesh: THREE.Mesh) => {
@@ -70,7 +70,7 @@ export const BODY_GLOW = 0.2;
 
 /** Body paint's brightest linear luminance: a pale palette colour (mint, lemon) is darkened to it, so it keeps its hue
  *  under the arena's lights instead of washing out to white. Trim is darker metal; glow sits over the bloom threshold. */
-const BODY_LUM = 0.2, TRIM_LUM = 0.07, GLOW_LUM = 1.0;
+const BODY_LUM = 0.2, TRIM_LUM = 0.07, GLOW_LUM = 1.0, CLOTH_LUM = 0.035;
 /** `color` scaled to at most luminance `lum` (to exactly `lum` when `exact`). */
 function atLum(color: number, lum: number, exact = false) {
   const c = new THREE.Color(color), l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
@@ -86,7 +86,7 @@ function atLum(color: number, lum: number, exact = false) {
 export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35 });
   const uniforms = {
-    uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) },
+    uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) }, uCloth: { value: atLum(body, CLOTH_LUM, true) },
     uRim: { value: new THREE.Color(token('--moon')).multiplyScalar(rim) },
     uSurface: { value: new THREE.Vector2(LOOK.SURFACE_GRAIN, LOOK.SURFACE_BUMP) },
   };
@@ -97,15 +97,17 @@ export function paintMaterial(body: number, glow = body, emissive = body, rim: n
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSlot = slot;\nvObj = position;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform vec3 uBody, uTrim, uGlow, uRim; uniform vec2 uSurface;
+        uniform vec3 uBody, uTrim, uGlow, uRim, uCloth; uniform vec2 uSurface;
         varying float vSlot; varying vec3 vObj;
         ${SURFACE_NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
-        float isTrim = step(0.5, vSlot) * step(vSlot, 1.5), isGlow = step(1.5, vSlot);
+        float isTrim = step(0.5, vSlot) * step(vSlot, 1.5), isGlow = step(1.5, vSlot) * step(vSlot, 2.5), isCloth = step(2.5, vSlot);
         // Surface: a procedural grain in model space (bone pits, cloth weave, rust) instead of a texture, plus stains.
         float grain = 0.55 * n3(vObj * 5.0) + 0.3 * n3(vObj * 11.0) + 0.15 * n3(vObj * 23.0);
         float stain = smoothstep(0.55, 0.8, n3(vObj * 3.1 + 9.0));
-        diffuseColor.rgb *= mix(mix(uBody, uTrim, isTrim), vec3(0.0), isGlow) * mix(1.0, (0.55 + 0.9 * grain) * (1.0 - 0.45 * stain), uSurface.x);`)
+        // Cloth: a coarse weave and fraying streaks over the grain.
+        float weave = mix(1.0, (0.8 + 0.2 * sin(vObj.x * 90.0) * sin(vObj.y * 90.0 + vObj.z * 90.0)) * (0.7 + 0.6 * n3(vObj * vec3(4.0, 4.0, 22.0))), isCloth);
+        diffuseColor.rgb *= mix(mix(mix(uBody, uTrim, isTrim), uCloth, isCloth), vec3(0.0), isGlow) * weave * mix(1.0, (0.55 + 0.9 * grain) * (1.0 - 0.45 * stain), uSurface.x);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
           // Bump from the grain (three's perturbNormalArb, on a procedural height).
@@ -115,11 +117,11 @@ export function paintMaterial(body: number, glow = body, emissive = body, rim: n
           vec3 grad = sign(det) * (dFdx(grain) * r1 + dFdy(grain) * r2);
           normal = normalize(abs(det) * normal - uSurface.y * (1.0 - isGlow) * grad);
         }`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.5, isTrim);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(mix(roughnessFactor, 0.5, isTrim), 1.0, isCloth);')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.6, isTrim);')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         float rim = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), ${LOOK.RIM_POWER.toFixed(2)});
-        totalEmissiveRadiance = mix(totalEmissiveRadiance * vColor.rgb * vColor.rgb * (1.0 - 0.7 * isTrim) + uRim * rim * (0.35 + 0.65 * vColor.g), uGlow * vColor.rgb, isGlow);`);
+        totalEmissiveRadiance = mix(totalEmissiveRadiance * vColor.rgb * vColor.rgb * (1.0 - 0.7 * isTrim - 0.8 * isCloth) + uRim * rim * (0.35 + 0.65 * vColor.g) * (1.0 - 0.5 * isCloth), uGlow * vColor.rgb, isGlow);`);
   };
   m.customProgramCacheKey = () => 'paint';
   return m;

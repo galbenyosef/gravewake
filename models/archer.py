@@ -5,7 +5,7 @@ from kit import *
 B = 0.07
 pelvis = at(smooth(box('pelvis', (0.2, 0.34, 0.15), 'body', 0.05)), (0, 0, -0.1))
 ribs = ribcage(0.28, 0.44, 4, (0.02, 0, 0.54), r=0.045)
-cape = slab('cape', [(-0.3, 0.2), (0.3, 0.2), (0.34, -0.5), (0.18, -0.6), (0.05, -0.48), (-0.1, -0.64), (-0.3, -0.5)], 0.03, 'trim', 0.01)
+cape = slab('cape', [(-0.3, 0.2), (0.3, 0.2), (0.34, -0.5), (0.18, -0.6), (0.05, -0.48), (-0.1, -0.64), (-0.3, -0.5)], 0.03, 'cloth', 0.01)
 deform(cape, lambda v: Vector((v.z - 0.2, v.x, v.y + 0.45)))  # hangs down the back
 rough(cape, 0.03, 8, 2)
 quiver = tube('quiver', [(-0.22, 0.12, 0.05), (-0.3, 0.2, 0.62)], [0.08, 0.09], 'trim', 7)
@@ -13,7 +13,7 @@ fletch = [tube('arrow', [(-0.3, 0.2 + dy, 0.6), (-0.33, 0.21 + dy, 0.8)], 0.02, 
 body = part('body', pelvis, *ribs, cape, quiver, *fletch)
 
 skl = skull(0.44, (0.08, 0, 0.84), jaw=6, tilt=20)
-hood = smooth(ball('hood', 0.27, 'trim', 12, 8))
+hood = smooth(ball('hood', 0.27, 'cloth', 12, 8))
 cut(hood, lambda c: not (c.x > 0.08 and c.z < 0.12))
 shell(hood, 0.03)
 rough(hood, 0.02, 8, 3)

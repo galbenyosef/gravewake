@@ -8,7 +8,7 @@ cuirass = smooth(lathe('cuirass', [(0.0, 0.0), (0.34, 0.02), (0.42, 0.3), (0.46,
 deform(cuirass, lambda v: Vector((v.x * 0.8, v.y * 1.1, v.z)))
 rough(cuirass, 0.02, 6, 1)
 ribs = ribcage(0.34, 0.3, 3, (0.1, 0, 0.3), r=0.04)
-tabard = slab('tabard', [(-0.18, 0), (0.18, 0), (0.22, -0.55), (0.1, -0.6), (0, -0.52), (-0.1, -0.62), (-0.22, -0.55)], 0.03, 'body', 0.01)
+tabard = slab('tabard', [(-0.18, 0), (0.18, 0), (0.22, -0.55), (0.1, -0.6), (0, -0.52), (-0.1, -0.62), (-0.22, -0.55)], 0.03, 'cloth', 0.01)
 at(tabard, (0.3, 0, 0.0), (90, 0, 90))
 rough(tabard, 0.03, 7)
 body = part('body', pelvis, cuirass, *ribs, tabard)

@@ -3,7 +3,7 @@
 # ring behind it, like wings. Its hands are raised; when it casts the blades flare and the phylactery flares.
 from kit import *
 
-robe = lathe('robe', [(0.0, -0.95), (0.35, -0.8), (0.5, -0.45), (0.46, -0.05), (0.4, 0.3), (0.0, 0.36)], 'body', 18)
+robe = lathe('robe', [(0.0, -0.95), (0.35, -0.8), (0.5, -0.45), (0.46, -0.05), (0.4, 0.3), (0.0, 0.36)], 'cloth', 18)
 deform(robe, lambda v: Vector((v.x - 0.2 * max(0, -v.z) ** 1.3, v.y, v.z)))
 smooth(robe)
 cut(robe, lambda c: not (c.z < -0.6 and (math.atan2(c.y, c.x + 0.2) * 7 % 1.0) < 0.35))
@@ -24,7 +24,7 @@ head = part('head', *skl, crown_base, *spikes, jewel, pivot=(0.12, 0, 0.72), par
 
 hands = []
 for s in (1, -1):
-    sleeve = tube('sleeve', [(0.1, s * 0.42, 0.42), (0.25, s * 0.62, 0.55), (0.35, s * 0.68, 0.75)], [0.13, 0.12, 0.1], 'body', 8)
+    sleeve = tube('sleeve', [(0.1, s * 0.42, 0.42), (0.25, s * 0.62, 0.55), (0.35, s * 0.68, 0.75)], [0.13, 0.12, 0.1], 'cloth', 8)
     rough(sleeve, 0.02, 8, 3 + s)
     fingers = [tube('finger', [(0.36, s * 0.68, 0.8), (0.4 + 0.03 * d, s * (0.68 + 0.04 * d), 0.98)], [0.02, 0.0], 'body', 4) for d in (-1, 0, 1, 2)]
     orb = at(smooth(ball('orb', 0.08, 'glow', 8, 6)), (0.42, s * 0.7, 1.02))
