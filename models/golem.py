@@ -49,7 +49,11 @@ jut = bundle((0, 0, 0.2), 0.8, 6, 0.06)  # long bones rammed through it, ends st
 body = part('torso', torso, *jut, *cage, soul, *spikes)
 
 skl = skull(0.42, (0.5, 0, 0.72), jaw=20, tilt=25)
-horns = [tube('horn', [(0.45, s * 0.14, 0.9), (0.35, s * 0.36, 1.05), (0.12, s * 0.45, 1.05), (0.0, s * 0.35, 0.9)], [0.07, 0.06, 0.04, 0.0], 'trim', 6) for s in (1, -1)]
+# Great antlered horns sweeping out and back: the silhouette you know it by from across the clearing.
+horns = []
+for s in (1, -1):
+    horns.append(tube('horn', [(0.45, s * 0.14, 0.9), (0.35, s * 0.5, 1.15), (0.05, s * 0.85, 1.3), (-0.3, s * 1.05, 1.2), (-0.45, s * 1.0, 1.0)], [0.1, 0.08, 0.06, 0.035, 0.0], 'body', 7))
+    horns += [tube('tine', [p, (p[0] + 0.12, p[1] + s * 0.12, p[2] + 0.28)], [0.04, 0.0], 'body', 5) for p in ((0.35, s * 0.5, 1.15), (0.05, s * 0.85, 1.3), (-0.3, s * 1.05, 1.2))]
 head = part('head', *skl, *horns, pivot=(0.4, 0, 0.6), parent=body)
 
 arms = []

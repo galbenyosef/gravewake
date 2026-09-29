@@ -87,6 +87,9 @@ const GROUND = /* glsl */ `
     alb *= 1.0 - 0.75 * wet;
     float edge = max(abs(p.x) - uHalf.x, abs(p.y) - uHalf.y);
     alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
+    // The heart of the clearing is the open sky: its ground reads a little paler than the edges under the trees.
+    vec2 c = p / uHalf;
+    alb *= 0.8 + 0.45 * exp(-dot(c, c) * 1.3);
     return vec4(alb, wet);
   }`;
 
@@ -404,6 +407,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
 
   const particles = createParticles(scene);
+  const moteColor = new THREE.Color(token('--moon')).multiplyScalar(0.25).getHex();
   /** Bone dust and grave dirt: lit, not glowing. */
   const dust = createParticles(scene, 800, false);
   const rings = createRings(scene);
@@ -670,6 +674,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, lobFire, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
 
     // effects
+    // Motes: dust and spores adrift in the moonlight over the clearing.
+    if (dt > 0 && Math.random() < dt * LOOK.MOTES_PER_S) particles.spark((Math.random() - 0.5) * T.ARENA_W_U, (Math.random() - 0.5) * T.ARENA_H_U, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, moteColor, 0.035, 5, 0.6 + Math.random() * 2);
     particles.update(dt);
     dust.update(dt);
     rings.update(dt);

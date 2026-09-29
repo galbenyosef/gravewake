@@ -185,6 +185,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `STATIC_LIGHTS` | scenery lights on the floor (grave-lanterns), at most this many |
 | `LANTERN_LIGHT` | how bright a scenery light is on the floor |
 | `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
+| `MOTES_PER_S` | motes of dust adrift in the moonlight, spawned per second |
 | `FLASH_LIGHTS` | pooled point lights for spell impacts |
 | `FLASH_S` | how long an impact flash lasts, s |
 | `FLASH_HIT` | a hit's flash |

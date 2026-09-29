@@ -51,6 +51,8 @@ export const LOOK = {
   STATIC_LIGHTS: 8,
   LANTERN_LIGHT: 2.5,
   /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
+  /** Motes of dust adrift in the moonlight, spawned per second. */
+  MOTES_PER_S: 6,
   FLASH_LIGHTS: 3,
   FLASH_S: 0.22,
   FLASH_HIT: 14,
