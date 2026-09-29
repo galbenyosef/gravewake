@@ -11,11 +11,13 @@ export const LOOK = {
   /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
   RIM: 1.6,
   RIM_POWER: 2.6,
-  SCENERY_RIM: 0.5,
+  SCENERY_RIM: 0.2,
   /** Moonlight on the floor: everywhere, in the clearing, and through gaps in the canopy (the dapple). */
   FLOOR_AMBIENT: 0.1,
   FLOOR_MOON: 0.25,
   FLOOR_DAPPLE: 1.6,
+  /** How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
+  FLOOR_RELIEF: 1.2,
   /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
   FOG_Y_U: 0.35,
   FOG_VEIL: 0.34,
@@ -25,8 +27,10 @@ export const LOOK = {
   FOG_NEAR_U: 30,
   FOG_FAR_U: 62,
   /** The wizard's light (--player-glow): intensity and reach, u. */
-  PLAYER_LIGHT: 38,
+  PLAYER_LIGHT: 24,
   PLAYER_LIGHT_U: 11,
+  /** The pool of his light on the floor. */
+  PLAYER_POOL: 2.4,
   /** How many spells in flight light the floor (a shader loop: phones pay per light). */
   FLOOR_LIGHTS: 20,
   /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
@@ -36,9 +40,9 @@ export const LOOK = {
   FLASH_KILL: 30,
   FLASH_BOSS: 60,
   /** Bloom: only magic should cross the threshold. */
-  BLOOM: 1.0,
-  BLOOM_RADIUS: 0.55,
-  BLOOM_THRESHOLD: 0.72,
+  BLOOM: 0.75,
+  BLOOM_RADIUS: 0.4,
+  BLOOM_THRESHOLD: 0.8,
   /** Blob shadows under characters. */
   SHADOW: 0.75,
   /** The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */

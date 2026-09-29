@@ -111,11 +111,12 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--title-font` | Cinzel (`@fontsource/cinzel`, weight 600) |
 | `--body-font` | Georgia, serif |
 | `--floor` | the clearing's earth (its albedo: the night decides how dark it looks), grave dirt |
-| `--moss` | rot and moss patches on the floor |
+| `--moss` | rot and moss patches on the floor, dead grass (`grass`) |
 | `--moon` | moonlight: key light, the cold rim on every model's edge, the move stick |
 | `--fog` | ground fog and the distance |
 | `--wood` | dead trees and roots (`tree`, `roots`) |
-| `--stone` | gravestones (`grave`) |
+| `--stone` | gravestones and stones (`grave`, `rocks`), stones in the floor |
+| `--bone` | old bones lying in the clearing (`bones`) |
 | `--player` | the wizard's robe |
 | `--player-glow` | the wizard's light: staff flame, the light pool round him, his trail |
 | `--player-shot` | spells, their light on the ground, the aim stick |
@@ -164,6 +165,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `FLOOR_AMBIENT` | moonlight on the floor everywhere |
 | `FLOOR_MOON` | extra moonlight in the clearing |
 | `FLOOR_DAPPLE` | moonlight through gaps in the dead canopy |
+| `FLOOR_RELIEF` | height of the floor's procedural relief, so light rakes across stones and cracks |
 | `FOG_Y_U` | ground fog height, u |
 | `FOG_VEIL` | ground fog thickness in the open |
 | `FOG_EDGE` | ground fog thickness under the trees |
@@ -172,6 +174,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `FOG_FAR_U` | distance fog end |
 | `PLAYER_LIGHT` | the wizard's light intensity (--player-glow) |
 | `PLAYER_LIGHT_U` | its reach, u |
+| `PLAYER_POOL` | the pool of his light on the floor |
 | `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
 | `FLASH_LIGHTS` | pooled point lights for spell impacts |
 | `FLASH_S` | how long an impact flash lasts, s |
@@ -250,6 +253,9 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | `tree` | scenery: a dead oak on clawing roots, bare crown (stands on z = 0, 1 unit about a metre) |
 | `grave` | scenery: a leaning, bitten headstone on a plinth, a mound and a broken iron cross |
 | `roots` | scenery: a snapped, rotten stump and the roots it throws across the ground |
+| `rocks` | scenery: a few half-sunk, weathered stones |
+| `bones` | scenery: an old skull, a femur and loose ribs lying in the leaves |
+| `grass` | scenery: a tuft of dead, bent grass |
 
 ## Model rig
 
@@ -303,7 +309,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
-| `scatter` | `scatter "id" model= along=top/bottom/sides/all out= step= scale= seed= [spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in `content/arena.kdl` |
+| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field step= scale= seed= [out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges (or a grid over it, `field`), in `content/arena.kdl` |
 
 ## Content helpers
 

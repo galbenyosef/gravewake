@@ -110,7 +110,7 @@ export function paintMaterial(body: number, glow = body, emissive = body, rim: n
 }
 /** Moonlight's direction (towards the moon): high and from the far side, so what faces the camera stays in shade and
  *  the moon only catches tops and edges. */
-const MOON_DIR = new THREE.Vector3(-0.35, 1, -0.55);
+export const MOON_DIR = new THREE.Vector3(-0.35, 1, -0.55);
 
 /** The night every model is seen in (the arena and the model viewer): a near-black sky, a faint environment so metal
  *  isn't dead, a cold moon key and a dim moonlit hemisphere. Warm light comes only from the wizard and his spells. */

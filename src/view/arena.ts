@@ -7,13 +7,13 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { enemyDef, radius, SCATTERS, SCENERY, waveDef } from '../content';
+import { enemyDef, radius, SCATTERS, waveDef, type ScatterDef } from '../content';
 import { sfx } from '../audio';
 import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
 import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
-import { BODY_GLOW, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
+import { BODY_GLOW, MOON_DIR, buildRig, buildShield, buildShip, glowMaterial, lightNight, paintMaterial, restGeometry, shared, type Rig } from './models';
 import { LOOK } from './look';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
@@ -53,7 +53,7 @@ const NOISE = /* glsl */ `
 const floorShader = {
   uniforms: {
     uTime: { value: 0 }, uEarth: { value: new THREE.Color() }, uMoss: { value: new THREE.Color() }, uMoon: { value: new THREE.Color() },
-    uPlayerCol: { value: new THREE.Color() }, uStone: { value: new THREE.Color() }, uMoonLevels: { value: new THREE.Vector3(LOOK.FLOOR_AMBIENT, LOOK.FLOOR_MOON, LOOK.FLOOR_DAPPLE) }, uPlayer: { value: new THREE.Vector2() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
+    uPlayerCol: { value: new THREE.Color() }, uStone: { value: new THREE.Color() }, uMoonLevels: { value: new THREE.Vector3(LOOK.FLOOR_AMBIENT, LOOK.FLOOR_MOON, LOOK.FLOOR_DAPPLE) }, uMoonDir: { value: MOON_DIR.clone().normalize() }, uRelief: { value: LOOK.FLOOR_RELIEF }, uPlayerPool: { value: LOOK.PLAYER_POOL }, uPlayer: { value: new THREE.Vector2() }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
     uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uLights: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
     uLightCol: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Color()) },
@@ -62,7 +62,7 @@ const floorShader = {
     varying vec2 vPos;
     void main() { vPos = position.xz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */ `
-    uniform float uTime; uniform vec3 uEarth, uMoss, uMoon, uPlayerCol, uStone, uMoonLevels; uniform vec2 uPlayer, uHalf;
+    uniform float uTime, uRelief, uPlayerPool; uniform vec3 uEarth, uMoss, uMoon, uPlayerCol, uStone, uMoonLevels, uMoonDir; uniform vec2 uPlayer, uHalf;
     uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
     varying vec2 vPos;
     ${NOISE}
@@ -89,21 +89,31 @@ const floorShader = {
       float crack = (1.0 - smoothstep(0.0, 0.035, crackCells.y)) * smoothstep(0.35, 0.6, fbm(p * 0.5 + 7.0));
       alb *= 1.0 - crack * 0.75;
 
+      // Relief: a height from the same noise (mounds, stones proud, cracks sunk) lit per pixel, so the moon rakes
+      // across the ground and a spell lights the near side of every stone.
+      float h = 0.5 * broad + stone * 0.25 * smoothstep(0.2, 0.0, stones.x) - crack * 0.1;
+      vec3 P = vec3(p.x, h * uRelief, p.y);
+      vec3 n = normalize(cross(dFdy(P), dFdx(P)));
+      n *= sign(n.y);
+
       // Light: moonlight through the canopy (drifting dapple, strongest in the clearing), the wizard, the spells.
       vec2 q = p / (uHalf * 1.15);
       float clearing = exp(-dot(q, q) * 1.1);
       float dapple = smoothstep(0.42, 0.72, fbm(p * 0.16 + vec2(uTime * 0.012, uTime * 0.005)));
-      vec3 light = uMoon * (uMoonLevels.x + (uMoonLevels.y + uMoonLevels.z * dapple) * clearing);
-      float dp = length(p - uPlayer);
-      light += uPlayerCol * (1.6 * exp(-dp * dp * 0.07) + 0.25 * exp(-dp * 0.25));
+      float moonLit = max(dot(n, uMoonDir), 0.0);
+      vec3 light = uMoon * (uMoonLevels.x + (uMoonLevels.y + uMoonLevels.z * dapple) * clearing * (0.3 + 1.4 * moonLit));
+      vec3 toP = vec3(uPlayer.x - p.x, 1.6, uPlayer.y - p.y);
+      float dp = length(toP.xz);
+      light += uPlayerCol * (uPlayerPool * exp(-dp * dp * 0.07) + 0.25 * exp(-dp * 0.25)) * (0.4 + 0.9 * max(dot(n, normalize(toP)), 0.0));
       for (int i = 0; i < ${MAX_FLOOR_LIGHTS}; i++) {
         vec4 l = uLights[i];
         if (l.w <= 0.0) continue;
-        float d = length(p - l.xy) / l.z;
-        light += uLightCol[i] * l.w * exp(-d * d);
+        vec3 toL = vec3(l.x - p.x, 0.6, l.y - p.y);
+        float d = length(toL.xz) / l.z;
+        light += uLightCol[i] * l.w * exp(-d * d) * (0.35 + 0.9 * max(dot(n, normalize(toL)), 0.0));
       }
       vec3 col = alb * light;
-      col += uMoon * wave * 0.05 * (0.5 + broad);
+      col += uMoon * wave * 0.012 * (0.5 + broad);
 
       // Past the edge the ground falls into the dark under the trees.
       float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
@@ -173,12 +183,14 @@ function blobTexture() {
   return t;
 }
 
-/** The scenery round the clearing (content/arena.kdl): each kind one instanced draw of its rest pose, as it never moves. */
+/** The scenery round the clearing (content/arena.kdl): one instanced draw per model and paint, its rest pose, as it
+ *  never moves. */
 function plantClearing(scene: THREE.Scene) {
-  const paint = { tree: token('--wood'), grave: token('--stone'), roots: token('--wood') } as const;
-  for (const kind of SCENERY) {
-    const spots = SCATTERS.filter((sc) => sc.model === kind).flatMap((sc) => sc.placements);
-    const im = new THREE.InstancedMesh(restGeometry(kind), paintMaterial(paint[kind], undefined, undefined, LOOK.SCENERY_RIM), spots.length);
+  const groups = new Map<string, ScatterDef[]>();
+  for (const sc of SCATTERS) groups.set(`${sc.model} ${sc.paint}`, [...(groups.get(`${sc.model} ${sc.paint}`) ?? []), sc]);
+  for (const scs of groups.values()) {
+    const { model, paint } = scs[0]!, spots = scs.flatMap((sc) => sc.placements);
+    const im = new THREE.InstancedMesh(restGeometry(model), paintMaterial(token(paint), undefined, undefined, LOOK.SCENERY_RIM), spots.length);
     spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0, p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
     im.frustumCulled = false;
     (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
@@ -246,7 +258,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
   const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
   const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.8, 0.25), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.6, 0.18), 800);
   const lobs = inst(new THREE.IcosahedronGeometry(0.4, 1), glowMaterial(token('--lob'), 3), 64);
   const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
   const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
@@ -337,7 +349,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         dust.burst(e.x, e.y, col, big ? 200 : 10 + d.r * 24, big ? 14 : 4 + d.r * 4, big ? 0.22 : 0.08 + d.r * 0.04, big ? 1.6 : 0.9, 0.6, 0.9);
         particles.burst(e.x, e.y, token('--player-shot'), big ? 80 : 8, big ? 16 : 6, 0.08, 0.4);
         particles.burst(e.x, e.y, token('--soulfire'), big ? 60 : 5, 1.5, 0.12, big ? 2 : 1.1, 0.8, 4);
-        rings.ring(e.x, e.y, d.r * 0.5, d.r * (big ? 12 : 3.5), big ? 1.4 : 0.5, token('--player-shot'), { boost: 0.8 });
+        rings.ring(e.x, e.y, d.r * 0.5, d.r * (big ? 12 : 2.5), big ? 1.4 : 0.4, token('--player-shot'), { boost: 0.4 });
         if (big) rings.column(e.x, e.y, 2.5, 14, 1.2, token('--soulfire'));
         ripple(e.x, e.y, big ? 2.5 : Math.min(1.2, 0.35 + d.r * 0.5));
         shake = Math.max(shake, big ? 1.4 : Math.min(0.5, d.r * 0.3));
@@ -380,7 +392,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     ship.obj.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
     if (!dead && ship.dead) ship.revive();
     ship.update(dt);
-    shipLight.position.set(p.x + Math.cos(Math.atan2(p.ay, p.ax)) * 0.5, 2.0, p.y + Math.sin(Math.atan2(p.ay, p.ax)) * 0.5);
+    // The light sits in the staff's witchfire, ahead and to the right of him.
+    const aimA = Math.atan2(p.ay, p.ax);
+    shipLight.position.set(p.x + Math.cos(aimA) * 0.5 - Math.sin(aimA) * 0.3, 1.5, p.y + Math.sin(aimA) * 0.5 + Math.cos(aimA) * 0.3);
     shipLight.visible = !dead;
     aimLine.visible = !dead && s.phase === 'fight';
     aimLine.position.set(p.x, 0.08, p.y); aimLine.rotation.y = -Math.atan2(p.ay, p.ax); aimLine.scale.set(5, 1, 0.05);
@@ -470,7 +484,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         orbs.setMatrixAt(no, m4);
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
-        floorLight(b.x, b.y, 1.3, 0.9, token('--hostile-shot'));
+        floorLight(b.x, b.y, 1.2, 0.45, token('--hostile-shot'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
         bolts.setMatrixAt(nb, m4);

@@ -41,9 +41,9 @@ hollow = at(smooth(ball('hollow', 0.13, 'trim', 8, 6)), (0.3, 0.02, 1.0), scale=
 base = part('trunk', trunk, *roots, hollow)
 
 limbs = []
-for a, z, ln in ((0.3, 2.0, 1.9), (2.4, 2.3, 1.6), (4.2, 1.7, 1.8), (1.4, 2.65, 1.3), (5.3, 2.5, 1.4)):
+for a, z, ln in ((0.3, 2.0, 1.9), (2.4, 2.3, 1.6), (4.2, 1.7, 1.8), (1.4, 2.65, 1.3), (5.3, 2.5, 1.4), (3.3, 1.4, 1.2), (0.9, 1.2, 1.0), (4.9, 2.8, 1.1)):
     d = Vector((math.cos(a), math.sin(a), 0.9)).normalized()
-    branch(Vector((0, 0, z)), d, ln, 0.13, 3, limbs)
+    branch(Vector((0, 0, z)), d, ln, 0.11, 2 if ln < 1.3 else 3, limbs)
 crown = part('crown', *limbs, pivot=(0, 0, 1.8), parent=base)
 
 loop(crown, 4.0, rot=(1.6, 1.2, 0))

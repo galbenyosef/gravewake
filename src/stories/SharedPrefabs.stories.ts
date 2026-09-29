@@ -20,9 +20,9 @@ prefab "demo" {
     }
 }`;
 const demoCss = `
-.demo { width: 100%; height: 100%; background-color: #04050c; pointer-events: auto; padding: 8px 12px; gap: 8px; align-items: center }
+.demo { width: 100%; height: 100%; background-color: #050507; pointer-events: auto; padding: 8px 12px; gap: 8px; align-items: center }
 .demo-row { flex-direction: row; gap: 10px; align-items: center }
-.demo-pips { width: 150px; height: 16px; tint: #3cf2ff }
+.demo-pips { width: 150px; height: 16px; tint: #c9a462 }
 .demo-bar { width: 300px }
 .demo button { width: 150px; height: 36px }
 .demo-pips, .demo-bar { height: 24px }
