@@ -44,6 +44,9 @@ export async function boot(el: HTMLElement): Promise<() => void> {
     blocked: (x, y) => pixi.renderer.events.rootBoundary.hitTest(x, y)?.eventMode === 'static',
     ship: () => { const p = game.getState().run.player; return a.toScreen(p.x, p.y); },
   });
+  // A phone call or app switch pauses the fight.
+  const hidden = () => { if (document.hidden) Actions.pause(); };
+  document.addEventListener('visibilitychange', hidden);
   const unlock = () => unlockAudio();
   el.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', unlock);
@@ -75,6 +78,7 @@ export async function boot(el: HTMLElement): Promise<() => void> {
     unsubs.forEach((u) => u());
     pixi.ticker.remove(render3d);
     stopClock(); offTick(); stopInput();
+    document.removeEventListener('visibilitychange', hidden);
     el.removeEventListener('pointerdown', unlock);
     window.removeEventListener('keydown', unlock);
   };

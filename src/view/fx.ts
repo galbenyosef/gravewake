@@ -113,8 +113,8 @@ export function createRings(scene: THREE.Scene, max = 64) {
         const flick = f.blink ? 0.55 + 0.45 * Math.sin(f.t * 30) : 1;
         if (f.kind === 'ring') { const r = f.r0 + (f.r1 - f.r0) * (1 - (1 - k) ** 3); f.mesh.scale.set(r, 1, r); mat.opacity = (1 - k) * flick; }
         else if (f.kind === 'fill') { const r = f.r0 + (f.r1 - f.r0) * k; f.mesh.scale.set(r, 1, r); mat.opacity = (0.15 + 0.5 * k) * flick; }
-        else if (f.kind === 'line') { mat.opacity = 0.5 * flick * (1 - k * 0.3); }
-        else { const grow = Math.sin(k * Math.PI); f.mesh.scale.set(f.r0 * (0.4 + grow * 0.6), f.r1 * grow, f.r0 * (0.4 + grow * 0.6)); mat.opacity = 0.5 * grow; }
+        else if (f.kind === 'line') { mat.opacity = 0.3 * flick * (1 - k * 0.3); }
+        else { const grow = Math.sin(k * Math.PI); f.mesh.scale.set(f.r0 * (0.4 + grow * 0.6), f.r1 * grow, f.r0 * (0.4 + grow * 0.6)); mat.opacity = 0.3 * grow; }
       }
     },
   };

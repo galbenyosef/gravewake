@@ -47,7 +47,7 @@
   --enemy-hive: #d05cff;
   --enemy-phantom: #9f7bff;
   --enemy-mortar: #ff7ad9;
-  --enemy-seraph: #fff1b8;
+  --enemy-seraph: #ffc86b;
   --enemy-colossus: #ff2a3c;
 }
 
@@ -85,7 +85,7 @@ corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: 
 
 /* An upgrade choice. */
 .upgrade-card {
-  width: 170px; height: 200px; padding: 16px 12px; gap: 10px; align-items: center;
+  width: 170px; height: 172px; padding: 16px 12px; gap: 10px; align-items: center;
   background-color: var(--panel); border-color: var(--edge); border-width: 2px;
   transition: scale .1s ease-out, border-color .15s;
   animation: shared-card-in .45s var(--pop) backwards;

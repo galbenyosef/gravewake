@@ -48,7 +48,7 @@ const floorShader = {
         vec4 r = uRipples[i];
         if (r.w <= 0.0) continue;
         vec2 d = p - r.xy; float dist = length(d), front = r.z * 16.0;
-        float band = exp(-pow((dist - front) * 0.9, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
+        float band = exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
         wave += band;
         p -= normalize(d + 1e-4) * band * 0.35;
       }
@@ -61,7 +61,7 @@ const floorShader = {
       float pulse = 0.85 + 0.15 * sin(uTime * 1.3 + vPos.x * 0.15);
       vec3 col = uFloor;
       col += uGrid * (minor * 0.10 + major * 0.28) * (0.45 + pool * 1.4) * pulse * mix(0.25, 1.0, inArena);
-      col += uGrid * wave * 0.5 + vec3(0.9, 0.95, 1.0) * wave * wave * 0.08;
+      col += (uGrid * wave * 0.5 + vec3(0.9, 0.95, 1.0) * wave * wave * 0.08) * mix(0.15, 1.0, inArena);
       col += uWall * rim * 0.35;
       float fade = exp(-max(edge, 0.0) * 0.12);
       gl_FragColor = vec4(col * fade, 1.0);
@@ -137,6 +137,10 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   // The ship
   const ship = buildShip(token('--player'), token('--player-glow'));
   scene.add(ship);
+  // A pool of light under the ship so it reads at a glance among the swarm.
+  const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.9, 0.22));
+  shipHalo.scale.setScalar(1.1);
+  scene.add(shipHalo);
   const shipLight = new THREE.PointLight(token('--player-glow'), 30, 12, 1.6);
   scene.add(shipLight);
   const aimLine = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0), glowMaterial(token('--player-glow'), 1.5, 0.25));
@@ -145,8 +149,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   // Instanced shots and pickups
   const inst = (g: THREE.BufferGeometry, m: THREE.Material, n: number) => { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; };
   const bolts = inst(new THREE.CapsuleGeometry(0.09, 0.7, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3), 600);
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2.6), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.2, 0.35), 800);
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.8, 0.25), 800);
   const lobs = inst(new THREE.IcosahedronGeometry(0.4, 0), glowMaterial(token('--lob'), 3), 64);
   const shards = inst(new THREE.OctahedronGeometry(0.22, 0), glowMaterial(token('--shard'), 2.4), 600);
   const repairs = inst(new THREE.OctahedronGeometry(0.4, 0), glowMaterial(token('--repair'), 2.6), 16);
@@ -173,7 +177,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   function makeEnemy(kind: string): EnemyView {
     const d = enemyDef(kind), col = enemyColor(kind), body = bodyMaterial(col);
-    const obj = buildEnemy(d.model, d.r, body, glowMaterial(col, 3));
+    const obj = buildEnemy(d.model, d.r, body, glowMaterial(col, 2.2));
     const parts: Part[] = [];
     obj.traverse((o) => { if ((o as Part).userData.spin) parts.push(o as Part); });
     const arc = d.behaviours.find((b) => b.shieldArcDeg)?.shieldArcDeg;
@@ -211,7 +215,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       case 'warp': sfx('warp'); break;
       case 'arrive': { const d = enemyDef(e.kind); particles.burst(e.x, e.y, token('--warp'), 12 + d.r * 10, 5, 0.1, 0.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp')); break; }
       case 'telegraph':
-        if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.9, e.dur + 0.2, token('--telegraph'));
+        if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--telegraph'));
         else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--lob'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--lob'), { fill: true }); }
         else { rings.ring(e.tx, e.ty, 1.4, 0.4, e.dur, token('--blink'), { blink: true }); rings.column(e.tx, e.ty, 0.5, 5, e.dur + 0.2, token('--blink')); }
         break;
@@ -239,6 +243,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     ship.rotation.set(0, -Math.atan2(p.ay, p.ax), 0);
     ship.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
     shipLight.position.set(p.x, 2.2, p.y);
+    shipHalo.position.set(p.x, 0.04, p.y);
+    shipHalo.visible = !dead;
     shipLight.visible = !dead;
     aimLine.visible = !dead && s.phase === 'fight';
     aimLine.position.set(p.x, 0.08, p.y); aimLine.rotation.y = -Math.atan2(p.ay, p.ax); aimLine.scale.set(5, 1, 0.05);
@@ -300,7 +306,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15;
         m4.compose(v3.set(b.x, 0.5, b.y), q.identity(), s3.setScalar(b.r * pulse));
         orbs.setMatrixAt(no, m4);
-        m4.compose(v3, q, s3.setScalar(b.r * 2.2 * pulse));
+        m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));

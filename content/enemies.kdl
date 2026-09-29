@@ -56,7 +56,7 @@ enemy "mortar" name="Mortar" hp=7 r=0.7 score=50 model="crown" blurb="Lobs round
 
 enemy "seraph" name="Seraph" tier="boss" hp=260 r=2 score=2000 model="core" spawns="wasp" blurb="Six wings of light and a spiral you have to thread." {
     keep-away 7 1.4
-    spiral 0.14 4
+    spiral 0.18 4
     burst 3.2 9 80
     summon 7 3
 }

@@ -107,7 +107,7 @@ export function buildShield(deg: number, color: number) {
 export function buildShip(color: number, glow: number) {
   const hull = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.8), emissive: new THREE.Color(glow), emissiveIntensity: 0.55, metalness: 0.8, roughness: 0.2, flatShading: true });
   const g = group(new THREE.Mesh(geo.ship, hull), part(geo.sphere, glowMaterial(glow, 4), { s: [0.2, 0.12, 0.3], p: [-0.45, 0.15, 0], body: false }));
-  g.scale.setScalar(0.62);
+  g.scale.setScalar(0.85);
   return g;
 }
 
