@@ -1,8 +1,10 @@
 // The enemy codex: every enemy in content/enemies.kdl with its glyph and what it does.
 prefab "codex" {
     panel class="shared-scrim codex" {
-        text class="codex-title" "CODEX"
+        panel class="codex-head" {
+            panel class="codex-back" slot="back"
+            text class="codex-title" "CODEX"
+        }
         panel class="codex-grid" slot="cards"
-        panel class="codex-back" slot="back"
     }
 }

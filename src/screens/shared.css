@@ -111,8 +111,9 @@ corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: 
 .enemy-card.boss { border-color: var(--gold) }
 .enemy-card.elite { border-color: var(--magenta) }
 .shared-enemy-glyph { width: 52px; height: 52px }
-.shared-enemy-text { gap: 3px; flex-grow: 1 }
+.shared-enemy-text { gap: 2px; flex-grow: 1 }
 .shared-enemy-name { font-family: var(--title-font); font-size: 13px; letter-spacing: 1px }
 .shared-enemy-blurb { font-size: 12px; font-color: var(--dim); text-wrap: wrap; width: 170px }
-.shared-enemy-tier { font-family: var(--title-font); font-size: 9px; letter-spacing: 2px; font-color: var(--magenta) }
+/* Top-right of the card, whatever the consumer's width (sized for the default 250px card; a narrower consumer moves it). */
+.shared-enemy-tier { position: absolute; left: 176px; top: 5px; width: 60px; text-align: right; font-family: var(--title-font); font-size: 8px; letter-spacing: 2px; font-color: var(--magenta) }
 .boss .shared-enemy-tier { font-color: var(--gold) }

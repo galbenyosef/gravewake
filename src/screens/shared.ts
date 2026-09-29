@@ -87,9 +87,15 @@ defineElement('enemy-glyph', ({ kind }, { w, h }) => {
 
 const screens: ReturnType<typeof createUi>[] = [];
 
-/** Every screen's Ui: the shared prefabs and styles come first (a screen's own CSS wins ties). Screens draw in creation order. */
+/**
+ * Every screen's Ui: the shared prefabs and styles come first (a screen's own CSS wins ties). Screens draw in creation
+ * order: each gets its own layer now, because the engine adds a root to its parent when it first renders, which would
+ * otherwise stack a screen by when it last appeared rather than by the order the runtime imports them.
+ */
 export function screenUi(kdl: string, css: string) {
-  const ui = createUi(layers.ui, sharedKdl + kdl, sharedCss + css, {
+  const layer = new Container();
+  layers.ui.addChild(layer);
+  const ui = createUi(layer, sharedKdl + kdl, sharedCss + css, {
     texture: (name) => { throw new Error(`no texture atlas in this game (asked for "${name}"); draw it with a defineElement in screens/shared.ts`); },
     onTap: () => sfx('tap'),
     viewport: () => ({ width: view.width, height: view.height, touch: view.touch }),

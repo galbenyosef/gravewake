@@ -24,13 +24,17 @@ const demoCss = `
 .demo-row { flex-direction: row; gap: 10px; align-items: center }
 .demo-pips { width: 150px; height: 16px; tint: #3cf2ff }
 .demo-bar { width: 300px }
-.demo button { width: 150px; height: 40px }
-.demo .upgrade-card { width: 150px; height: 150px; padding: 10px 8px }
+.demo button { width: 150px; height: 36px }
+.demo-pips, .demo-bar { height: 24px }
+.demo .upgrade-card { width: 150px; height: 140px; padding: 8px 6px; gap: 6px }
+.demo .shared-card-icon { width: 48px; height: 48px }
+.demo .shared-card-glyph { font-size: 14px }
 .demo .shared-card-blurb { width: 130px }
 .demo-enemies { flex-wrap: wrap; width: 820px; justify-content: center }
 .demo .enemy-card { width: 200px; height: 50px; padding: 3px 6px }
 .demo .shared-enemy-glyph { width: 40px; height: 40px }
 .demo .shared-enemy-blurb { width: 140px; font-size: 10px }
+.demo .shared-enemy-tier { left: 126px }
 `;
 const demo = screenUi(demoKdl, demoCss);
 storyScreen(() => demo.show(null));
@@ -41,8 +45,8 @@ function draw() {
   demo.show(use('demo', {}, {
     buttons: [btn('PLAIN', hit('plain')), btn('PRIMARY', hit('primary'), 'primary'), btn('DANGER', hit('danger'), 'danger'), btn('OFF', hit('off'), 'off')],
     bar: [bar('BOSS', 0.62)],
-    cards: ['overclock', 'hollow-point', 'split-barrel', 'plating', 'tractor'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
-    enemies: ['drone', 'lancer', 'bulwark', 'hive', 'seraph', 'colossus', 'mite', 'phantom'].map(enemyCard),
+    cards: ['overclock', 'hollow-point', 'split-barrel', 'plating'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
+    enemies: ['drone', 'lancer', 'bulwark', 'hive', 'seraph', 'colossus'].map(enemyCard),
   }));
 }
 

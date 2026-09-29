@@ -29,8 +29,8 @@ prefab "upgrade-card" {
 prefab "enemy-card" {
     panel class="enemy-card" bind-class="tier" {
         enemy-glyph class="shared-enemy-glyph" kind=(bind)"kind"
+        text class="shared-enemy-tier" bind="tierLabel"
         panel class="shared-enemy-text" {
-            text class="shared-enemy-tier" bind="tierLabel"
             text class="shared-enemy-name" bind="name"
             text class="shared-enemy-blurb" bind="blurb"
         }

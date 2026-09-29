@@ -1,7 +1,10 @@
-.codex { opacity: .94; gap: 8px; padding: 10px 0 }
+.codex { opacity: .94; gap: 6px; padding: 6px 0; justify-content: flex-start }
+.codex-head { width: 780px; height: max(40px, var(--touch-size)); align-items: center; justify-content: center }
+.codex-back { position: absolute; left: 0; top: 0 }
+.codex-back button { width: 120px; height: max(40px, var(--touch-size)) }
 .codex-title { font-family: var(--title-font); font-size: 22px; letter-spacing: 10px }
-.codex-grid { flex-direction: row; flex-wrap: wrap; gap: 6px; width: 774px; justify-content: center }
-.codex-grid .enemy-card { width: 250px; height: 56px; padding: 4px 8px }
+.codex-grid { flex-direction: row; flex-wrap: wrap; gap: 6px; width: 780px; justify-content: center }
+.codex-grid .enemy-card { width: 256px; height: 58px; padding: 4px 8px }
 .codex-grid .shared-enemy-glyph { width: 44px; height: 44px }
-.codex-grid .shared-enemy-blurb { font-size: 11px; width: 180px }
-.codex-back button { height: max(38px, var(--touch-size)) }
+.codex-grid .shared-enemy-blurb { font-size: 11px; width: 190px }
+.codex-grid .shared-enemy-tier { left: 182px }
