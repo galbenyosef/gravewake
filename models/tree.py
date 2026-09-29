@@ -33,7 +33,7 @@ deform(trunk, lambda v: Vector((v.x * (1 + 0.25 * math.sin(v.z * 3)), v.y * (1 +
 roots = []
 for i in range(6):
     a = i / 6 * math.tau + rnd.uniform(-0.3, 0.3)
-    ln = rnd.uniform(0.6, 1.0)
+    ln = rnd.uniform(0.4, 0.6)
     pts = [(math.cos(a) * 0.15, math.sin(a) * 0.15, 0.45), (math.cos(a) * 0.45, math.sin(a) * 0.45, 0.12),
            (math.cos(a) * ln * 0.7, math.sin(a) * ln * 0.7 + 0.1, 0.02), (math.cos(a + 0.2) * ln, math.sin(a + 0.2) * ln, -0.05)]
     roots.append(tube('root', pts, [0.2, 0.14, 0.07, 0.02], 'body', 6))

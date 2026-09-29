@@ -71,7 +71,11 @@ function floorMaterial() {
         uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
         uniform vec4 uStatic[${LOOK.STATIC_LIGHTS}]; uniform vec3 uStaticCol[${LOOK.STATIC_LIGHTS}];
         varying vec2 vPos;
-        ${NOISE}`)
+        ${NOISE}
+        float reliefH(vec2 q) {
+          vec3 st = cells(q * 0.8 + 40.0);
+          return 0.5 * fbm(q * 0.21) + 0.08 * vnoise(q * 2.3) + step(0.82, st.z) * 0.3 * smoothstep(0.28, 0.0, st.x);
+        }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         vec2 p = vPos; float wave = 0.0;
         for (int i = 0; i < ${MAX_RIPPLES}; i++) {
@@ -111,13 +115,13 @@ function floorMaterial() {
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.4, wet);')
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
-          // Relief from the height: the moon rakes across stones, mounds and furrows (three's perturbNormalArb).
-          float h = low * uRelief * (1.0 - 0.8 * wet);
-          vec3 dpdx = dFdx(-vViewPosition), dpdy = dFdy(-vViewPosition);
-          vec3 r1 = cross(dpdy, normal), r2 = cross(normal, dpdx);
-          float det = dot(dpdx, r1);
-          vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
-          normal = normalize(abs(det) * normal - grad);
+          // Relief: a world-space height (mounds and sunk stones) differenced across a few cm, so the moon rakes across
+          // it smoothly (screen-space derivatives stair-step in 2x2 blocks).
+          const float E = 0.06;
+          float h0 = reliefH(p), hx = reliefH(p + vec2(E, 0.0)), hz = reliefH(p + vec2(0.0, E));
+          float k = uRelief * (1.0 - 0.8 * wet) / E;
+          vec3 nw = normalize(vec3(-(hx - h0) * k, 1.0, -(hz - h0) * k));
+          normal = normalize((viewMatrix * vec4(nw, 0.0)).xyz);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         vec3 spell = vec3(0.0);
