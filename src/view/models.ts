@@ -83,7 +83,7 @@ function atLum(color: number, lum: number, exact = false) {
  * `emissiveIntensity` is the body's glow: the arena flashes it on a hit.
  */
 export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM, rimColor = token('--moon')) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED !== 0 });
   const uniforms = {
     uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) }, uCloth: { value: atLum(body, CLOTH_LUM, true) },
     uRim: { value: new THREE.Color(rimColor).multiplyScalar(rim) },

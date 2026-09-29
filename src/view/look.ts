@@ -1,84 +1,25 @@
 // Look numbers: how bright the night is, how thick the fog, how hard the moon catches an edge, how spells light the
-// scene. Hues are the palette's (screens/shared.css); these say how much of them you see. One home for tweaking the
-// render, like tuning.ts is for the rules (catalog: ## Look, drift-tested).
-export const LOOK = {
-  /** Camera: tilt off straight down (rad), how much it follows the wizard (0 = fixed on the centre, 1 = locked to him),
-   *  field of view, and distance (it must still fit the arena's height, follow slack included). */
-  CAMERA_TILT_RAD: 0.62,
-  CAMERA_FOLLOW: 0.32,
-  CAMERA_FOV_DEG: 38,
-  CAMERA_DIST_U: 32.5,
-  /** Characters are drawn larger than their collision radius r, at r + this (u): small ones read at phone size, a boss
-   *  grows a little. View only; hits still use r. The wizard is drawn at WIZARD_SCALE. */
-  CHARACTER_PAD_U: 0.4,
-  WIZARD_SCALE: 1.5,
-  /** Opacity of the faint warm halo on the ground round the wizard. */
-  WIZARD_HALO: 0.07,
-  /** The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
-   *  (soulfire eyes, the moon on their edges), under the wizard's light. */
-  BODY_LUM: 0.1,
-  /** Models shaded in flat facets (hard, chiselled planes) rather than smoothed. */
-  FACETED: true,
-  /** Tone-mapping exposure: the whole frame. */
-  EXPOSURE: 1.35,
-  /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
-  MOON_KEY: 2.2,
-  MOON_FILL: 0.22,
-  ENV: 0.6,
-  /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
-  RIM: 1.6,
-  RIM_POWER: 2.6,
-  SCENERY_RIM: 0.6,
-  /** Models' procedural surface: how much the grain and stains vary the paint, and how deep its bump is. */
-  SURFACE_GRAIN: 0.6,
-  SURFACE_BUMP: 0.06,
-  /** How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
-  FLOOR_RELIEF: 1.8,
-  /** The ground is baked once into textures at this many texels per u (GPU memory: 8 bytes a texel over 76x54 u). */
-  GROUND_TEXELS_PER_U: 20,
-  /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
-  FOG_Y_U: 0.35,
-  FOG_VEIL: 0.18,
-  FOG_EDGE: 0.4,
-  FOG_BRIGHT: 0.07,
-  /** Distance fog (--fog) from and to, u from the camera. */
-  FOG_NEAR_U: 30,
-  FOG_FAR_U: 62,
-  /** The wizard's light (--player-glow): intensity and reach, u. */
-  PLAYER_LIGHT: 24,
-  PLAYER_LIGHT_U: 11,
-  /** How many spells in flight light the floor (a shader loop: phones pay per light). */
-  FLOOR_LIGHTS: 20,
-  /** Scenery lights on the floor (grave-lanterns): how many at most, and how bright. */
-  STATIC_LIGHTS: 8,
-  LANTERN_LIGHT: 2.5,
-  /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
-  /** Motes of dust adrift in the moonlight, spawned per second. */
-  MOTES_PER_S: 6,
-  FLASH_LIGHTS: 3,
-  FLASH_S: 0.22,
-  FLASH_HIT: 14,
-  FLASH_KILL: 30,
-  FLASH_BOSS: 60,
-  /** Bloom: only magic should cross the threshold. */
-  BLOOM: 0.6,
-  BLOOM_RADIUS: 0.4,
-  BLOOM_THRESHOLD: 0.8,
-  /** Contact shadows under characters (the moon casts the real ones), and the moon's shadow map size (px). */
-  SHADOW: 0.5,
-  /** Stains a kill leaves on the ground (ichor, bone dust): how many at once and how long they take to fade, s. */
-  STAINS: 96,
-  STAIN_S: 20,
-  SHADOW_MAP: 2048,
-  /** The bank the clearing sits in: its height past the edge (u), and how far it takes to rise (u). */
-  BERM_U: 1.6,
-  BERM_W_U: 3.5,
-  /** Height of the dead canopy whose shadow dapples the clearing, u. */
-  CANOPY_Y_U: 14,
-  /** The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */
-  VIGNETTE: 0.6,
-  GRADE: 0.25,
-  GRAIN: 0.03,
-  /** Saturation kept in everything that isn't bright (magic stays saturated; the world is squashed towards grey). */
-  SATURATION: 0.7,
-} as const;
+// scene. They live as `--look-*` tokens in screens/shared.css :root beside the palette, so the render is tuned in the
+// stylesheet; this is the typed view the shell reads (`--look-fog-near-u` is `LOOK.FOG_NEAR_U`). Catalog: ## Look.
+import { TOKENS } from '../tokens';
+
+const KEYS = [
+  'CAMERA_TILT_RAD', 'CAMERA_FOLLOW', 'CAMERA_FOV_DEG', 'CAMERA_DIST_U', 'CHARACTER_PAD_U', 'WIZARD_SCALE', 'WIZARD_HALO',
+  'BODY_LUM', 'FACETED', 'EXPOSURE', 'MOON_KEY', 'MOON_FILL', 'ENV', 'RIM', 'RIM_POWER', 'SCENERY_RIM', 'SURFACE_GRAIN',
+  'SURFACE_BUMP', 'FLOOR_RELIEF', 'GROUND_TEXELS_PER_U', 'FOG_Y_U', 'FOG_VEIL', 'FOG_EDGE', 'FOG_BRIGHT', 'FOG_NEAR_U',
+  'FOG_FAR_U', 'PLAYER_LIGHT', 'PLAYER_LIGHT_U', 'FLOOR_LIGHTS', 'STATIC_LIGHTS', 'LANTERN_LIGHT', 'MOTES_PER_S',
+  'FLASH_LIGHTS', 'FLASH_S', 'FLASH_HIT', 'FLASH_KILL', 'FLASH_BOSS', 'BLOOM', 'BLOOM_RADIUS', 'BLOOM_THRESHOLD', 'SHADOW',
+  'STAINS', 'STAIN_S', 'SHADOW_MAP_PX', 'BERM_U', 'BERM_W_U', 'CANOPY_Y_U', 'VIGNETTE', 'GRADE', 'GRAIN', 'SATURATION',
+] as const;
+export type LookKey = (typeof KEYS)[number];
+
+/** The token a look key reads: `FOG_NEAR_U` is `--look-fog-near-u`. */
+export const lookToken = (k: string) => `--look-${k.toLowerCase().replaceAll('_', '-')}`;
+
+function read(k: LookKey): number {
+  const raw = TOKENS[lookToken(k)], v = raw === undefined ? NaN : Number(raw);
+  if (Number.isNaN(v)) throw new Error(`look: \`${lookToken(k)}\` in shared.css :root is ${raw === undefined ? 'missing' : `"${raw}", not a number`}`);
+  return v;
+}
+
+export const LOOK = Object.fromEntries(KEYS.map((k) => [k, read(k)])) as Record<LookKey, number>;

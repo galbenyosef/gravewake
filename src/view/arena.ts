@@ -342,7 +342,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   renderer.shadowMap.type = THREE.PCFShadowMap;
   moon.castShadow = true;
   moon.position.copy(MOON_DIR).normalize().multiplyScalar(40);
-  moon.shadow.mapSize.set(LOOK.SHADOW_MAP, LOOK.SHADOW_MAP);
+  moon.shadow.mapSize.set(LOOK.SHADOW_MAP_PX, LOOK.SHADOW_MAP_PX);
   Object.assign(moon.shadow.camera, { left: -30, right: 30, top: 24, bottom: -24, near: 1, far: 90 });
   moon.shadow.bias = -0.0004; moon.shadow.normalBias = 0.03;
   scene.add(moon.target);
@@ -464,7 +464,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     if (!slowSince) slowSince = now;
     if (now - slowSince < SLOW_WINDOW_MS || tier >= 2) return;
     tier++; slowSince = 0;
-    if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); moon.shadow.mapSize.set(LOOK.SHADOW_MAP / 2, LOOK.SHADOW_MAP / 2); moon.shadow.map?.dispose(); moon.shadow.map = null; }
+    if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); moon.shadow.mapSize.set(LOOK.SHADOW_MAP_PX / 2, LOOK.SHADOW_MAP_PX / 2); moon.shadow.map?.dispose(); moon.shadow.map = null; }
     else { bloom.enabled = false; moon.castShadow = false; }
   }
 

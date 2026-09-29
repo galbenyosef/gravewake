@@ -13,7 +13,7 @@ import { PROPS } from './decl/css';
 import { BEHAVIOURS } from './enemies';
 import { EFFECTS } from './upgrades';
 import { TOKENS } from './tokens';
-import { LOOK } from './view/look';
+import { LOOK, lookToken } from './view/look';
 import './screens/shared'; // registers the game's properties
 
 /** The backticked first-column names of the table under `## title`. */
@@ -30,8 +30,10 @@ describe('the catalog matches the code', () => {
   it('CSS properties', () => same('CSS properties', Object.keys(PROPS)));
   it('elements', () => same('Elements', ['panel', 'button', 'text', 'sprite', ...all(sharedTs, /defineElement\('([\w-]+)'/g)]));
   it('shared prefabs', () => same('Shared prefabs', all(sharedKdl, /^prefab "([\w-]+)"/gm)));
-  it('palette', () => same('Palette', Object.keys(TOKENS)));
-  it('look', () => same('Look', Object.keys(LOOK)));
+  const looks = Object.keys(TOKENS).filter((k) => k.startsWith('--look-'));
+  it('palette', () => same('Palette', Object.keys(TOKENS).filter((k) => !k.startsWith('--look-'))));
+  it('look', () => same('Look', looks));
+  it('every look token is read by the shell', () => expect(Object.keys(LOOK).map(lookToken).sort()).toEqual([...looks].sort()));
   it('behaviour words', () => same('Behaviour words', Object.keys(BEHAVIOURS)));
   it('effect words', () => same('Effect words', Object.keys(EFFECTS)));
   it('content kinds', () => same('Content kinds', all(contentTs, /loadKdl\(\w+, \{ (\w+):/g)));

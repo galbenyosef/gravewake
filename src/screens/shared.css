@@ -57,6 +57,89 @@
   --enemy-sniper: #c1b79b;
   --enemy-seraph: #9490ad;
   --enemy-colossus: #d8ceb2;
+
+  /* The look (tokens.ts, view/look.ts): how the render sees the palette's hues. Plain numbers; the unit is the name's
+     last word (u = world units, s = seconds, deg, rad, px, per-s); no unit is a strength or a 0..1 amount. */
+  /* Camera: tilt off straight down, how much it follows the wizard (0 = fixed on the centre, 1 = locked to him),
+     field of view, and distance (it must still fit the arena's height, follow slack included). */
+  --look-camera-tilt-rad: 0.62;
+  --look-camera-follow: 0.32;
+  --look-camera-fov-deg: 38;
+  --look-camera-dist-u: 32.5;
+  /* Characters are drawn larger than their collision radius r, at r + this: small ones read at phone size, a boss
+     grows a little. View only; hits still use r. The wizard is drawn at --look-wizard-scale. */
+  --look-character-pad-u: 0.4;
+  --look-wizard-scale: 1.5;
+  /* Opacity of the faint warm halo on the ground round the wizard. */
+  --look-wizard-halo: 0.07;
+  /* The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
+     (soulfire eyes, the moon on their edges), under the wizard's light. */
+  --look-body-lum: 0.1;
+  /* 1: models shaded in flat facets (hard, chiselled planes); 0: smoothed. */
+  --look-faceted: 1;
+  /* Tone-mapping exposure: the whole frame. */
+  --look-exposure: 1.35;
+  /* Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
+  --look-moon-key: 2.2;
+  --look-moon-fill: 0.22;
+  --look-env: 0.6;
+  /* The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
+  --look-rim: 1.6;
+  --look-rim-power: 2.6;
+  --look-scenery-rim: 0.6;
+  /* Models' procedural surface: how much the grain and stains vary the paint, and how deep its bump is. */
+  --look-surface-grain: 0.6;
+  --look-surface-bump: 0.06;
+  /* How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
+  --look-floor-relief: 1.8;
+  /* The ground is baked once into textures at this many texels per u (GPU memory: 8 bytes a texel over 76x54 u). */
+  --look-ground-texels-per-u: 20;
+  /* Ground fog: the veil's height, its thickness in the open and under the trees, and how moonlit it is. */
+  --look-fog-y-u: 0.35;
+  --look-fog-veil: 0.18;
+  --look-fog-edge: 0.4;
+  --look-fog-bright: 0.07;
+  /* Distance fog (--fog) from and to, u from the camera. */
+  --look-fog-near-u: 30;
+  --look-fog-far-u: 62;
+  /* The wizard's light (--player-glow): intensity and reach. */
+  --look-player-light: 24;
+  --look-player-light-u: 11;
+  /* How many spells in flight light the floor (a shader loop: phones pay per light). */
+  --look-floor-lights: 20;
+  /* Scenery lights on the floor (grave-lanterns): how many at most, and how bright. */
+  --look-static-lights: 8;
+  --look-lantern-light: 2.5;
+  /* Motes of dust adrift in the moonlight, spawned per second. */
+  --look-motes-per-s: 6;
+  /* Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
+  --look-flash-lights: 3;
+  --look-flash-s: 0.22;
+  --look-flash-hit: 14;
+  --look-flash-kill: 30;
+  --look-flash-boss: 60;
+  /* Bloom: only magic should cross the threshold. */
+  --look-bloom: 0.6;
+  --look-bloom-radius: 0.4;
+  --look-bloom-threshold: 0.8;
+  /* Contact shadows under characters and scenery (the moon casts the real ones). */
+  --look-shadow: 0.5;
+  /* Stains a kill leaves on the ground (ichor, bone dust): how many at once and how long they take to fade. */
+  --look-stains: 96;
+  --look-stain-s: 20;
+  /* The moon's shadow map size. */
+  --look-shadow-map-px: 2048;
+  /* The bank the clearing sits in: its height past the edge, and how far it takes to rise. */
+  --look-berm-u: 1.6;
+  --look-berm-w-u: 3.5;
+  /* Height of the dead canopy whose shadow dapples the clearing. */
+  --look-canopy-y-u: 14;
+  /* The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */
+  --look-vignette: 0.6;
+  --look-grade: 0.25;
+  --look-grain: 0.03;
+  /* Saturation kept in everything that isn't bright (magic stays saturated; the world is squashed towards grey). */
+  --look-saturation: 0.7;
 }
 
 text { font-family: var(--body-font); font-color: var(--text); font-size: 16px }

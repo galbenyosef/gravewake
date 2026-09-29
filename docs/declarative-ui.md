@@ -12,7 +12,7 @@ Homes:
 | Game CSS properties, custom elements | `src/screens/shared.ts` (the only module calling `defineProp` / `defineElement`) |
 | Shared prefabs | `src/screens/shared.kdl`, styled in `src/screens/shared.css` |
 | Palette (UI and 3D) | `:root` of `src/screens/shared.css`, read by the shell through `src/tokens.ts` |
-| Look numbers (light, fog, rim, bloom, flashes) | `LOOK` in `src/view/look.ts`: how much of the palette's hues you see; the render's tuning.ts |
+| Look numbers (light, fog, rim, bloom, flashes) | `--look-*` tokens in the `:root` of `src/screens/shared.css`, read by the shell through `src/view/look.ts` |
 | Scenery layout | `scatter` nodes in `content/arena.kdl` (expanded to placements by `ScatterSchema` in `src/content.ts`) |
 | Behaviour words | `BEHAVIOURS` in `src/enemies.ts` |
 | Upgrade effect words | `EFFECTS` in `src/upgrades.ts` |
@@ -151,61 +151,63 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 
 ## Look
 
-`LOOK` in `src/view/look.ts`. Hues come from the palette; these numbers say how much of them you see.
+`--look-*` tokens in the `:root` of `src/screens/shared.css`, beside the palette; `src/view/look.ts` reads them as `LOOK`
+(`--look-fog-near-u` is `LOOK.FOG_NEAR_U`). Hues come from the palette; these numbers say how much of them you see.
+Plain numbers, the unit the name's last word (`u`, `s`, `deg`, `rad`, `px`, `per-s`); no unit is a strength or 0..1 amount.
 
 | Name | Use |
 |---|---|
-| `CAMERA_TILT_RAD` | camera tilt off straight down, rad (more shows more of every figure's height) |
-| `CAMERA_FOLLOW` | how much the camera follows the wizard (0 fixed, 1 locked) |
-| `CAMERA_FOV_DEG` | field of view |
-| `CAMERA_DIST_U` | camera distance; the arena's height must still fit |
-| `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
-| `WIZARD_SCALE` | the wizard's drawn size |
-| `FACETED` | models shaded in flat facets (hard, chiselled planes) rather than smoothed |
-| `WIZARD_HALO` | opacity of the faint warm halo on the ground round the wizard |
-| `BODY_LUM` | the brightest a body's paint may be: the dead stay dark shapes with bright tells |
-| `EXPOSURE` | tone-mapping exposure, the whole frame |
-| `MOON_KEY` | moon key light intensity (--moon) |
-| `MOON_FILL` | moonlit hemisphere fill |
-| `ENV` | environment reflections on metal |
-| `RIM` | cold fresnel rim on every character's silhouette |
-| `RIM_POWER` | the rim's falloff (higher is a thinner edge) |
-| `SCENERY_RIM` | scenery's weaker rim |
-| `SURFACE_GRAIN` | how much models' procedural grain and stains vary their paint |
-| `SURFACE_BUMP` | depth of that grain's bump |
-| `GROUND_TEXELS_PER_U` | the procedural ground is baked once into textures at this resolution (texels per u) |
-| `FLOOR_RELIEF` | height of the floor's procedural relief, so light rakes across stones and cracks |
-| `FOG_Y_U` | ground fog height, u |
-| `FOG_VEIL` | ground fog thickness in the open |
-| `FOG_EDGE` | ground fog thickness under the trees |
-| `FOG_BRIGHT` | how moonlit the fog is |
-| `FOG_NEAR_U` | distance fog start, u from the camera |
-| `FOG_FAR_U` | distance fog end |
-| `PLAYER_LIGHT` | the wizard's light intensity (--player-glow) |
-| `PLAYER_LIGHT_U` | its reach, u |
-| `STATIC_LIGHTS` | scenery lights on the floor (grave-lanterns), at most this many |
-| `LANTERN_LIGHT` | how bright a scenery light is on the floor |
-| `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
-| `MOTES_PER_S` | motes of dust adrift in the moonlight, spawned per second |
-| `FLASH_LIGHTS` | pooled point lights for spell impacts |
-| `FLASH_S` | how long an impact flash lasts, s |
-| `FLASH_HIT` | a hit's flash |
-| `FLASH_KILL` | a kill's flash |
-| `FLASH_BOSS` | a boss kill's flash |
-| `BLOOM` | bloom strength (only magic should cross the threshold) |
-| `BLOOM_RADIUS` | bloom radius |
-| `BLOOM_THRESHOLD` | bloom threshold |
-| `SHADOW` | contact-shadow darkness under characters and scenery (the moon casts the real shadows) |
-| `STAINS` | stains kills leave on the ground, at most this many |
-| `STAIN_S` | how long a stain takes to fade, s |
-| `SHADOW_MAP` | the moon's shadow map size, px |
-| `BERM_U` | height of the bank the clearing sits in, past the arena's edge (u); scenery stands on it |
-| `BERM_W_U` | how far the bank takes to rise |
-| `CANOPY_Y_U` | height of the dead canopy whose moon shadow dapples the clearing, u |
-| `VIGNETTE` | vignette depth |
-| `GRADE` | how far the shadows lean towards moonlight |
-| `GRAIN` | film grain |
-| `SATURATION` | saturation kept in everything that isn't bright (the world squashed towards grey, magic untouched) |
+| `--look-camera-tilt-rad` | camera tilt off straight down, rad (more shows more of every figure's height) |
+| `--look-camera-follow` | how much the camera follows the wizard (0 fixed, 1 locked) |
+| `--look-camera-fov-deg` | field of view |
+| `--look-camera-dist-u` | camera distance; the arena's height must still fit |
+| `--look-character-pad-u` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
+| `--look-wizard-scale` | the wizard's drawn size |
+| `--look-faceted` | 1: models shaded in flat facets (hard, chiselled planes) rather than smoothed (0) |
+| `--look-wizard-halo` | opacity of the faint warm halo on the ground round the wizard |
+| `--look-body-lum` | the brightest a body's paint may be: the dead stay dark shapes with bright tells |
+| `--look-exposure` | tone-mapping exposure, the whole frame |
+| `--look-moon-key` | moon key light intensity (--moon) |
+| `--look-moon-fill` | moonlit hemisphere fill |
+| `--look-env` | environment reflections on metal |
+| `--look-rim` | cold fresnel rim on every character's silhouette |
+| `--look-rim-power` | the rim's falloff (higher is a thinner edge) |
+| `--look-scenery-rim` | scenery's weaker rim |
+| `--look-surface-grain` | how much models' procedural grain and stains vary their paint |
+| `--look-surface-bump` | depth of that grain's bump |
+| `--look-ground-texels-per-u` | the procedural ground is baked once into textures at this resolution (texels per u) |
+| `--look-floor-relief` | height of the floor's procedural relief, so light rakes across stones and cracks |
+| `--look-fog-y-u` | ground fog height, u |
+| `--look-fog-veil` | ground fog thickness in the open |
+| `--look-fog-edge` | ground fog thickness under the trees |
+| `--look-fog-bright` | how moonlit the fog is |
+| `--look-fog-near-u` | distance fog start, u from the camera |
+| `--look-fog-far-u` | distance fog end |
+| `--look-player-light` | the wizard's light intensity (--player-glow) |
+| `--look-player-light-u` | its reach, u |
+| `--look-static-lights` | scenery lights on the floor (grave-lanterns), at most this many |
+| `--look-lantern-light` | how bright a scenery light is on the floor |
+| `--look-floor-lights` | spells in flight that light the floor (phones pay per light) |
+| `--look-motes-per-s` | motes of dust adrift in the moonlight, spawned per second |
+| `--look-flash-lights` | pooled point lights for spell impacts |
+| `--look-flash-s` | how long an impact flash lasts, s |
+| `--look-flash-hit` | a hit's flash |
+| `--look-flash-kill` | a kill's flash |
+| `--look-flash-boss` | a boss kill's flash |
+| `--look-bloom` | bloom strength (only magic should cross the threshold) |
+| `--look-bloom-radius` | bloom radius |
+| `--look-bloom-threshold` | bloom threshold |
+| `--look-shadow` | contact-shadow darkness under characters and scenery (the moon casts the real shadows) |
+| `--look-stains` | stains kills leave on the ground, at most this many |
+| `--look-stain-s` | how long a stain takes to fade, s |
+| `--look-shadow-map-px` | the moon's shadow map size, px |
+| `--look-berm-u` | height of the bank the clearing sits in, past the arena's edge (u); scenery stands on it |
+| `--look-berm-w-u` | how far the bank takes to rise |
+| `--look-canopy-y-u` | height of the dead canopy whose moon shadow dapples the clearing, u |
+| `--look-vignette` | vignette depth |
+| `--look-grade` | how far the shadows lean towards moonlight |
+| `--look-grain` | film grain |
+| `--look-saturation` | saturation kept in everything that isn't bright (the world squashed towards grey, magic untouched) |
 
 ## Behaviour words
 
