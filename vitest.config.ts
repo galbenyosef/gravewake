@@ -5,6 +5,7 @@ import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  assetsInclude: ['**/*.glb'], // models/*.glb: src/models.test.ts reads them ?inline
   test: {
     projects: [
       // css.include: vitest otherwise replaces .css imports (even ?raw) with empty strings, and the screens' sheets are data here.

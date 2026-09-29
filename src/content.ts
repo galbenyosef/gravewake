@@ -8,8 +8,8 @@ import enemiesKdl from '../content/enemies.kdl?raw';
 import wavesKdl from '../content/waves.kdl?raw';
 import upgradesKdl from '../content/upgrades.kdl?raw';
 
-/** Mesh shapes the shell knows how to build (view/models.ts implements every one; the type makes it total). */
-export const MODELS = ['orb', 'shard', 'dart', 'ring', 'spike', 'cube', 'hive', 'eye', 'prism', 'star', 'crown', 'core', 'titan', 'needle'] as const;
+/** Characters the shell can build: each is models/<name>.py, exported to models/<name>.glb (view/models.ts loads them). */
+export const MODELS = ['pod', 'tick', 'lance', 'hornet', 'urchin', 'bastion', 'nest', 'wraith', 'geode', 'jelly', 'crab', 'angel', 'walker', 'rail'] as const;
 export type Model = (typeof MODELS)[number];
 
 const pos = z.number().positive();

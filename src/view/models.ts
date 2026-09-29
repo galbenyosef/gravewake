@@ -1,101 +1,184 @@
-// One mesh factory per enemy model (content.ts MODELS; the Record type makes the set total), plus the ship.
-// Every model is built at unit radius from shared geometry, lit faceted metal with an emissive body in the enemy's
-// palette colour, so bloom makes it glow. Parts tagged `spin` turn on their own; the arena spins them.
+// The characters: one glTF per model (content.ts MODELS names them, plus the ship), built by the Blender scripts in
+// models/ (`npm run models`) and loaded once at boot. A model is a rig of named parts, value-painted in its vertex
+// colours, with three clips (idle loops, attack and die play once). Its materials are named `body`, `trim` and `glow`.
+// At load each part's pieces are fused into one mesh that remembers its slot per vertex, and one paint material
+// colours all three from the palette: one draw per part however many materials it had, hue from shared.css, and the
+// wave tint for free.
 import * as THREE from 'three';
-import type { Model } from '../content';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { MODELS } from '../content';
+import { token } from '../tokens';
 
-export type Part = THREE.Object3D & { userData: { spin?: THREE.Vector3; body?: boolean } };
+/** The rig contract with models/kit.py (src/models.test.ts checks every .glb against it). */
+export const CLIPS = ['idle', 'attack', 'die'] as const;
+export const SLOTS = ['body', 'trim', 'glow'] as const;
+export const RIGS = [...MODELS, 'ship'] as const;
+export type Clip = (typeof CLIPS)[number];
+export type Slot = (typeof SLOTS)[number];
+export type RigName = (typeof RIGS)[number];
 
-const geo = {
-  ico1: new THREE.IcosahedronGeometry(1, 1),
-  ico0: new THREE.IcosahedronGeometry(1, 0),
-  octa: new THREE.OctahedronGeometry(1, 0),
-  tetra: new THREE.TetrahedronGeometry(1, 0),
-  dodeca: new THREE.DodecahedronGeometry(1, 0),
-  box: new THREE.BoxGeometry(1, 1, 1),
-  sphere: new THREE.SphereGeometry(1, 20, 14),
-  cone4: new THREE.ConeGeometry(1, 1, 4),
-  cone6: new THREE.ConeGeometry(1, 1, 6),
-  torus: new THREE.TorusGeometry(1, 0.16, 8, 32),
-  thinTorus: new THREE.TorusGeometry(1, 0.05, 6, 48),
-  star: (() => {
-    const s = new THREE.Shape();
-    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 0.42 : 1; if (i) s.lineTo(Math.cos(a) * r, Math.sin(a) * r); else s.moveTo(Math.cos(a) * r, Math.sin(a) * r); }
-    return new THREE.ExtrudeGeometry(s, { depth: 0.35, bevelEnabled: true, bevelSize: 0.06, bevelThickness: 0.06, bevelSegments: 1 }).rotateX(-Math.PI / 2).translate(0, 0.17, 0);
-  })(),
-  ship: (() => {
-    const s = new THREE.Shape();
-    s.moveTo(1.1, 0); s.lineTo(-0.7, 0.72); s.lineTo(-0.35, 0); s.lineTo(-0.7, -0.72); s.closePath();
-    return new THREE.ExtrudeGeometry(s, { depth: 0.22, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.06, bevelSegments: 1 }).rotateX(-Math.PI / 2).translate(0, 0.1, 0);
-  })(),
-};
+/** How long an attack or idle clip takes to hand over to the other, s. */
+const BLEND_S = 0.08;
 
-/** The shared body material for one enemy colour; each enemy gets a clone so its hit flash is its own. */
-export function bodyMaterial(color: number) {
+const URLS = import.meta.glob<string>('../../models/*.glb', { query: '?url', import: 'default', eager: true });
+const templates = new Map<string, { scene: THREE.Object3D; clips: Record<Clip, THREE.AnimationClip> }>();
+
+/** Fetch and parse every model; boot awaits it before the arena builds anything. */
+export async function loadModels() {
+  const loader = new GLTFLoader();
+  await Promise.all(RIGS.filter((n) => !templates.has(n)).map(async (name) => {
+    const url = URLS[`../../models/${name}.glb`];
+    if (!url) throw new Error(`models: no models/${name}.glb; run \`npm run models -- ${name}\``);
+    const g = await loader.loadAsync(url);
+    fuse(g, name);
+    const clip = (c: Clip) => g.animations.find((a) => a.name === c) ?? (() => { throw new Error(`models/${name}.glb: no "${c}" clip`); })();
+    templates.set(name, { scene: g.scene, clips: { idle: clip('idle'), attack: clip('attack'), die: clip('die') } });
+  }));
+}
+
+/** Each part's pieces (one per material) as one mesh with a `slot` attribute (0 body, 1 trim, 2 glow). */
+function fuse(g: GLTF, name: string) {
+  const assoc = g.parser.associations;
+  const slotted = (mesh: THREE.Mesh) => {
+    const slot = SLOTS.indexOf((mesh.material as THREE.Material).name as Slot);
+    if (slot < 0) throw new Error(`models/${name}.glb: material "${(mesh.material as THREE.Material).name}" isn't one of ${SLOTS.join(', ')}`);
+    const geo = mesh.geometry.clone();
+    geo.setAttribute('slot', new THREE.BufferAttribute(new Float32Array(geo.attributes.position!.count).fill(slot), 1));
+    return geo;
+  };
+  const all: THREE.Object3D[] = [];
+  g.scene.traverse((o) => { all.push(o); });
+  for (const o of all) {
+    const m = o as THREE.Mesh;
+    // A part with one material is itself the mesh; a part with several is a group of primitive meshes (no node).
+    if (m.isMesh && assoc.get(m)?.nodes !== undefined) { m.geometry = slotted(m); continue; }
+    const prims = o.children.filter((c): c is THREE.Mesh => (c as THREE.Mesh).isMesh && assoc.get(c)?.nodes === undefined);
+    if (!prims.length) continue;
+    const fused = new THREE.Mesh(mergeGeometries(prims.map(slotted)));
+    fused.name = `${o.name}-paint`;
+    o.remove(...prims);
+    o.add(fused);
+  }
+}
+
+/** A body's resting self-glow (emissiveIntensity): enough to read on the dark floor, under the bloom threshold so
+ *  only `glow` parts bloom and the paint stays visible. The arena raises it with damage and flashes it on a hit. */
+export const BODY_GLOW = 0.2;
+
+/** Body paint's brightest linear luminance: a pale palette colour (mint, lemon) is darkened to it, so it keeps its hue
+ *  under the arena's lights instead of washing out to white. Trim is darker metal; glow sits over the bloom threshold. */
+const BODY_LUM = 0.2, TRIM_LUM = 0.07, GLOW_LUM = 1.0;
+/** `color` scaled to at most luminance `lum` (to exactly `lum` when `exact`). */
+function atLum(color: number, lum: number, exact = false) {
+  const c = new THREE.Color(color), l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
+  return l > 0 && (exact || l > lum) ? c.multiplyScalar(lum / l) : c;
+}
+
+/**
+ * The one material a model wears, per slot: `body` in `body` (matte: the light is painted into the vertices, and a
+ * shiny top would mirror the sky from the game's high camera) with a faint emissive that follows the paint, `trim` in
+ * --trim as dull metal, `glow` unlit in `glow`. `emissiveIntensity` is the body's glow: the arena flashes it on a hit.
+ */
+export function paintMaterial(body: number, glow = body, emissive = body) {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35 });
+  const uniforms = { uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) } };
+  m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, uniforms);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float slot;\nvarying float vSlot;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSlot = slot;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform vec3 uBody, uTrim, uGlow;\nvarying float vSlot;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        float isTrim = step(0.5, vSlot) * step(vSlot, 1.5), isGlow = step(1.5, vSlot);
+        diffuseColor.rgb *= mix(mix(uBody, uTrim, isTrim), vec3(0.0), isGlow);`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.5, isTrim);')
+      .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.6, isTrim);')
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        totalEmissiveRadiance = mix(totalEmissiveRadiance * vColor.rgb * vColor.rgb * (1.0 - 0.7 * isTrim), uGlow * vColor.rgb, isGlow);`);
+  };
+  m.customProgramCacheKey = () => 'paint';
+  return m;
+}
+/** Faceted metal for scenery (the walls' pylons): no vertex paint. */
+export function metalMaterial(color: number) {
   const c = new THREE.Color(color);
   return new THREE.MeshStandardMaterial({ color: c.clone().multiplyScalar(0.7), emissive: c, emissiveIntensity: 0.35, metalness: 0.55, roughness: 0.3, flatShading: true });
 }
-/** Unlit, over-bright, so bloom picks it up: cores, halos, wires. */
+/** Unlit, over-bright, so bloom picks it up: walls, shots, gates, shields. */
 export function glowMaterial(color: number, boost = 2.5, opacity = 1) {
   return new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(boost), transparent: opacity < 1, opacity, blending: opacity < 1 ? THREE.AdditiveBlending : THREE.NormalBlending, depthWrite: opacity >= 1 });
 }
 
-function part(g: THREE.BufferGeometry, m: THREE.Material, o: { s?: [number, number, number] | number; p?: [number, number, number]; r?: [number, number, number]; spin?: [number, number, number]; body?: boolean } = {}): Part {
-  const mesh = new THREE.Mesh(g, m) as unknown as Part;
-  const s = o.s ?? 1;
-  if (typeof s === 'number') mesh.scale.setScalar(s); else mesh.scale.set(...s);
-  if (o.p) mesh.position.set(...o.p);
-  if (o.r) mesh.rotation.set(...o.r);
-  if (o.spin) mesh.userData.spin = new THREE.Vector3(...o.spin);
-  mesh.userData.body = o.body ?? true;
-  return mesh;
-}
-const group = (...parts: THREE.Object3D[]) => { const g = new THREE.Group(); g.add(...parts); return g; };
-/** `n` copies of a part around the Y axis. */
-const around = (n: number, make: (a: number) => THREE.Object3D) => group(...Array.from({ length: n }, (_, i) => make((i / n) * Math.PI * 2)));
+export type Rig = ReturnType<typeof buildRig>;
 
-/** The edges of a geometry as glowing lines, spinning. */
-function wire(g: THREE.BufferGeometry, glow: THREE.Material, scale: number, spin: [number, number, number]): Part {
-  const w = new THREE.LineSegments(new THREE.EdgesGeometry(g), new THREE.LineBasicMaterial({ color: (glow as THREE.MeshBasicMaterial).color })) as unknown as Part;
-  w.scale.setScalar(scale);
-  w.userData.spin = new THREE.Vector3(...spin);
-  return w;
-}
-
-type Build = (body: THREE.Material, glow: THREE.Material) => THREE.Object3D;
-
-const MODELS: Record<Model, Build> = {
-  orb: (b, g) => group(part(geo.ico1, b, { s: 0.85, spin: [0.6, 1.1, 0] }), part(geo.sphere, g, { s: 0.38, body: false })),
-  shard: (b) => part(geo.octa, b, { s: [0.55, 1, 0.55], r: [0, 0, Math.PI / 2], spin: [3, 0, 0] }),
-  dart: (b, g) => group(part(geo.cone4, b, { s: [0.6, 1.9, 0.6], r: [0, 0, -Math.PI / 2] }), part(geo.sphere, g, { s: 0.22, p: [-0.75, 0, 0], body: false })),
-  ring: (b, g) => group(part(geo.torus, b, { s: 0.85, r: [Math.PI / 2, 0, 0], spin: [0, 0, 2.5] }), part(geo.ico0, g, { s: 0.3, spin: [2, 3, 0], body: false }),
-    part(geo.thinTorus, g, { s: 1.15, r: [Math.PI / 2 + 0.4, 0, 0], spin: [0, 1.5, 0], body: false })),
-  spike: (b, g) => group(part(geo.ico0, b, { s: 0.6, spin: [1.5, 2.5, 0] }), around(8, (a) => part(geo.cone4, b, { s: [0.18, 0.7, 0.18], p: [Math.cos(a) * 0.65, 0, Math.sin(a) * 0.65], r: [Math.PI / 2, 0, -a + Math.PI / 2] })),
-    part(geo.sphere, g, { s: 0.3, body: false })),
-  cube: (b) => group(part(geo.box, b, { s: 1.25, spin: [0, 0.4, 0] }), part(geo.box, b, { s: [0.5, 1.7, 0.5] })),
-  hive: (b, g) => group(part(geo.dodeca, b, { s: 0.9, spin: [0, 0.5, 0] }), wire(geo.ico1, g, 1.35, [0.3, -0.8, 0.2]), part(geo.sphere, g, { s: 0.35, body: false })),
-  eye: (b, g) => group(part(geo.sphere, b, { s: [1, 0.55, 1] }), part(geo.torus, g, { s: 0.55, r: [Math.PI / 2, 0, 0], p: [0, 0.45, 0], body: false }), part(geo.sphere, g, { s: 0.22, p: [0, 0.5, 0], body: false }),
-    part(geo.thinTorus, g, { s: 1.3, r: [Math.PI / 2, 0, 0], spin: [0, 0, -3], body: false })),
-  prism: (b, g) => group(part(geo.tetra, b, { s: 1, spin: [0.9, 1.3, 0.4] }), part(geo.tetra, g, { s: 0.45, spin: [-1.2, -1, 0], body: false })),
-  star: (b, g) => group(part(geo.star, b, { s: 1, spin: [0, 1.8, 0] }), part(geo.sphere, g, { s: 0.28, p: [0, 0.3, 0], body: false })),
-  crown: (b, g) => group(part(geo.cone6, b, { s: [0.9, 0.8, 0.9], r: [Math.PI, 0, 0] }),
-    around(6, (a) => part(geo.cone4, b, { s: [0.14, 0.6, 0.14], p: [Math.cos(a) * 0.75, 0.55, Math.sin(a) * 0.75] })), part(geo.sphere, g, { s: 0.3, p: [0, 0.45, 0], body: false })),
-  core: (b, g) => group(part(geo.ico1, b, { s: 0.7, spin: [0.4, 0.9, 0] }), part(geo.sphere, g, { s: 0.45, body: false }),
-    (() => { const wings = around(6, (a) => part(geo.octa, b, { s: [0.9, 0.08, 0.22], p: [Math.cos(a) * 1.35, 0, Math.sin(a) * 1.35], r: [0, -a, 0] })) as Part; wings.userData.spin = new THREE.Vector3(0, 0.8, 0); return wings; })(),
-    part(geo.thinTorus, g, { s: 1.05, r: [Math.PI / 2, 0, 0], spin: [0.2, 0, 1], body: false })),
-  titan: (b, g) => group(part(geo.octa, b, { s: 1, spin: [0, 0.3, 0] }), part(geo.sphere, g, { s: 0.42, body: false }),
-    part(geo.torus, b, { s: 1.25, r: [Math.PI / 2, 0, 0], spin: [0, 0, 0.7] }), part(geo.thinTorus, g, { s: 1.5, r: [1.2, 0, 0], spin: [0.5, 1, 0], body: false }),
-    around(8, (a) => part(geo.cone4, b, { s: [0.16, 0.55, 0.16], p: [Math.cos(a) * 1.05, 0, Math.sin(a) * 1.05], r: [Math.PI / 2, 0, -a + Math.PI / 2] }))),
-  needle: (b, g) => group(part(geo.octa, b, { s: [1.1, 0.34, 0.34] }), part(geo.box, b, { s: [1.4, 0.18, 0.18], p: [0.9, 0, 0] }),
-    part(geo.sphere, g, { s: 0.22, p: [1.65, 0, 0], body: false }), part(geo.thinTorus, g, { s: 0.55, r: [0, Math.PI / 2, 0], body: false })),
-};
-
-/** An enemy of `model` at radius `r`: a Group whose scale is r. Its body material is `body` (the caller disposes it). */
-export function buildEnemy(model: Model, r: number, body: THREE.Material, glow: THREE.Material): THREE.Group {
-  const g = new THREE.Group();
-  g.add(MODELS[model](body, glow));
-  g.scale.setScalar(r);
-  return g;
+/**
+ * A live copy of `name` wearing `paint` (a paintMaterial; the caller disposes it). The caller scales and places
+ * `obj`, calls `update(dt)` with game time each frame, and `play`s attack/die. `phase` offsets the idle loop so a
+ * swarm doesn't breathe in step.
+ */
+export function buildRig(name: RigName, paint: THREE.MeshStandardMaterial, phase = 0) {
+  const tpl = templates.get(name);
+  if (!tpl) throw new Error(`models: "${name}" isn't loaded (await loadModels() first)`);
+  const inner = tpl.scene.clone(true);
+  inner.traverse((o) => { if ((o as THREE.Mesh).isMesh) (o as THREE.Mesh).material = paint; });
+  const obj = new THREE.Group();
+  obj.add(inner);
+  const mixer = new THREE.AnimationMixer(inner);
+  const idle = mixer.clipAction(tpl.clips.idle).play();
+  idle.time = phase % tpl.clips.idle.duration;
+  const attack = mixer.clipAction(tpl.clips.attack).setLoop(THREE.LoopOnce, 1);
+  const die = mixer.clipAction(tpl.clips.die).setLoop(THREE.LoopOnce, 1);
+  die.clampWhenFinished = true;
+  /** Seconds of attack left; the hand back to idle starts BLEND_S before the end. */
+  let striking = 0, dead = false;
+  return {
+    obj,
+    body: paint,
+    /** Play a one-shot clip; an attack already under way isn't restarted. Returns the clip's length, s. */
+    play(clip: 'attack' | 'die') {
+      if (dead) return 0;
+      if (clip === 'die') {
+        dead = true;
+        mixer.stopAllAction();
+        die.reset().play();
+        return tpl.clips.die.duration;
+      }
+      if (striking > 0) return 0;
+      striking = tpl.clips.attack.duration;
+      idle.fadeOut(BLEND_S);
+      attack.reset().fadeIn(BLEND_S).play();
+      return striking;
+    },
+    update(dt: number) {
+      if (striking > 0) {
+        const was = striking;
+        striking -= dt;
+        // A faded-out action is disabled (its time held), so re-enable idle before fading it back in.
+        if (striking <= BLEND_S && was > BLEND_S) { attack.fadeOut(BLEND_S); idle.enabled = true; idle.fadeIn(BLEND_S); }
+      }
+      mixer.update(dt);
+    },
+    /** Pose at `t` s into `clip` (the model viewer's stills). */
+    pose(clip: Clip, t: number) {
+      mixer.stopAllAction();
+      const a = { idle, attack, die }[clip];
+      a.reset().play();
+      a.time = Math.min(t, tpl.clips[clip].duration - 1e-3);
+      mixer.update(0);
+    },
+    duration: (clip: Clip) => tpl.clips[clip].duration,
+    /** Back from a `die` to the idle loop (the ship on a new run). */
+    revive() {
+      if (!dead) return;
+      dead = false; striking = 0;
+      mixer.stopAllAction();
+      idle.reset().play();
+    },
+    get dead() { return dead; },
+    get attacking() { return striking > 0; },
+  };
 }
 
 /** A frontal shield arc `deg` wide, facing +x at unit radius. */
@@ -106,11 +189,19 @@ export function buildShield(deg: number, color: number) {
   return m;
 }
 
+/** The player's ship: the `ship` model in the hull colour, glowing in its glow colour. */
 export function buildShip(color: number, glow: number) {
-  const hull = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).multiplyScalar(0.8), emissive: new THREE.Color(glow), emissiveIntensity: 0.55, metalness: 0.8, roughness: 0.2, flatShading: true });
-  const g = group(new THREE.Mesh(geo.ship, hull), part(geo.sphere, glowMaterial(glow, 4), { s: [0.2, 0.12, 0.3], p: [-0.45, 0.15, 0], body: false }));
-  g.scale.setScalar(0.85);
-  return g;
+  const paint = paintMaterial(color, glow, glow);
+  paint.emissiveIntensity = 0.3;
+  const rig = buildRig('ship', paint);
+  rig.obj.scale.setScalar(0.85);
+  return rig;
 }
 
-export const shared = geo;
+/** Scenery geometry the arena shares (walls, pylons, warp gates). */
+export const shared = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  octa: new THREE.OctahedronGeometry(1, 0),
+  torus: new THREE.TorusGeometry(1, 0.16, 8, 32),
+  thinTorus: new THREE.TorusGeometry(1, 0.05, 6, 48),
+};

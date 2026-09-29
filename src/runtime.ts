@@ -9,6 +9,7 @@ import { readInput, startInput } from './input';
 import { fit, initPixi, pixi } from './stage';
 import { game, ui } from './store';
 import { createArena, type Arena } from './view/arena';
+import { loadModels } from './view/models';
 import { tickScreens } from './screens/shared';
 // Screens stack in import order (each screenUi attaches to layers.ui as its module loads): later draws on top.
 import { drawHud } from './screens/hud';
@@ -34,6 +35,7 @@ export function renderNow() {
 
 export async function boot(el: HTMLElement): Promise<() => void> {
   const w = el.clientWidth || innerWidth, h = el.clientHeight || innerHeight;
+  await loadModels();
   arena = createArena(el, w, h);
   await initPixi(el, w, h);
   await document.fonts.load('20px Orbitron').catch(() => undefined);

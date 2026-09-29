@@ -7,6 +7,8 @@ import sharedKdl from './screens/shared.kdl?raw';
 import contentTs from './content.ts?raw';
 import runtimeTs from './runtime.ts?raw';
 import contentLoadTs from './content-load.ts?raw';
+import kitPy from '../models/kit.py?raw';
+import { CLIPS, RIGS, SLOTS } from './view/models';
 import { PROPS } from './decl/css';
 import { BEHAVIOURS } from './enemies';
 import { EFFECTS } from './upgrades';
@@ -32,5 +34,8 @@ describe('the catalog matches the code', () => {
   it('effect words', () => same('Effect words', Object.keys(EFFECTS)));
   it('content kinds', () => same('Content kinds', all(contentTs, /loadKdl\(\w+, \{ (\w+):/g)));
   it('content helpers', () => same('Content helpers', all(contentLoadTs, /^export function (\w+)/gm)));
+  it('models', () => same('Models', [...RIGS]));
+  it('model rig', () => same('Model rig', [...CLIPS, ...SLOTS]));
+  it('modelling kit', () => same('Modelling kit', all(kitPy, /^def ([a-z]\w*)\(/gm)));
   it('screens, in draw order', () => expect(section('Screens')).toEqual(all(runtimeTs, /^import \{ draw\w+ \} from '\.\/screens\/([\w-]+)';/gm)));
 });

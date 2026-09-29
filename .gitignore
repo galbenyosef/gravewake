@@ -3,3 +3,4 @@ dist
 storybook-static
 *.log
 scripts/tmp
+models/__pycache__

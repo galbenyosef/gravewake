@@ -14,7 +14,7 @@ import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
 import { rayToWall, type GameEvent, type GameState } from '../world';
 import { createParticles, createRings } from './fx';
-import { bodyMaterial, buildEnemy, buildShield, buildShip, glowMaterial, shared, type Part } from './models';
+import { BODY_GLOW, buildRig, buildShield, buildShip, glowMaterial, metalMaterial, paintMaterial, shared, type Rig } from './models';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
 /** Camera: tilt from straight down, and how much it follows the ship (0 = fixed on the centre, 1 = locked to the ship). */
@@ -86,7 +86,14 @@ const finalShader = {
     }`,
 };
 
-type EnemyView = { obj: THREE.Group; body: THREE.MeshStandardMaterial; parts: Part[]; shield?: THREE.Mesh; laser?: THREE.Mesh };
+type EnemyView = { rig: Rig; body: THREE.MeshStandardMaterial; shield?: THREE.Mesh; laser?: THREE.Mesh };
+/** A killed enemy playing its `die` clip where it fell, `t` s left. */
+type Corpse = { rig: Rig; body: THREE.Material; t: number };
+/** A melee enemy within this many u of its own edge from the ship lunges (its attack clip). */
+const LUNGE_U = 1.4;
+/** Models are drawn larger than their collision radius by LEGIBLE_U / r: a mite (0.28) nearly doubles so it reads
+ *  as a beetle at phone size, a boss (2+) grows about 12%. View only; hits still use the radius. */
+const LEGIBLE_U = 0.25;
 
 export type Arena = ReturnType<typeof createArena>;
 
@@ -125,7 +132,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     bar.scale.set(w, 0.25, d); bar.position.set(x, 0.12, z);
     walls.add(bar);
   }
-  const pylonMat = bodyMaterial(token('--wall-alt'));
+  const pylonMat = metalMaterial(token('--wall-alt'));
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const py = new THREE.Mesh(shared.octa, pylonMat);
     py.scale.set(0.55, 1.4, 0.55); py.position.set(sx * HALF_W, 1.2, sz * HALF_H);
@@ -136,7 +143,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // The ship
   const ship = buildShip(token('--player'), token('--player-glow'));
-  scene.add(ship);
+  scene.add(ship.obj);
   // A pool of light under the ship so it reads at a glance among the swarm.
   const shipHalo = new THREE.Mesh(new THREE.CircleGeometry(1, 40).rotateX(-Math.PI / 2), glowMaterial(token('--player-glow'), 0.9, 0.22));
   shipHalo.scale.setScalar(1.1);
@@ -171,6 +178,10 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   composer.addPass(final);
 
   const enemies = new Map<number, EnemyView>();
+  const corpses: Corpse[] = [];
+  /** Ids killed in the step being drawn: they leave a corpse; anything else that vanishes (a new run) just goes. */
+  const killed = new Set<number>();
+  const strike = (id: number) => enemies.get(id)?.rig.play('attack');
   const warps = new Map<number, THREE.Object3D>();
   const ripples: THREE.Vector4[] = floorU.uRipples.value;
   let rippleNext = 0, shake = 0, hurt = 0, time = 0, last: GameState | null = null;
@@ -198,19 +209,18 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   /** An enemy's colour: its own, or the wave's tint (`wave tint="--ice"`) when the wave has one. */
   const hue = (kind: string, s: GameState) => { const t = waveDef(s.wave).def.tint; return t ? token(t) : enemyColor(kind); };
 
-  function makeEnemy(kind: string, s: GameState): EnemyView {
-    const d = enemyDef(kind), col = hue(kind, s), body = bodyMaterial(col);
-    const obj = buildEnemy(d.model, d.r, body, glowMaterial(col, 2.2));
-    const parts: Part[] = [];
-    obj.traverse((o) => { if ((o as Part).userData.spin) parts.push(o as Part); });
+  function makeEnemy(id: number, kind: string, s: GameState): EnemyView {
+    const d = enemyDef(kind), body = paintMaterial(hue(kind, s));
+    const rig = buildRig(d.model, body, id * 0.37);
     const arc = d.behaviours.find((b) => b.shieldArcDeg)?.shieldArcDeg;
     let shield: THREE.Mesh | undefined;
     if (arc) { shield = buildShield(arc, token('--shield')); scene.add(shield); }
-    scene.add(obj);
-    return { obj, body, parts, shield };
+    scene.add(rig.obj);
+    return { rig, body, shield };
   }
-  function dropEnemy(v: EnemyView) {
-    scene.remove(v.obj); v.body.dispose();
+  function dropEnemy(v: EnemyView, died: boolean) {
+    if (died) corpses.push({ rig: v.rig, body: v.body, t: v.rig.play('die') });
+    else { scene.remove(v.rig.obj); v.body.dispose(); }
     if (v.laser) scene.remove(v.laser);
     if (v.shield) { scene.remove(v.shield); (v.shield.material as THREE.Material).dispose(); v.shield.geometry.dispose(); }
   }
@@ -219,12 +229,14 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     switch (e.type) {
       case 'fire': {
         sfx('fire');
+        ship.play('attack');
         const nx = Math.cos(e.angle), nz = Math.sin(e.angle);
         for (let i = 0; i < 2; i++) particles.spark(e.x + nx * 0.6, e.y + nz * 0.6, nx * 6 + (Math.random() - 0.5) * 3, nz * 6 + (Math.random() - 0.5) * 3, token('--player-shot'), 0.07, 0.12);
         break;
       }
       case 'hit': sfx('hit'); particles.burst(e.x, e.y, hue(e.kind, s), 4, 7, 0.08, 0.25); break;
       case 'kill': {
+        killed.add(e.id);
         const d = enemyDef(e.kind), col = hue(e.kind, s), big = d.tier === 'boss';
         sfx(big || d.tier === 'elite' ? 'big-kill' : 'kill');
         particles.burst(e.x, e.y, col, big ? 260 : 16 + d.r * 30, big ? 22 : 9 + d.r * 5, big ? 0.3 : 0.14 + d.r * 0.05, big ? 1.6 : 0.8);
@@ -239,6 +251,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       case 'warp': sfx('warp'); break;
       case 'arrive': { const d = enemyDef(e.kind); particles.burst(e.x, e.y, token('--warp'), 12 + d.r * 10, 5, 0.1, 0.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp')); break; }
       case 'telegraph':
+        strike(e.id);
         if (e.what === 'dash') rings.line(e.x, e.y, e.tx, e.ty, 0.45, e.dur + 0.2, token('--telegraph'));
         else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--lob'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--lob'), { fill: true }); }
         else if (e.what === 'snipe') rings.line(e.x, e.y, e.tx, e.ty, 0.32, e.dur, token('--laser'));
@@ -246,27 +259,31 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         break;
       case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--hostile-shot'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--lob')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
       case 'block': particles.burst(e.x, e.y, token('--shield'), 6, 8, 0.07, 0.25); break;
-      case 'heal': particles.burst(e.x, e.y, token('--heal'), 3, 1.5, 0.1, 0.8, 0.6, 2); break;
-      case 'enemy-fire': sfx('enemy-fire'); break;
+      case 'heal': strike(e.by); particles.burst(e.x, e.y, token('--heal'), 3, 1.5, 0.1, 0.8, 0.6, 2); break;
+      case 'enemy-fire': sfx('enemy-fire'); strike(e.id); break;
       case 'pickup': sfx('pickup'); particles.burst(e.x, e.y, e.kind === 'shard' ? token('--shard') : token('--repair'), e.kind === 'shard' ? 3 : 20, 3, 0.07, 0.3); break;
       case 'wave': sfx('wave'); break;
       case 'cleared': ripple(s.player.x, s.player.y, 2); rings.ring(s.player.x, s.player.y, 0.5, 30, 1.6, token('--player-glow')); break;
       case 'upgrade': sfx('upgrade'); rings.ring(s.player.x, s.player.y, 0.5, 3, 0.6, token('--shard')); break;
-      case 'dead': sfx('dead'); particles.burst(s.player.x, s.player.y, token('--player-glow'), 300, 18, 0.2, 1.8); rings.ring(s.player.x, s.player.y, 0.5, 20, 1.5, token('--danger')); ripple(s.player.x, s.player.y, 3); shake = 1.6; break;
+      case 'dead': sfx('dead'); ship.play('die'); particles.burst(s.player.x, s.player.y, token('--player-glow'), 300, 18, 0.2, 1.8); rings.ring(s.player.x, s.player.y, 0.5, 20, 1.5, token('--danger')); ripple(s.player.x, s.player.y, 3); shake = 1.6; break;
     }
   }
 
   /** Bring the scene in step with the run and advance effects by dt (game-clock seconds). */
   function sync(s: GameState, dt: number) {
     time += dt;
-    if (s !== last) { for (const e of s.events) onEvent(e, s); last = s; }
+    const fresh = s !== last;
+    killed.clear();
+    if (fresh) { for (const e of s.events) onEvent(e, s); last = s; }
 
     // ship
     const p = s.player, dead = s.phase === 'dead';
-    ship.visible = !dead && !(p.invuln > 0 && Math.floor(time * 14) % 2 === 0);
-    ship.position.set(p.x, 0.35 + Math.sin(time * 3) * 0.05, p.y);
-    ship.rotation.set(0, -Math.atan2(p.ay, p.ax), 0);
-    ship.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
+    ship.obj.visible = !(p.invuln > 0 && !dead && Math.floor(time * 14) % 2 === 0);
+    ship.obj.position.set(p.x, 0.35 + Math.sin(time * 3) * 0.05, p.y);
+    ship.obj.rotation.set(0, -Math.atan2(p.ay, p.ax), 0);
+    ship.obj.rotateX(-p.vy * 0.02 * Math.sign(p.ax || 1));
+    if (!dead && ship.dead) ship.revive();
+    ship.update(dt);
     shipLight.position.set(p.x, 2.2, p.y);
     shipHalo.position.set(p.x, 0.04, p.y);
     shipHalo.visible = !dead;
@@ -285,13 +302,15 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const e of s.enemies) {
       seen.add(e.id);
       let v = enemies.get(e.id);
-      if (!v) { v = makeEnemy(e.kind, s); enemies.set(e.id, v); }
+      if (!v) { v = makeEnemy(e.id, e.kind, s); enemies.set(e.id, v); }
       const r = radius(e), grow = Math.min(1, e.age / 0.25);
-      v.obj.position.set(e.x, r * 0.9 + Math.sin(time * 2 + e.id) * 0.08, e.y);
-      v.obj.rotation.y = -e.facing;
-      v.obj.scale.setScalar(r * (0.3 + 0.7 * grow) * (1 + (e.flash > 0 ? 0.12 : 0)));
-      v.body.emissiveIntensity = e.flash > 0 ? 3 : 0.35 + (1 - e.hp / e.maxHp) * 0.4 + Math.sin(time * 4 + e.id) * 0.08;
-      for (const part of v.parts) { const w = part.userData.spin!; part.rotation.x += w.x * dt; part.rotation.y += w.y * dt; part.rotation.z += w.z * dt; }
+      const o = v.rig.obj;
+      o.position.set(e.x, (r + LEGIBLE_U) * 0.9, e.y);
+      o.rotation.y = -e.facing;
+      o.scale.setScalar((r + LEGIBLE_U) * (0.3 + 0.7 * grow) * (1 + (e.flash > 0 ? 0.12 : 0)));
+      v.body.emissiveIntensity = e.flash > 0 ? 3 : BODY_GLOW + (1 - e.hp / e.maxHp) * 0.4;
+      if (fresh && !v.rig.attacking && Math.hypot(e.x - p.x, e.y - p.y) < r + LUNGE_U) v.rig.play('attack');
+      v.rig.update(dt);
       if (v.shield) { v.shield.position.set(e.x, r * 0.9, e.y); v.shield.rotation.y = -e.facing; v.shield.scale.setScalar(r); }
       if (e.laser !== undefined) {
         if (!v.laser) { v.laser = new THREE.Mesh(beamGeo, laserMat); scene.add(v.laser); }
@@ -302,7 +321,12 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         v.laser.scale.set(Math.hypot(tx - e.x, ty - e.y), 1, 0.05 + Math.sin(time * 40) * 0.015);
       } else if (v.laser) v.laser.visible = false;
     }
-    for (const [id, v] of enemies) if (!seen.has(id)) { dropEnemy(v); enemies.delete(id); }
+    for (const [id, v] of enemies) if (!seen.has(id)) { dropEnemy(v, killed.has(id)); enemies.delete(id); }
+    for (let i = corpses.length - 1; i >= 0; i--) {
+      const c = corpses[i]!;
+      c.rig.update(dt);
+      if ((c.t -= dt) <= 0) { scene.remove(c.rig.obj); c.body.dispose(); corpses.splice(i, 1); }
+    }
 
     // warp gates
     const gates = new Set<number>();
@@ -392,8 +416,13 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       const v = new THREE.Vector3(x, 0.35, y).project(camera), r = renderer.domElement.getBoundingClientRect();
       return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
     },
-    /** Snap the camera to the ship (a story's first frame shouldn't pan in from the centre). */
-    snap(s: GameState) { camTarget.set(s.player.x * FOLLOW, 0, s.player.y * FOLLOW); last = null; },
+    /** Jump the view to `s`: the camera on the ship (a story's first frame shouldn't pan in from the centre), no corpses. */
+    snap(s: GameState) {
+      camTarget.set(s.player.x * FOLLOW, 0, s.player.y * FOLLOW); last = null;
+      for (const c of corpses) { scene.remove(c.rig.obj); c.body.dispose(); }
+      corpses.length = 0;
+      sync(s, 0); // meshes for everything already in play, so the next step can animate from them (a kill leaves a corpse)
+    },
     canvas: renderer.domElement,
   };
 }

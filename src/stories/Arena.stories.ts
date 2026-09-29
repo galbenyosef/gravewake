@@ -58,3 +58,16 @@ export const IceStorm: Story = {
     await expect(game.getState().run.enemies.find((e) => e.kind === 'colossus')?.scale).toBe(2);
   },
 };
+
+/** A volley's worth of kills on one frame: every model mid-`die`, parts flying, where each enemy fell. */
+export const Deaths: Story = {
+  render: () => stage(() => {
+    const s = fight([['bulwark', 4, -4], ['wasp', 2, 4], ['splitter', 8, 1], ['lancer', 11, -4], ['drone', 5, 0], ['mortar', 12, 4], ['hive', 1, -8], ['bomber', 9, 7]], { px: -8, py: 0 });
+    return { run: { ...s, enemies: s.enemies.map((e) => ({ ...e, hp: 0 })) }, ui: { screen: 'play' } };
+  }, 100),
+  play: async ({ args }) => {
+    if (!args.runInteraction) return;
+    await ready();
+    await expect(game.getState().run.enemies.filter((e) => e.kind !== 'mite').length).toBe(0);
+  },
+};

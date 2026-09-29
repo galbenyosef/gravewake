@@ -16,7 +16,9 @@ Homes:
 | Upgrade effect words | `EFFECTS` in `src/upgrades.ts` |
 | Content kinds | zod schemas in `src/content.ts`, data in `content/*.kdl` |
 | Screens and their stacking | `src/runtime.ts` (import order = draw order) |
-| 3D models | `src/view/models.ts` (`MODELS` in `src/content.ts` names them) |
+| 3D models | `models/<name>.py` (Blender, built from `models/kit.py`), exported by `npm run models` to `models/<name>.glb` (committed); `src/view/models.ts` loads them; `MODELS` in `src/content.ts` names them |
+| Modelling words | `models/kit.py` (the only module model scripts import) |
+| Model rig contract | `CLIPS` and `SLOTS` in `src/view/models.ts`, matched by `models/kit.py`, checked on every export by `src/models.test.ts` |
 
 ## CSS properties
 
@@ -124,6 +126,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--heal` | mend pulses |
 | `--ice` | a wave tint: every enemy in the wave, icy blue |
 | `--laser` | sniper sight lines and their lock flash |
+| `--trim` | armour metal on every model (the `trim` material), painted in the model; hue from here |
 | `--enemy-mite` | mite |
 | `--enemy-drone` | drone |
 | `--enemy-lancer` | lancer |
@@ -176,6 +179,68 @@ Under an `upgrade` node in `content/upgrades.kdl`.
 | `thrust` | `thrust x`: move speed times x |
 | `magnet` | `magnet x`: shard pull range times x |
 | `hull` | `hull n`: n more hull points, repaired to full |
+
+## Models
+
+One Blender script per character, `models/<name>.py`. `enemy model=` in `content/enemies.kdl` names one; `ship` is the player.
+See each in Storybook under Models (idle, attack and die side by side; `still` freezes them for screenshots).
+
+| Model | Use |
+|---|---|
+| `ship` | the player's fighter: swept wings, wingtip guns that recoil on each shot, twin engines |
+| `pod` | Drone: helmet-bot with one big eye and thruster ears; lunges when close |
+| `tick` | Mite: beetle with a glowing abdomen, skittering legs, snapping mandibles |
+| `lance` | Lancer: armoured hull, drill-lance that spins, pauldrons that fold back on the charge |
+| `hornet` | Wasp: striped abdomen and glowing stinger that curls to fire, four fluttering wings |
+| `urchin` | Bomber: spiked mine with a lit fuse; swells when close, bursts spikes on death |
+| `bastion` | Bulwark: shield-wall golem, tower shield with a sigil, spiked pauldrons; shield-bashes |
+| `nest` | Hive: ridged brood-mound on claw roots, comb cells, petals that open to summon |
+| `wraith` | Phantom: hooded eye that looks around, torn cloak, orbiting shards; flares on a blink |
+| `geode` | Splitter: rock egg over a crystal heart; its four plates burst open on death |
+| `jelly` | Mender: jellyfish with a glowing cross and a halo; pumps when it heals |
+| `crab` | Mortar: artillery crab; its mortar tube kicks back on every lob |
+| `rail` | Sniper: tripod railgun with glowing coils; the barrel slams back on the shot |
+| `angel` | Seraph: armoured heart in a turning ring of six blade wings that flare to fire |
+| `walker` | Colossus: siege titan on stomping legs, twin shoulder cannons that recoil |
+
+## Model rig
+
+The contract between a model script and the game. `models/kit.py` enforces it on export, `src/models.test.ts` checks the committed .glb files.
+
+| Name | Use |
+|---|---|
+| `idle` | clip, loops; the arena offsets it per enemy so a swarm doesn't breathe in step |
+| `attack` | clip, one shot: on the enemy's `enemy-fire`, `telegraph` or `heal` event, or when it's within 1.4 u of the ship (a lunge); the ship's on each shot |
+| `die` | clip, one shot, ends collapsed: the arena keeps a killed enemy where it fell until it finishes; the ship's on death |
+| `body` | material: the enemy's palette colour (or its wave tint) times the vertex paint; the hit flash lights it |
+| `trim` | material: armour metal in `--trim`, shared by every model |
+| `glow` | material: unlit, over the bloom threshold, in the palette colour |
+
+## Modelling kit
+
+Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is forward, +Z up, 1 unit = the collision radius.
+
+| Word | Use |
+|---|---|
+| `lathe` | `lathe(name, [(r, z), ...], mat, seg)`: a body of revolution around Z |
+| `slab` | `slab(name, [(x, y), ...], depth, mat, bevel)`: an outline extruded and bevelled: wings, fins, blades, plates |
+| `box` | `box(name, (x, y, z), mat, bevel)`: a bevelled box |
+| `ball` | `ball(name, r, mat, seg, rings)`: a UV sphere |
+| `cone` | `cone(name, r1, r2, depth, mat, seg)`: along +Z; r2 = r1 is a cylinder, 0 a spike |
+| `torus` | `torus(name, R, r, mat)`: a ring in the XY plane |
+| `at` | `at(ob, loc, rot_degrees, scale)`: place a shape |
+| `aim` | `aim(ob, direction, loc)`: point a shape's +Z along a direction |
+| `deform` | `deform(ob, fn)`: move every vertex: taper, bulge, bend |
+| `smooth` | `smooth(ob, levels)`: subdivide (soft chunky forms, and vertices to hold the paint) |
+| `shell` | `shell(ob, thickness)`: give an open surface thickness |
+| `cut` | `cut(ob, keep)`: delete faces whose centre fails `keep`: open a hood, split plates |
+| `sphere_dirs` | `sphere_dirs(n, zmin)`: evenly spread directions (spikes, crystals) |
+| `part` | `part(name, *shapes, pivot, parent)`: merge shapes into one moving rig part |
+| `key` | `key(part, clip, [(s, {loc, rot, scale}), ...])`: key a clip relative to rest; one per part per clip |
+| `loop` | `loop(part, period, n, steps, phase, loc=, rot=, scale=)`: a sine idle loop |
+| `spin` | `spin(part, clip, period, turns, axis)`: a constant spin |
+| `burst_apart` | `burst_apart(parts, dur, fling, rise)`: the generic `die`: parts fly out, tumble, shrink |
+| `export` | `export(__file__)`: paint the vertices (value only; hue comes from CSS) and write the .glb |
 
 ## Content kinds
 

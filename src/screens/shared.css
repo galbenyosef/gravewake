@@ -36,6 +36,7 @@
   --heal: #5dff9d;
   --ice: #3aa8ff;
   --laser: #ff2250;
+  --trim: #8a93b8;
 
   /* One per enemy in content/enemies.kdl (a test checks the pairing). */
   --enemy-mite: #ff9a3c;

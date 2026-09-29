@@ -52,24 +52,29 @@ defineElement('corners', (_p, { w, h }) => {
   return c;
 });
 
-/** Flat outlines of each enemy model, points on a unit circle: the 2D face of the 3D roster. */
-const ring = (n: number, r = 1, a0 = -Math.PI / 2) => Array.from({ length: n }, (_, i) => [Math.cos(a0 + (i / n) * Math.PI * 2) * r, Math.sin(a0 + (i / n) * Math.PI * 2) * r] as const);
-const star = (n: number, inner: number) => Array.from({ length: n * 2 }, (_, i) => { const a = -Math.PI / 2 + (i / (n * 2)) * Math.PI * 2, r = i % 2 ? inner : 1; return [Math.cos(a) * r, Math.sin(a) * r] as const; });
-const GLYPHS: Record<Model, readonly (readonly [number, number])[][]> = {
-  orb: [ring(16), ring(16, 0.45)],
-  shard: [[[0, -1], [0.55, 0], [0, 1], [-0.55, 0]]],
-  dart: [[[0, -1], [0.7, 0.8], [0, 0.4], [-0.7, 0.8]]],
-  ring: [ring(20), ring(20, 0.62)],
-  spike: [star(8, 0.45)],
-  cube: [ring(4, 0.85, -Math.PI / 4), [[-1, -0.5], [-0.75, -0.95], [0.75, -0.95], [1, -0.5]]],
-  hive: [ring(6), ring(6, 0.55), ring(6, 0.2)],
-  eye: [[[-1, 0], [-0.5, -0.5], [0.5, -0.5], [1, 0], [0.5, 0.5], [-0.5, 0.5]], ring(12, 0.3)],
-  prism: [ring(3), ring(3, 0.5, Math.PI / 2)],
-  star: [star(5, 0.42)],
-  crown: [[[-1, 0.7], [-1, -0.4], [-0.5, 0.1], [0, -0.8], [0.5, 0.1], [1, -0.4], [1, 0.7]]],
-  core: [star(6, 0.55), ring(12, 0.35)],
-  titan: [ring(8), star(8, 0.6), ring(8, 0.3)],
-  needle: [[[-1, 0], [-0.2, -0.3], [0.3, -0.06], [1, -0.06], [1, 0.06], [0.3, 0.06], [-0.2, 0.3]], ring(12, 0.28, 0).map(([x, y]) => [x - 0.3, y] as const)],
+/** Flat outlines of each enemy model seen from above, forward up, on a unit circle: the 2D face of the 3D roster. */
+type Pt = readonly [number, number];
+const ring = (n: number, r = 1, cx = 0, cy = 0, a0 = -Math.PI / 2) => Array.from({ length: n }, (_, i) => [cx + Math.cos(a0 + (i / n) * Math.PI * 2) * r, cy + Math.sin(a0 + (i / n) * Math.PI * 2) * r] as const);
+const star = (n: number, inner: number, outer = 1) => Array.from({ length: n * 2 }, (_, i) => { const a = -Math.PI / 2 + (i / (n * 2)) * Math.PI * 2, r = i % 2 ? inner : outer; return [Math.cos(a) * r, Math.sin(a) * r] as const; });
+/** A left-right symmetric outline from its right half, top to bottom. */
+const sym = (half: Pt[]): Pt[] => [...half, ...half.slice().reverse().map(([x, y]) => [-x, y] as const)];
+/** A shape and its mirror image across the vertical axis (paired wings, legs, guns). */
+const pair = (pts: Pt[]): Pt[][] => [pts, pts.map(([x, y]) => [-x, y] as const)];
+const GLYPHS: Record<Model, readonly (readonly Pt[])[]> = {
+  pod: [ring(16, 0.7, 0, 0.05), ring(10, 0.22, 0, -0.55), ...pair(ring(8, 0.2, 0.88, 0.1))],
+  tick: [sym([[0, -1], [0.22, -0.8], [0.42, -0.25], [0.38, 0.45], [0, 0.95]]), ...pair([[0.4, -0.3], [0.85, -0.55]]), ...pair([[0.42, 0.05], [0.9, 0.05]]), ...pair([[0.38, 0.35], [0.8, 0.65]])],
+  lance: [sym([[0, -1], [0.12, -0.3], [0.7, -0.15], [0.55, 0.3], [0.2, 0.35], [0.4, 0.9], [0, 0.7]])],
+  hornet: [sym([[0, -0.95], [0.2, -0.75], [0.26, -0.3], [0.3, 0.25], [0.18, 0.8], [0, 1]]), ...pair([[0.24, -0.35], [0.95, -0.7], [0.98, -0.42], [0.28, -0.12]])],
+  urchin: [star(12, 0.58), ring(14, 0.45)],
+  bastion: [sym([[0, -0.95], [0.85, -0.7], [0.85, -0.5], [0, -0.72]]), ring(4, 0.62, 0, 0.2, -Math.PI / 4), ...pair(ring(8, 0.3, 0.6, 0.15))],
+  nest: [ring(18, 0.95), star(6, 0.18, 0.55), ...Array.from({ length: 6 }, (_, i) => ring(6, 0.12, Math.cos(i * 1.047 + 0.3) * 0.75, Math.sin(i * 1.047 + 0.3) * 0.75))],
+  wraith: [ring(16, 0.65, 0, -0.05), ring(10, 0.28, 0, -0.35), sym([[0.3, 0.5], [0.12, 1], [0, 0.75]])],
+  geode: [...Array.from({ length: 4 }, (_, q) => Array.from({ length: 6 }, (_, i) => { const a = q * Math.PI / 2 + 0.2 + i * 0.23; return [Math.cos(a) * 0.9, Math.sin(a) * 0.9] as const; })), star(5, 0.25, 0.5)],
+  jelly: [Array.from({ length: 32 }, (_, i) => { const a = (i / 32) * Math.PI * 2, r = 0.72 + 0.08 * Math.cos(a * 8); return [Math.cos(a) * r, Math.sin(a) * r] as const; }), sym([[0.08, -0.3], [0.08, -0.08], [0.3, -0.08], [0.3, 0.08], [0.08, 0.08], [0.08, 0.3]])],
+  crab: [ring(18, 0.72, 0, 0.1).map(([x, y]) => [x * 1.15, y] as const), [[-0.12, -1], [0.12, -1], [0.12, -0.1], [-0.12, -0.1]], ...pair([[0.75, -0.2], [1, -0.55]]), ...pair([[0.75, 0.35], [1, 0.75]])],
+  rail: [[[-0.06, -1], [0.06, -1], [0.06, 0.05], [-0.06, 0.05]], sym([[0, 0], [0.22, 0.05], [0.25, 0.45], [0, 0.5]]), ...pair([[0.2, 0.4], [0.7, 0.9]]), [[0, 0.5], [0, 1]]],
+  angel: [star(6, 0.32), ring(12, 0.3)],
+  walker: [ring(4, 0.55, 0, 0.1, -Math.PI / 4), ...pair([[0.45, -0.3], [0.9, -0.3], [0.9, 0.25], [0.45, 0.25]]), ...pair([[0.62, -0.3], [0.62, -0.9], [0.74, -0.9], [0.74, -0.3]])],
 };
 
 /** An enemy's glyph in its palette colour, fitted to the box: `enemy-glyph kind=(bind)"kind"`. */

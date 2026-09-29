@@ -12,7 +12,8 @@
     "test:stories": "vitest run --project storybook",
     "typecheck": "tsc",
     "sim": "node scripts/run.mjs scripts/sim.ts",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "models": "node scripts/models.mjs"
   },
   "dependencies": {
     "@fontsource/orbitron": "^5.3.0",
