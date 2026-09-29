@@ -83,7 +83,7 @@ const GROUND = /* glsl */ `
     alb = mix(alb, uEarth * (1.25 + 0.3 * fine) * vec3(1.05, 1.0, 0.92), path * 0.85);
     alb = mix(alb, uStone * 0.35, verge * 0.7);
     float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
-    float wet = smoothstep(0.245, 0.225, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
+    float wet = smoothstep(0.255, 0.215, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
     alb *= 1.0 - 0.75 * wet;
     float edge = max(abs(p.x) - uHalf.x, abs(p.y) - uHalf.y);
     alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
@@ -195,7 +195,7 @@ function floorMaterial(renderer: THREE.WebGLRenderer) {
         float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
         float shore = smoothstep(0.15, 0.5, wet) * smoothstep(0.85, 0.5, wet);
         float shimmer = 0.8 + 0.2 * sin(p.x * 3.1 + uTime * 0.7) * sin(p.y * 2.7 - uTime * 0.5);
-        totalEmissiveRadiance += alb * (spell + lamp) + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * shimmer + shore * 0.012)
+        totalEmissiveRadiance += alb * (spell + lamp) + spell * 0.07 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * shimmer + shore * 0.012)
           + uMoon * wave * 0.012;`);
   };
   return { material: m, uniforms };
@@ -411,9 +411,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
   const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
   // Enemy spells: a white-hot core in a necrotic wisp, drawn out behind it along its flight.
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.2, 0.8), 800);
-  const cores = inst(new THREE.SphereGeometry(1, 8, 6), glowMaterial(0xffffff, 1.6), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.12), 800);
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.0, 0.65), 800);
+  const cores = inst(new THREE.SphereGeometry(1, 8, 6), glowMaterial(0xffffff, 1.25), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.06), 800);
   // Hurled rounds: a burning skull-stone (a dark lump inside a ball of fire) that sheds sparks.
   const lobs = inst(new THREE.IcosahedronGeometry(0.3, 1), new THREE.MeshStandardMaterial({ color: token('--bone'), roughness: 0.9, emissive: token('--lob'), emissiveIntensity: 0.6 }), 64);
   const lobFire = inst(new THREE.SphereGeometry(0.55, 10, 8), glowMaterial(token('--lob'), 1.4, 0.45), 64);
@@ -642,7 +642,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         if (dt > 0) particles.spark(b.x, b.y, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8, token('--lob'), 0.09, 0.4, v3.y);
         floorLight(b.x, b.y, 1.8, 2.4, token('--lob'));
       } else if (b.hostile) {
-        const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15, sp = Math.hypot(b.vx, b.vy) || 1;
+        const pulse = (0.85 + 0.3 * ((b.id * 0.618) % 1)) * (1 + Math.sin(time * 20 + b.id) * 0.15), sp = Math.hypot(b.vx, b.vy) || 1;
         q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx));
         m4.compose(v3.set(b.x - (b.vx / sp) * b.r * 0.4, 0.5, b.y - (b.vy / sp) * b.r * 0.4), q, s3.set(b.r * 1.8 * pulse, b.r * pulse, b.r * pulse));
         orbs.setMatrixAt(no, m4);

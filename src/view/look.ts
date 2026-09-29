@@ -13,7 +13,7 @@ export const LOOK = {
   CHARACTER_PAD_U: 0.4,
   WIZARD_SCALE: 1.5,
   /** Opacity of the faint warm halo on the ground round the wizard. */
-  WIZARD_HALO: 0.14,
+  WIZARD_HALO: 0.07,
   /** The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
    *  (soulfire eyes, the moon on their edges), under the wizard's light. */
   BODY_LUM: 0.1,
@@ -28,7 +28,7 @@ export const LOOK = {
   /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
   RIM: 1.6,
   RIM_POWER: 2.6,
-  SCENERY_RIM: 0.2,
+  SCENERY_RIM: 0.6,
   /** Models' procedural surface: how much the grain and stains vary the paint, and how deep its bump is. */
   SURFACE_GRAIN: 0.6,
   SURFACE_BUMP: 0.06,
