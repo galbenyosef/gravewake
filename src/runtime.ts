@@ -51,7 +51,15 @@ export async function boot(el: HTMLElement): Promise<() => void> {
   // A phone call or app switch pauses the fight.
   const hidden = () => { if (document.hidden) Actions.pause(); };
   document.addEventListener('visibilitychange', hidden);
-  const unlock = () => unlockAudio();
+  // First touch: sound on, and on phones go fullscreen in landscape (both may be refused; the game works either way).
+  let askedFullscreen = false;
+  const unlock = (e: Event) => {
+    unlockAudio();
+    if ((e as PointerEvent).pointerType === 'touch' && !askedFullscreen && !document.fullscreenElement) {
+      askedFullscreen = true;
+      document.documentElement.requestFullscreen?.().then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape')).catch(() => undefined);
+    }
+  };
   el.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', unlock);
 

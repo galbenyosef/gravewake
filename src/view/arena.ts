@@ -173,6 +173,23 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   let rippleNext = 0, shake = 0, hurt = 0, time = 0, last: GameState | null = null;
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 
+  // Adaptive quality: a phone that can't hold ~45 fps drops to 1x pixels, then loses bloom. Measured on wall time
+  // between rendered frames (not game time), over SLOW_WINDOW_MS; never steps back up (no oscillation).
+  const SLOW_FRAME_MS = 22, SLOW_WINDOW_MS = 2500;
+  let lastFrame = 0, slowSince = 0, tier = 0;
+  function adapt() {
+    if (import.meta.env.STORYBOOK) return; // stories and shots keep full quality
+    const now = performance.now(), dtMs = now - lastFrame;
+    lastFrame = now;
+    if (dtMs > 200) { slowSince = 0; return; } // a stall (tab switch), not a slow device
+    if (dtMs < SLOW_FRAME_MS) { slowSince = 0; return; }
+    if (!slowSince) slowSince = now;
+    if (now - slowSince < SLOW_WINDOW_MS || tier >= 2) return;
+    tier++; slowSince = 0;
+    if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); }
+    else bloom.enabled = false;
+  }
+
   const ripple = (x: number, z: number, strength: number) => { ripples[rippleNext]!.set(x, z, 0, strength); rippleNext = (rippleNext + 1) % MAX_RIPPLES; };
 
   function makeEnemy(kind: string): EnemyView {
@@ -211,7 +228,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         shake = Math.max(shake, big ? 1.4 : Math.min(0.5, d.r * 0.3));
         break;
       }
-      case 'hurt': sfx('hurt'); hurt = 1; shake = Math.max(shake, 0.8); particles.burst(e.x, e.y, token('--danger'), 30, 10, 0.12, 0.6); ripple(e.x, e.y, 1); break;
+      case 'hurt': sfx('hurt'); if (navigator.userActivation?.hasBeenActive) navigator.vibrate?.(60); hurt = 1; shake = Math.max(shake, 0.8); particles.burst(e.x, e.y, token('--danger'), 30, 10, 0.12, 0.6); ripple(e.x, e.y, 1); break;
       case 'warp': sfx('warp'); break;
       case 'arrive': { const d = enemyDef(e.kind); particles.burst(e.x, e.y, token('--warp'), 12 + d.r * 10, 5, 0.1, 0.5); rings.ring(e.x, e.y, d.r, d.r * 2.5, 0.4, token('--warp')); break; }
       case 'telegraph':
@@ -343,7 +360,10 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   return {
     sync,
-    render: () => composer.render(),
+    render() {
+      adapt();
+      composer.render();
+    },
     resize(w: number, h: number) {
       renderer.setSize(w, h);
       composer.setSize(w, h);
