@@ -11,7 +11,7 @@
     "test": "vitest run --project unit",
     "test:stories": "vitest run --project storybook",
     "typecheck": "tsc",
-    "sim": "node --experimental-strip-types scripts/sim.ts",
+    "sim": "node scripts/run.mjs scripts/sim.ts",
     "shots": "node scripts/shots.mjs"
   },
   "dependencies": {

@@ -1,0 +1,69 @@
+// The roster. Each enemy is props (what it is) plus behaviour words (what it does), one per line.
+// Words and their units are in src/enemies.ts. Colours are CSS: --enemy-<id> in src/screens/shared.css.
+// At most one movement word per enemy: chase, keep-away, orbit, dash, blink, anchor.
+
+enemy "mite" name="Mite" tier="minion" hp=1 r=0.28 score=5 model="shard" blurb="Fast, frail, never alone." {
+    chase 6.5
+}
+
+enemy "drone" name="Drone" hp=3 r=0.5 score=10 model="orb" blurb="The swarm's rank and file. Slow, steady, many." {
+    chase 3.2
+}
+
+enemy "lancer" name="Lancer" hp=4 r=0.55 score=25 model="dart" blurb="Stops, aims, and charges in a straight line. Step aside." {
+    dash 0.7 17
+}
+
+enemy "wasp" name="Wasp" hp=4 r=0.5 score=30 model="ring" blurb="Circles at range and stings with aimed bolts." {
+    orbit 6.5 4.5
+    shoot 1.8 8
+}
+
+enemy "splitter" name="Splitter" hp=8 r=0.8 score=40 model="prism" spawns="mite" blurb="Crack it and four mites pour out." {
+    chase 2.2
+    split 4
+}
+
+enemy "bulwark" name="Bulwark" tier="elite" hp=22 r=0.95 score=90 model="cube" blurb="A shield wall that turns slowly. Get round the back." {
+    chase 1.6
+    shield 140
+}
+
+enemy "bomber" name="Bomber" hp=2 r=0.5 score=20 model="spike" blurb="Rushes you and detonates. Pop it early." {
+    chase 5
+    explode 2.4
+}
+
+enemy "mender" name="Mender" hp=6 r=0.55 score=60 model="star" blurb="Keeps its distance and knits the swarm back together." {
+    keep-away 9 3.2
+    heal 5 3
+}
+
+enemy "hive" name="Hive" tier="elite" hp=30 r=1.2 score=120 model="hive" spawns="drone" blurb="A nest that breeds drones until you break it." {
+    anchor
+    summon 2.6 5
+}
+
+enemy "phantom" name="Phantom" hp=5 r=0.55 score=55 model="eye" blurb="Blinks beside you and fires a fan on arrival." {
+    blink 2.8 5
+    burst 2.8 5 70
+}
+
+enemy "mortar" name="Mortar" hp=7 r=0.7 score=50 model="crown" blurb="Lobs rounds where you are going. Watch the rings." {
+    keep-away 11 2.2
+    mortar 2.6 2.2
+}
+
+enemy "seraph" name="Seraph" tier="boss" hp=260 r=2 score=2000 model="core" spawns="wasp" blurb="Six wings of light and a spiral you have to thread." {
+    keep-away 7 1.4
+    spiral 0.14 4
+    burst 3.2 9 80
+    summon 7 3
+}
+
+enemy "colossus" name="Colossus" tier="boss" hp=420 r=2.3 score=3500 model="titan" spawns="splitter" blurb="Walks you down firing rings; dies into splitters." {
+    chase 1.3
+    burst 1.5 14 360
+    mortar 4 3
+    split 3
+}
