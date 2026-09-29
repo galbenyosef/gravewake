@@ -135,6 +135,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--enemy-hive` | hive |
 | `--enemy-phantom` | phantom |
 | `--enemy-mortar` | mortar |
+| `--enemy-sniper` | sniper |
 | `--enemy-seraph` | seraph |
 | `--enemy-colossus` | colossus |
 

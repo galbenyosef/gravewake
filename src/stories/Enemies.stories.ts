@@ -68,5 +68,10 @@ export const Mender: Story = {
 export const Hive: Story = enemy('hive', 2, (_s, ev) => expect(has(ev, 'warp')).toBe(true), 3500);
 export const Phantom: Story = enemy('phantom', 3, (_s, ev) => expect(ev.some((e) => e.type === 'telegraph' && e.what === 'blink')).toBe(true), 4500);
 export const Mortar: Story = enemy('mortar', 2, (_s, ev) => expect(ev.some((e) => e.type === 'telegraph' && e.what === 'lob')).toBe(true), 3000);
+/** Ends in the lock: both lasers frozen on the ship, a beat before the shots. */
+export const Sniper: Story = enemy('sniper', 2, (s, ev) => {
+  expect(ev.some((e) => e.type === 'telegraph' && e.what === 'snipe')).toBe(true);
+  expect(s.enemies.every((e) => e.laser !== undefined)).toBe(true);
+}, 2800);
 export const Seraph: Story = enemy('seraph', 1, (s) => expect(s.shots.filter((b) => b.hostile).length).toBeGreaterThan(20), 2000);
 export const Colossus: Story = enemy('colossus', 1, (_s, ev) => expect(has(ev, 'enemy-fire')).toBe(true), 2000);

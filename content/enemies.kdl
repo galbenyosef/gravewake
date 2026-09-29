@@ -54,6 +54,11 @@ enemy "mortar" name="Mortar" hp=7 r=0.7 score=50 model="crown" blurb="Lobs round
     mortar 2.6 2.2
 }
 
+enemy "sniper" name="Sniper" hp=5 r=0.6 score=70 model="needle" blurb="Hangs back at the wall and paints you red. When the laser freezes, move." {
+    keep-away 17 3
+    snipe 3.2 1 42
+}
+
 enemy "seraph" name="Seraph" tier="boss" hp=260 r=2 score=2000 model="core" spawns="wasp" blurb="Six wings of light and a spiral you have to thread." {
     keep-away 7 1.4
     spiral 0.18 4

@@ -43,6 +43,7 @@ wave "w08" title="Phantoms" {
     spawn "phantom" count=4 gap=1.2
     spawn "mortar" count=2 gap=1 at=3
     spawn "splitter" count=3 gap=1 at=7
+    spawn "sniper" count=2 gap=2 at=5
 }
 wave "w09" title="Everything" {
     spawn "bulwark" count=1
@@ -50,6 +51,7 @@ wave "w09" title="Everything" {
     spawn "mortar" count=2 gap=1 at=2
     spawn "phantom" count=2 gap=1 at=5
     spawn "wasp" count=3 gap=0.8 at=8
+    spawn "sniper" count=2 gap=1.5 at=9
     spawn "drone" count=10 gap=0.25 at=10
 }
 wave "w10" title="The Colossus" {

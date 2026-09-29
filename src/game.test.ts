@@ -155,6 +155,14 @@ describe('the roster behaves', () => {
     expect(fired).toBeGreaterThan(0);
     expect(Math.hypot(s.enemies[0]!.x, s.enemies[0]!.y)).toBeGreaterThan(4); // still out on its ring
   });
+  it('snipers hang back at the wall and land one fast shot', () => {
+    let fast = 0;
+    const s = run(arena([['sniper', 6, 0]]), 5, (x) => { fast = Math.max(fast, ...x.shots.filter((b) => b.hostile).map((b) => Math.hypot(b.vx, b.vy))); return IDLE; });
+    const e = s.enemies[0]!;
+    expect(Math.max(Math.abs(e.x) - T.ARENA_W_U / 2, Math.abs(e.y) - T.ARENA_H_U / 2)).toBeGreaterThan(-2); // within 2u of a wall
+    expect(fast).toBeGreaterThan(30);
+    expect(s.player.hp).toBe(T.PLAYER_HP - 1); // a ship that stands still gets hit
+  });
   it('the seraph fills the air', () => {
     const s = run(arena([['seraph', 8, 0]]), 2);
     expect(s.shots.filter((b) => b.hostile).length).toBeGreaterThan(20);
