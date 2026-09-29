@@ -15,7 +15,7 @@ import { T } from './tuning';
 export const MODELS = ['skeleton', 'crawler', 'ghoul', 'banshee', 'blightskull', 'warden', 'barrow', 'wraith', 'bloat', 'necromancer', 'catapult', 'lich', 'golem', 'archer'] as const;
 export type Model = (typeof MODELS)[number];
 /** Scenery models round the clearing (models/<name>.py like the characters; content/arena.kdl places them). */
-export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar'] as const;
+export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar', 'ruin', 'lantern'] as const;
 
 const pos = z.number().positive();
 
@@ -122,6 +122,8 @@ export const ScatterSchema = z.strictObject({
   scale: pos, vary: nonneg.default(0),
   chance: z.number().min(0).max(1).default(1),
   face: z.enum(['in', 'any']).default('any'),
+  /** Each one lights the ground round it, this radius (u), in its glow colour. */
+  light: pos.optional(),
   seed: z.number().int(),
   children: z.array(z.never()).max(0),
 }).transform(({ children: _c, ...sc }) => {

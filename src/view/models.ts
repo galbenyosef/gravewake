@@ -70,7 +70,7 @@ export const BODY_GLOW = 0.2;
 
 /** Body paint's brightest linear luminance: a pale palette colour (mint, lemon) is darkened to it, so it keeps its hue
  *  under the arena's lights instead of washing out to white. Trim is darker metal; glow sits over the bloom threshold. */
-const BODY_LUM = 0.2, TRIM_LUM = 0.07, GLOW_LUM = 1.0, CLOTH_LUM = 0.035;
+const BODY_LUM = LOOK.BODY_LUM, TRIM_LUM = 0.07, GLOW_LUM = 1.0, CLOTH_LUM = 0.035;
 /** `color` scaled to at most luminance `lum` (to exactly `lum` when `exact`). */
 function atLum(color: number, lum: number, exact = false) {
   const c = new THREE.Color(color), l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;

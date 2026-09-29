@@ -56,6 +56,8 @@ function floorMaterial() {
     uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uLights: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
     uLightCol: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Color()) },
+    uStatic: { value: Array.from({ length: LOOK.STATIC_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
+    uStaticCol: { value: Array.from({ length: LOOK.STATIC_LIGHTS }, () => new THREE.Color()) },
   };
   const m = new THREE.MeshStandardMaterial({ roughness: 0.95, metalness: 0, envMapIntensity: 0.6 });
   m.onBeforeCompile = (sh) => {
@@ -67,6 +69,7 @@ function floorMaterial() {
       .replace('#include <common>', `#include <common>
         uniform float uTime, uRelief; uniform vec3 uEarth, uMoss, uStone, uMoon; uniform vec2 uHalf;
         uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
+        uniform vec4 uStatic[${LOOK.STATIC_LIGHTS}]; uniform vec3 uStaticCol[${LOOK.STATIC_LIGHTS}];
         varying vec2 vPos;
         ${NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
@@ -92,7 +95,14 @@ function floorMaterial() {
         // Furrows: where old roots ran, soft dark grooves winding through (domain-warped, not a crack net).
         float furrow = smoothstep(0.06, 0.0, abs(fbm(warp * 0.35 + 11.0) - 0.5)) * smoothstep(0.3, 0.6, fbm(p * 0.2 + 2.0));
         alb *= 1.0 - furrow * 0.6;
-        float low = 0.5 * broad + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15;
+        // An old path, trodden flat and pale, winds across the clearing past the circle; stones kicked to its edges.
+        float pathY = 1.8 * sin(p.x * 0.17 + 0.6) + 1.2 * (fbm(vec2(p.x * 0.08, 3.0)) - 0.5) * 4.0 - 1.0;
+        float pathD = abs(p.y - pathY), path = smoothstep(1.5, 0.9, pathD + 0.4 * (fbm(p * 0.9) - 0.5));
+        float verge = smoothstep(0.35, 0.0, abs(pathD - 1.35)) * step(0.6, vnoise(p * 3.1));
+        alb = mix(alb, uEarth * (1.25 + 0.3 * fine) * vec3(1.05, 1.0, 0.92), path * 0.85);
+        alb = mix(alb, uStone * 0.35, verge * 0.7);
+        moss *= 1.0 - path;
+        float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
         float wet = smoothstep(0.34, 0.26, low) * smoothstep(0.45, 0.65, fbm(p * 0.4 + 8.0));
         alb *= 1.0 - 0.45 * wet;
         float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
@@ -116,6 +126,12 @@ function floorMaterial() {
           if (l.w <= 0.0) continue;
           float d = length(p - l.xy) / l.z;
           spell += uLightCol[i] * l.w * exp(-d * d);
+        }
+        for (int i = 0; i < ${LOOK.STATIC_LIGHTS}; i++) {
+          vec4 l = uStatic[i];
+          if (l.w <= 0.0) continue;
+          float d = length(p - l.xy) / l.z;
+          spell += uStaticCol[i] * l.w * exp(-d * d) * (0.85 + 0.15 * sin(uTime * 3.0 + float(i) * 1.7));
         }
         totalEmissiveRadiance += alb * spell + uMoon * wave * 0.012 * (0.5 + broad);`);
   };
@@ -267,6 +283,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   groundFog.position.y = LOOK.FOG_Y_U;
   groundFog.renderOrder = 1;
   scene.add(groundFog);
+  // Scenery that carries a light (grave-lanterns) lights the ground round it.
+  SCATTERS.filter((sc) => sc.light).flatMap((sc) => sc.placements.map((p) => ({ ...p, r: sc.light!, col: token(sc.glow ?? sc.paint) }))).slice(0, LOOK.STATIC_LIGHTS)
+    .forEach((l, i) => { floorU.uStatic.value[i]!.set(l.x, l.z, l.r * l.scale, LOOK.LANTERN_LIGHT); floorU.uStaticCol.value[i]!.set(l.col); });
   plantClearing(scene);
 
   // The wizard, and the light he carries (lights the floor through floorU.uPlayer and the characters round him).
@@ -276,10 +295,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const shipLight = new THREE.PointLight(token('--player-glow'), LOOK.PLAYER_LIGHT, LOOK.PLAYER_LIGHT_U, 1.4);
   scene.add(shipLight);
   const beamGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2).translate(0.5, 0, 0);
-  const aimLine = new THREE.Mesh(beamGeo, glowMaterial(token('--player-shot'), 1.2, 0.16));
   /** Sniper sight lines share one material; each painting enemy gets its own mesh. */
   const laserMat = glowMaterial(token('--laser'), 2.4, 0.6);
-  scene.add(aimLine);
   /** Warm flashes where spells land: a few pooled point lights so a hit lights the enemy it hits. Always in the scene
    *  (intensity 0 when idle): adding or removing a light recompiles every lit material. */
   const flashes = Array.from({ length: LOOK.FLASH_LIGHTS }, () => { const l = new THREE.PointLight(token('--player-shot'), 0, 6, 1.6); scene.add(l); return { l, t: 0, peak: 0 }; });
@@ -447,8 +464,6 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     const aimA = Math.atan2(p.ay, p.ax);
     shipLight.position.set(p.x + Math.cos(aimA) * 0.7 - Math.sin(aimA) * 0.35, 2.3, p.y + Math.sin(aimA) * 0.7 + Math.cos(aimA) * 0.35);
     shipLight.visible = !dead;
-    aimLine.visible = !dead && s.phase === 'fight';
-    aimLine.position.set(p.x, 0.08, p.y); aimLine.rotation.y = -Math.atan2(p.ay, p.ax); aimLine.scale.set(5, 1, 0.05);
     const speed = Math.hypot(p.vx, p.vy);
     if (!dead && speed > 1 && dt > 0) {
       const bx = p.x - (p.vx / speed) * 0.45, bz = p.y - (p.vy / speed) * 0.45;

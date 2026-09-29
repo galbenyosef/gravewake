@@ -161,6 +161,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `CAMERA_DIST_U` | camera distance; the arena's height must still fit |
 | `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
 | `WIZARD_SCALE` | the wizard's drawn size |
+| `BODY_LUM` | the brightest a body's paint may be: the dead stay dark shapes with bright tells |
 | `EXPOSURE` | tone-mapping exposure, the whole frame |
 | `MOON_KEY` | moon key light intensity (--moon) |
 | `MOON_FILL` | moonlit hemisphere fill |
@@ -179,6 +180,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `FOG_FAR_U` | distance fog end |
 | `PLAYER_LIGHT` | the wizard's light intensity (--player-glow) |
 | `PLAYER_LIGHT_U` | its reach, u |
+| `STATIC_LIGHTS` | scenery lights on the floor (grave-lanterns), at most this many |
+| `LANTERN_LIGHT` | how bright a scenery light is on the floor |
 | `FLOOR_LIGHTS` | spells in flight that light the floor (phones pay per light) |
 | `FLASH_LIGHTS` | pooled point lights for spell impacts |
 | `FLASH_S` | how long an impact flash lasts, s |
@@ -263,6 +266,8 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | `rocks` | scenery: a few half-sunk, weathered stones |
 | `bones` | scenery: an old skull, a femur and loose ribs lying in the leaves |
 | `grass` | scenery: a tuft of dead, bent grass |
+| `ruin` | scenery: a broken, leaning standing stone with a rune, whose moon shadow falls long across the clearing |
+| `lantern` | scenery: a grave-lantern on a bent iron post, cold soulfire in its cage; with `light=` it lights the ground |
 | `altar` | scenery: the sunken ritual circle at the clearing's heart: broken flagstones, smouldering runes, guttered candles |
 
 ## Model rig
@@ -320,7 +325,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
-| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
+| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" light= out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
 
 ## Content helpers
 

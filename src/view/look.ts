@@ -12,11 +12,14 @@ export const LOOK = {
    *  grows a little. View only; hits still use r. The wizard is drawn at WIZARD_SCALE. */
   CHARACTER_PAD_U: 0.4,
   WIZARD_SCALE: 1.3,
+  /** The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
+   *  (soulfire eyes, the moon on their edges), under the wizard's light. */
+  BODY_LUM: 0.1,
   /** Tone-mapping exposure: the whole frame. */
   EXPOSURE: 1.1,
   /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
-  MOON_KEY: 1.5,
-  MOON_FILL: 0.55,
+  MOON_KEY: 2.2,
+  MOON_FILL: 0.3,
   ENV: 0.12,
   /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
   RIM: 1.6,
@@ -40,6 +43,9 @@ export const LOOK = {
   PLAYER_LIGHT_U: 11,
   /** How many spells in flight light the floor (a shader loop: phones pay per light). */
   FLOOR_LIGHTS: 20,
+  /** Scenery lights on the floor (grave-lanterns): how many at most, and how bright. */
+  STATIC_LIGHTS: 8,
+  LANTERN_LIGHT: 1.2,
   /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
   FLASH_LIGHTS: 3,
   FLASH_S: 0.22,

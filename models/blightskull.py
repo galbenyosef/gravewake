@@ -10,8 +10,11 @@ body = part('skull', skl[0], *skl[2:], *cracks, *horns)
 jaw = part('jaw', skl[1], pivot=(0.15, 0, -0.35), parent=body)
 flames = []
 for i, (y, z, ln) in enumerate(((0, 0.3, 1.2), (0.3, 0.1, 0.9), (-0.3, 0.1, 0.9), (0.18, -0.2, 0.8), (-0.18, -0.2, 0.8))):
-    t = tube('flame', [(-0.3, y, z), (-0.3 - ln * 0.4, y * 1.2, z + 0.12), (-0.3 - ln * 0.8, y * 1.1, z + 0.05), (-0.3 - ln, y, z + 0.15)], [0.22, 0.15, 0.07, 0.0], 'glow', 6)
-    flames.append(part(f'flame_{i}', t, pivot=(-0.3, y, z), parent=body))
+    path = [(-0.3, y, z), (-0.3 - ln * 0.4, y * 1.2, z + 0.12), (-0.3 - ln * 0.8, y * 1.1, z + 0.05), (-0.3 - ln, y, z + 0.15)]
+    smoke = tube('smoke', path, [0.2, 0.16, 0.1, 0.0], 'trim', 6)
+    rough(smoke, 0.03, 8, i)
+    core = tube('flame', [(px + 0.05, py, pz + 0.04) for px, py, pz in path[:3]], [0.08, 0.05, 0.0], 'glow', 5)
+    flames.append(part(f'flame_{i}', smoke, core, pivot=(-0.3, y, z), parent=body))
 # It floats: lift the whole thing off the ground.
 RIG.location = (0, 0, 0.1)
 
