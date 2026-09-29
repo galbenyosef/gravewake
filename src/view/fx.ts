@@ -59,6 +59,46 @@ export function createParticles(scene: THREE.Scene, max = 2400, additive = true)
   return { burst, spark, update };
 }
 
+/**
+ * The telegraph material: not flat vector shapes but carved sigils. A ring is a band of rune ticks with a noisy,
+ * flickering edge; a landing zone is a filled circle of concentric bands with a rune rim; a lane is a runner of
+ * chevrons crawling along it; a column fades up. `uKind` picks which (0 ring, 1 fill, 2 line, 3 column).
+ */
+function sigilMaterial() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color() }, uOpacity: { value: 1 }, uTime: { value: 0 }, uKind: { value: 0 } },
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: /* glsl */ `
+      varying vec3 vLocal; varying vec2 vUv;
+      void main() { vLocal = position; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor; uniform float uOpacity, uTime; uniform int uKind;
+      varying vec3 vLocal; varying vec2 vUv;
+      float hash(float n) { return fract(sin(n) * 43758.5453); }
+      void main() {
+        float a = 0.0;
+        if (uKind == 0 || uKind == 1) {
+          float r = length(vLocal.xz), ang = atan(vLocal.z, vLocal.x);
+          float seg = floor((ang + 3.14159) / 6.28318 * 36.0), f = fract((ang + 3.14159) / 6.28318 * 36.0);
+          // Rune ticks: each of 36 segments carries a short mark at a hashed depth.
+          float tick = step(0.3, f) * step(f, 0.55) * step(abs(r - 0.93 + 0.04 * (hash(seg) - 0.5)), 0.035);
+          float edge = smoothstep(0.012, 0.0, abs(r - 0.995)) + smoothstep(0.012, 0.0, abs(r - 0.865));
+          float flicker = 0.75 + 0.25 * sin(uTime * 17.0 + seg * 1.7);
+          if (uKind == 0) a = (edge * 0.9 + tick * 1.2) * flicker;
+          else a = smoothstep(1.0, 0.0, r) * 0.25 * (0.6 + 0.4 * sin(r * 40.0 - uTime * 6.0)) + (smoothstep(0.02, 0.0, abs(r - 0.97)) + tick * step(0.86, r)) * flicker;
+        } else if (uKind == 2) {
+          // Chevrons crawling from the start of the lane to its end, brighter at the edges.
+          float x = vUv.x, y = abs(vUv.y - 0.5) * 2.0;
+          float chev = step(fract(x * 10.0 - y * 0.6 - uTime * 3.0), 0.35);
+          a = chev * 0.8 + smoothstep(0.8, 1.0, y) * 0.7;
+        } else {
+          a = 1.0 - vUv.y;
+        }
+        gl_FragColor = vec4(uColor * a, 1.0) * uOpacity;
+      }`,
+  });
+}
+
 type Fx = { mesh: THREE.Mesh; t: number; dur: number; r0: number; r1: number; kind: 'ring' | 'fill' | 'line' | 'column'; blink: boolean };
 
 /** Rings on the floor (expanding shockwaves, closing landing zones), glowing lanes and light columns. */
@@ -69,7 +109,7 @@ export function createRings(scene: THREE.Scene, max = 64) {
   const colGeo = new THREE.CylinderGeometry(1, 1, 1, 24, 1, true).translate(0, 0.5, 0);
   const pool: Fx[] = [];
   for (let i = 0; i < max; i++) {
-    const mesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    const mesh = new THREE.Mesh(ringGeo, sigilMaterial());
     mesh.visible = false;
     mesh.renderOrder = 2;
     scene.add(mesh);
@@ -80,7 +120,9 @@ export function createRings(scene: THREE.Scene, max = 64) {
     const f = pool[next]!; next = (next + 1) % max;
     f.kind = kind; f.t = 0; f.dur = dur; f.blink = false;
     f.mesh.geometry = kind === 'fill' ? discGeo : kind === 'line' ? lineGeo : kind === 'column' ? colGeo : ringGeo;
-    (f.mesh.material as THREE.MeshBasicMaterial).color.set(color).multiplyScalar(boost);
+    const u = (f.mesh.material as THREE.ShaderMaterial).uniforms;
+    u.uColor!.value.set(color).multiplyScalar(boost);
+    u.uKind!.value = { ring: 0, fill: 1, line: 2, column: 3 }[kind];
     f.mesh.visible = true;
     f.mesh.rotation.set(0, 0, 0);
     return f;
@@ -112,7 +154,8 @@ export function createRings(scene: THREE.Scene, max = 64) {
       for (const f of pool) {
         if (!f.mesh.visible) continue;
         f.t += dt;
-        const k = Math.min(1, f.t / f.dur), mat = f.mesh.material as THREE.MeshBasicMaterial;
+        const k = Math.min(1, f.t / f.dur), u = (f.mesh.material as THREE.ShaderMaterial).uniforms, mat = { set opacity(v: number) { u.uOpacity!.value = v; } };
+        u.uTime!.value = f.t;
         if (k >= 1) { f.mesh.visible = false; continue; }
         const flick = f.blink ? 0.55 + 0.45 * Math.sin(f.t * 30) : 1;
         if (f.kind === 'ring') { const r = f.r0 + (f.r1 - f.r0) * (1 - (1 - k) ** 3); f.mesh.scale.set(r, 1, r); mat.opacity = (1 - k) * flick; }

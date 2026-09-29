@@ -23,4 +23,4 @@ scatter "grass" model="grass" paint="--moss" along="field" step=2.2 jitter=2.2 e
 scatter "bones" model="bones" paint="--bone" along="field" step=5.5 jitter=4 extend=1 scale=0.8 vary=0.3 chance=0.45 seed=33
 
 // The heart of the clearing: the old ritual circle, its runes still smouldering.
-scatter "altar" model="altar" paint="--stone" glow="--soulfire" along="ring" out=0 step=1 scale=1.4 seed=41
+scatter "altar" model="altar" paint="--wood" glow="--soulfire" along="ring" out=0 step=1 scale=1.4 seed=41

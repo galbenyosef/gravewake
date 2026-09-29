@@ -14,8 +14,8 @@ for i in range(14):
     st = slab('flag', pts, 0.08, 'body', 0.02)
     at(st, (0, 0, 0.01 + rnd.uniform(-0.02, 0.02)), (rnd.uniform(-3, 3), rnd.uniform(-3, 3), 0))
     stones.append(st)
-centre = lathe('centre', [(0.0, -0.02), (0.72, -0.02), (0.74, 0.04), (0.7, 0.07), (0.0, 0.08)], 'body', 24)
-rough(centre, 0.01, 6, 1)
+centre = slab('centre', [(math.cos(a) * 0.72, math.sin(a) * 0.72) for a in (i / 24 * math.tau for i in range(24))], 0.1, 'body', 0.03)
+at(centre, (0, 0, 0.02))
 crack = tube('crack', [(-0.5, 0.1, 0.085), (-0.1, -0.05, 0.085), (0.2, 0.15, 0.085), (0.55, -0.1, 0.085)], 0.018, 'trim', 4)
 runes = []
 for i in range(7):

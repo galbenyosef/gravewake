@@ -404,7 +404,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     ship.update(dt);
     // The light sits in the staff's witchfire, ahead and to the right of him.
     const aimA = Math.atan2(p.ay, p.ax);
-    shipLight.position.set(p.x + Math.cos(aimA) * 0.5 - Math.sin(aimA) * 0.3, 1.5, p.y + Math.sin(aimA) * 0.5 + Math.cos(aimA) * 0.3);
+    shipLight.position.set(p.x + Math.cos(aimA) * 0.7 - Math.sin(aimA) * 0.35, 2.3, p.y + Math.sin(aimA) * 0.7 + Math.cos(aimA) * 0.35);
     shipLight.visible = !dead;
     aimLine.visible = !dead && s.phase === 'fight';
     aimLine.position.set(p.x, 0.08, p.y); aimLine.rotation.y = -Math.atan2(p.ay, p.ax); aimLine.scale.set(5, 1, 0.05);
