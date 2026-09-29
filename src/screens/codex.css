@@ -1,0 +1,7 @@
+.codex { opacity: .94; gap: 8px; padding: 10px 0 }
+.codex-title { font-family: var(--title-font); font-size: 22px; letter-spacing: 10px }
+.codex-grid { flex-direction: row; flex-wrap: wrap; gap: 6px; width: 774px; justify-content: center }
+.codex-grid .enemy-card { width: 250px; height: 56px; padding: 4px 8px }
+.codex-grid .shared-enemy-glyph { width: 44px; height: 44px }
+.codex-grid .shared-enemy-blurb { font-size: 11px; width: 180px }
+.codex-back button { height: max(38px, var(--touch-size)) }

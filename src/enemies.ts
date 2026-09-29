@@ -16,6 +16,8 @@ export type Behaviour = {
   death?: (m: number[], w: World, e: Enemy, spawns: string) => void;
   /** Touching the ship destroys it (and so triggers its death words). */
   kamikaze?: boolean;
+  /** A shield's width in degrees, for the shell to draw the arc. */
+  shieldArcDeg?: number;
   /** Steers the enemy; an enemy has at most one such word. */
   moves?: boolean;
   /** Words that need a `spawns` kind on the enemy. */
@@ -171,6 +173,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
   /** A frontal shield `arc` degrees wide that eats shots; it turns toward the ship at a limited rate, so flank it. */
   shield: (arc) => ({
     mem: none,
+    shieldArcDeg: arc,
     tick: (_m, w, e, dt) => {
       const d = angleDiff(e.facing, aimAt(e, w)), turn = T.ENEMY_TURN_RAD_PER_S * dt;
       e.facing += clamp(d, -turn, turn);

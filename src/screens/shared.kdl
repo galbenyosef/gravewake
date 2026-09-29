@@ -1,0 +1,38 @@
+// Shared prefabs, prepended to every screen's KDL by screenUi (shared.ts). Build them with the binding builders there.
+
+prefab "btn" {
+    button bind-class="state" tap="tap" {
+        text class="shared-btn-label" bind="label"
+    }
+}
+
+prefab "bar" {
+    panel class="shared-bar" {
+        text class="shared-bar-label" bind="label"
+        panel class="shared-bar-track" {
+            meter class="shared-bar-fill" value=(bind)"fill"
+        }
+    }
+}
+
+prefab "upgrade-card" {
+    panel class="upgrade-card" bind-class="state" tap="pick" {
+        corners
+        panel class="shared-card-icon" {
+            text class="shared-card-glyph" bind="icon"
+        }
+        text class="shared-card-name" bind="name"
+        text class="shared-card-blurb" bind="blurb"
+    }
+}
+
+prefab "enemy-card" {
+    panel class="enemy-card" bind-class="tier" {
+        enemy-glyph class="shared-enemy-glyph" kind=(bind)"kind"
+        panel class="shared-enemy-text" {
+            text class="shared-enemy-tier" bind="tierLabel"
+            text class="shared-enemy-name" bind="name"
+            text class="shared-enemy-blurb" bind="blurb"
+        }
+    }
+}

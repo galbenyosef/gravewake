@@ -1,0 +1,6 @@
+prefab "pause" {
+    panel class="shared-scrim pause" {
+        text class="pause-title" "PAUSED"
+        panel class="pause-buttons" slot="buttons"
+    }
+}

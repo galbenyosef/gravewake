@@ -1,0 +1,10 @@
+.gameover { opacity: .92; gap: 10px }
+.go-title { font-family: var(--title-font); font-size: 44px; letter-spacing: 8px; font-color: var(--danger); text-stroke-color: #2a0010; text-stroke-width: 6px; animation: go-in .7s var(--pop) }
+@keyframes go-in { from { opacity: 0; scale: 1.8; letter-spacing: 30px } }
+.go-score { font-family: var(--title-font); font-size: 30px; letter-spacing: 3px }
+.go-best { font-family: var(--title-font); font-size: 13px; letter-spacing: 4px; font-color: var(--dim) }
+.go-best.new { font-color: var(--gold); animation: go-best 1s ease-in-out infinite alternate }
+@keyframes go-best { to { scale: 1.12 } }
+.go-stats { flex-direction: row; gap: 30px }
+.go-stat { font-size: 15px; font-color: var(--dim) }
+.go-buttons { flex-direction: row; gap: 18px; padding: 12px 0 0 0 }

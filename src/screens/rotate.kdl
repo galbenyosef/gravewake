@@ -1,0 +1,6 @@
+prefab "rotate" {
+    panel class="rotate" {
+        text class="rotate-glyph" "⟳"
+        text class="rotate-text" "ROTATE TO LANDSCAPE"
+    }
+}

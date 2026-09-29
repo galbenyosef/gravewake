@@ -1,0 +1,14 @@
+// The title over the attract-mode arena.
+prefab "title" {
+    panel class="title" {
+        panel class="title-scrim"
+        panel class="logo" {
+            text class="logo-kicker" "LIORA LABS PRESENTS"
+            text class="logo-word" "PRISMFALL"
+            text class="logo-tag" "HOLD THE LINE AGAINST THE SWARM"
+        }
+        panel class="title-buttons" slot="buttons"
+        text class="title-best" bind="best"
+        text class="title-hint" bind="hint"
+    }
+}

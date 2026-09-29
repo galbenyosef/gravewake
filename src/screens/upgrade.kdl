@@ -1,0 +1,8 @@
+// Between waves: three upgrade cards; tap one to take it and start the next wave.
+prefab "upgrade" {
+    panel class="shared-scrim upgrade" {
+        text class="up-kicker" bind="kicker"
+        text class="up-title" "CHOOSE AN UPGRADE"
+        panel class="up-cards" slot="cards"
+    }
+}
