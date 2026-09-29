@@ -268,6 +268,8 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | `grass` | scenery: a tuft of dead, bent grass |
 | `ruin` | scenery: a broken, leaning standing stone with a rune, whose moon shadow falls long across the clearing |
 | `lantern` | scenery: a grave-lantern on a bent iron post, cold soulfire in its cage; with `light=` it lights the ground |
+| `statue` | scenery: the landmark, a weeping hooded angel on a cracked plinth, one wing snapped, soulfire tears |
+| `snag` | scenery: a tall dead pine, bark gone, top snapped, a few broken spurs |
 | `altar` | scenery: the sunken ritual circle at the clearing's heart: broken flagstones, smouldering runes, guttered candles |
 
 ## Model rig

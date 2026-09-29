@@ -107,7 +107,7 @@ function floorMaterial() {
         alb = mix(alb, uStone * 0.35, verge * 0.7);
         moss *= 1.0 - path;
         float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
-        float wet = smoothstep(0.34, 0.26, low) * smoothstep(0.45, 0.65, fbm(p * 0.4 + 8.0));
+        float wet = smoothstep(0.3, 0.24, low) * smoothstep(0.5, 0.68, fbm(p * 0.4 + 8.0));
         alb *= 1.0 - 0.45 * wet;
         float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
         alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
@@ -137,7 +137,11 @@ function floorMaterial() {
           float d = length(p - l.xy) / l.z;
           spell += uStaticCol[i] * l.w * exp(-d * d) * (0.85 + 0.15 * sin(uTime * 3.0 + float(i) * 1.7));
         }
-        totalEmissiveRadiance += alb * spell + uMoon * wave * 0.012 * (0.5 + broad);`);
+        // Standing water: the moonlit sky in it (stronger at a glancing angle), a pale shoreline, and the spells mirrored.
+        float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+        float shore = smoothstep(0.15, 0.5, wet) * smoothstep(0.85, 0.5, wet);
+        totalEmissiveRadiance += alb * spell + spell * 0.25 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
+          + uMoon * wave * 0.012 * (0.5 + broad);`);
   };
   return { material: m, uniforms };
 }
@@ -551,7 +555,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         m4.compose(v3, q, s3.setScalar(0.9 + Math.sin(time * 25 + b.id) * 0.12));
         lobFire.setMatrixAt(nl++, m4);
         if (dt > 0) particles.spark(b.x, b.y, (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 0.8, token('--lob'), 0.09, 0.4, v3.y);
-        floorLight(b.x, b.y, 1.6, 1.2, token('--lob'));
+        floorLight(b.x, b.y, 1.8, 2.4, token('--lob'));
       } else if (b.hostile) {
         const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15, sp = Math.hypot(b.vx, b.vy) || 1;
         q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx));
@@ -562,7 +566,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
         if (dt > 0 && no < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--hostile-shot'), 0.05, 0.3, 0.5);
-        floorLight(b.x, b.y, 1.2, 0.45, token('--hostile-shot'));
+        floorLight(b.x, b.y, 1.4, 1.1, token('--hostile-shot'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
         bolts.setMatrixAt(nb, m4);
@@ -570,7 +574,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         boltHalos.setMatrixAt(nb++, m4);
         // A trail of embers behind each spell.
         if (dt > 0 && nb < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--player-shot'), 0.05, 0.25, 0.45);
-        floorLight(b.x, b.y, 2.2, 1.5, token('--player-shot'));
+        floorLight(b.x, b.y, 2.4, 3.2, token('--player-shot'));
       }
     }
     for (let i = nf; i < MAX_FLOOR_LIGHTS; i++) floorU.uLights.value[i]!.w = 0;

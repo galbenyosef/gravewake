@@ -15,7 +15,7 @@ import { T } from './tuning';
 export const MODELS = ['skeleton', 'crawler', 'ghoul', 'banshee', 'blightskull', 'warden', 'barrow', 'wraith', 'bloat', 'necromancer', 'catapult', 'lich', 'golem', 'archer'] as const;
 export type Model = (typeof MODELS)[number];
 /** Scenery models round the clearing (models/<name>.py like the characters; content/arena.kdl places them). */
-export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar', 'ruin', 'lantern'] as const;
+export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar', 'ruin', 'lantern', 'statue', 'snag'] as const;
 
 const pos = z.number().positive();
 
@@ -147,7 +147,8 @@ export const ScatterSchema = z.strictObject({
   }
   for (const edge of EDGES[sc.along]) {
     const horiz = edge === 'top' || edge === 'bottom', half = (horiz ? hw : hh) + sc.extend, sign = edge === 'top' || edge === 'left' ? -1 : 1;
-    for (let t = -half; t <= half + 1e-6; t += sc.step) {
+    // A step longer than the edge is one slot at its middle.
+    for (let t = sc.step > 2 * half ? 0 : -half; t <= half + 1e-6; t += sc.step) {
       const along = t + (r() - 0.5) * sc.jitter, away = sign * ((horiz ? hh : hw) + sc.out + r() * sc.spread), keep = r() < sc.chance;
       const scale = sc.scale + (r() - 0.5) * sc.vary, turn = r();
       if (!keep) continue;

@@ -3,6 +3,7 @@
 //   along="top/bottom/sides/all": walks those edges; `out` is how far past the edge a slot sits (negative is inside) and
 //     `spread` adds up to that much more at random; `jitter` slides a slot along the edge; `extend` runs the row that far
 //     past the edge's ends.
+//     A `step` longer than the edge puts one slot at its middle.
 //   along="field": a `step` grid over the whole clearing (`extend` past its edges), each slot jittered by `jitter`.
 //   along="ring": round the centre at radius `out` (radius 0 is one slot at the centre).
 // `scale` +- `vary`/2 sizes a slot; `chance` is the odds it is filled; `face="in"` turns the model's front (+X) towards
@@ -12,7 +13,8 @@
 // Dead trees: a ragged row well past each edge (up close they'd crowd the fight), two leaning in at the near corners.
 scatter "far-trees" model="tree" paint="--wood" along="top" out=9 spread=4 step=5 jitter=2.5 extend=8 scale=2.1 vary=0.8 seed=11
 scatter "side-trees" model="tree" paint="--wood" along="sides" out=4 spread=3 step=4.5 jitter=2.5 extend=3 scale=2.1 vary=0.8 seed=12
-scatter "corner-trees" model="tree" paint="--wood" along="bottom" out=4.5 step=34 scale=2.2 seed=13
+scatter "corner-trees" model="tree" paint="--wood" along="bottom" out=3 step=36 extend=1 scale=3 seed=13
+scatter "snags" model="snag" paint="--wood" along="all" out=5 spread=4 step=9 jitter=4 extend=4 scale=1.2 vary=0.4 chance=0.6 seed=14
 
 // The edge itself: a broken line of graves facing into the clearing, and roots between them.
 scatter "graves" model="grave" paint="--stone" along="all" out=0.9 spread=0.8 step=2.4 jitter=1 scale=0.9 vary=0.35 chance=0.5 face="in" seed=21
@@ -31,4 +33,7 @@ scatter "ruins" model="ruin" paint="--stone" glow="--soulfire" along="top" out=1
 scatter "ruins-side" model="ruin" paint="--stone" glow="--soulfire" along="sides" out=1.8 spread=1 step=8 jitter=3 scale=1 vary=0.3 chance=0.6 seed=52
 
 // Grave-lanterns: cold pools of soulfire that anchor the corners of the clearing.
-scatter "lanterns" model="lantern" paint="--wood" glow="--soulfire" along="ring" out=13 step=10 jitter=2 scale=1.2 face="in" light=3 seed=61
+scatter "lanterns" model="lantern" paint="--wood" glow="--soulfire" along="ring" out=13 step=10 jitter=2 scale=1.2 face="in" light=1.8 seed=61
+
+// The landmark: a weeping angel at the head of the clearing, looking down on the circle.
+scatter "statue" model="statue" paint="--stone" glow="--soulfire" along="top" out=2.2 step=100 scale=1.2 face="in" light=2 seed=71

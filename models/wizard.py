@@ -20,7 +20,10 @@ satchel = at(smooth(box('satchel', (0.16, 0.12, 0.2), 'trim', 0.04)), (-0.05, -0
 cape = [tube('cape', [(-0.2, y, 0.62), (-0.45, y * 1.25, 0.3), (-0.7, y * 1.35, -0.1), (-0.95, y * 1.2, -0.38)], [0.13, 0.12, 0.09, 0.02], 'cloth', 6) for y in (-0.22, 0.0, 0.22)]
 for c in cape: rough(c, 0.03, 7, 4)
 pauldrons = [at(ball('shoulder', 0.17, 'cloth', 10, 6), (-0.02, sd * 0.33, 0.66), scale=(1.1, 1.2, 0.55)) for sd in (1, -1)]
-body = part('body', cloak, mantle, belt, clasp, satchel, *cape, *pauldrons)
+# Embers stitched round his hem and down the cape: runes of the fire he carries, the one warm colour on the field.
+hem = [tube('hemrune', [(math.cos(t) * 0.5, math.sin(t) * 0.5, -0.3), (math.cos(t + 0.12) * 0.51, math.sin(t + 0.12) * 0.51, -0.24)], 0.018, 'glow', 3)
+       for t in (i / 14 * math.tau for i in range(14))]
+body = part('body', cloak, mantle, belt, clasp, satchel, *cape, *pauldrons, *hem)
 
 # Hood: deep cowl, open at the front, the point flopping back.
 hood = smooth(ball('hood', 0.27, 'cloth', 14, 10))

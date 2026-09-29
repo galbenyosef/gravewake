@@ -45,7 +45,7 @@ export const LOOK = {
   FLOOR_LIGHTS: 20,
   /** Scenery lights on the floor (grave-lanterns): how many at most, and how bright. */
   STATIC_LIGHTS: 8,
-  LANTERN_LIGHT: 1.2,
+  LANTERN_LIGHT: 2.5,
   /** Warm point-light flashes where spells land: how many at once, how long, how bright on a hit, a kill, a boss. */
   FLASH_LIGHTS: 3,
   FLASH_S: 0.22,
