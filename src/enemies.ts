@@ -128,7 +128,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
     },
   }),
 
-  /** Doesn't move; turns slowly (hives, turrets). */
+  /** Doesn't move; turns slowly (barrows). */
   anchor: () => ({ mem: none, moves: true, tick: (_m, _w, e, dt) => { steer(e, 0, 0, dt, 10); e.facing += dt * 0.4; } }),
 
   /** An aimed shot every `interval` s at `speed` u/s. */

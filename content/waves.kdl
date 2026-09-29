@@ -2,60 +2,60 @@
 // Past the last wave the list loops with tougher enemies (LOOP_HP_MULT in src/tuning.ts).
 
 wave "w01" title="The First Grave" {
-    spawn "drone" count=8 gap=0.6
+    spawn "skeleton" count=8 gap=0.6
 }
 wave "w02" title="Bones in the Leaves" {
-    spawn "drone" count=8 gap=0.4
-    spawn "mite" count=10 gap=0.2 at=4
+    spawn "skeleton" count=8 gap=0.4
+    spawn "crawler" count=10 gap=0.2 at=4
 }
 wave "w03" title="Ghouls" {
-    spawn "drone" count=6 gap=0.5
-    spawn "lancer" count=3 gap=1.2 at=2
-    spawn "bomber" count=3 gap=0.6 at=6
+    spawn "skeleton" count=6 gap=0.5
+    spawn "ghoul" count=3 gap=1.2 at=2
+    spawn "blightskull" count=3 gap=0.6 at=6
 }
 wave "w04" title="Banshees" {
-    spawn "wasp" count=4 gap=0.8
-    spawn "splitter" count=3 gap=1.5 at=3
-    spawn "drone" count=6 gap=0.3 at=7
+    spawn "banshee" count=4 gap=0.8
+    spawn "bloat" count=3 gap=1.5 at=3
+    spawn "skeleton" count=6 gap=0.3 at=7
 }
 wave "w05" title="The Lich" {
-    spawn "seraph"
-    spawn "drone" count=6 gap=0.8 at=6
+    spawn "lich"
+    spawn "skeleton" count=6 gap=0.8 at=6
 }
 wave "w06" title="Grave Wardens" {
-    spawn "bulwark" count=2 gap=2
-    spawn "mender" count=2 gap=1 at=1
-    spawn "lancer" count=3 gap=0.8 at=5
-    spawn "mite" count=12 gap=0.15 at=8
+    spawn "warden" count=2 gap=2
+    spawn "necromancer" count=2 gap=1 at=1
+    spawn "ghoul" count=3 gap=0.8 at=5
+    spawn "crawler" count=12 gap=0.15 at=8
 }
 wave "ice" title="Hoarfrost" tint="--ice" {
-    spawn "drone" count=8 gap=0.4
-    spawn "wasp" count=3 gap=1 at=3
-    spawn "lancer" count=2 gap=1.2 at=6
+    spawn "skeleton" count=8 gap=0.4
+    spawn "banshee" count=3 gap=1 at=3
+    spawn "ghoul" count=2 gap=1.2 at=6
     spawn "colossus" scale=2 at=12
 }
 wave "w07" title="Open Barrows" {
-    spawn "hive" count=2 gap=1
-    spawn "wasp" count=3 gap=1 at=4
-    spawn "bomber" count=5 gap=0.5 at=8
+    spawn "barrow" count=2 gap=1
+    spawn "banshee" count=3 gap=1 at=4
+    spawn "blightskull" count=5 gap=0.5 at=8
 }
 wave "w08" title="Wraiths" {
-    spawn "phantom" count=4 gap=1.2
-    spawn "mortar" count=2 gap=1 at=3
-    spawn "splitter" count=3 gap=1 at=7
-    spawn "sniper" count=2 gap=2 at=5
+    spawn "wraith" count=4 gap=1.2
+    spawn "catapult" count=2 gap=1 at=3
+    spawn "bloat" count=3 gap=1 at=7
+    spawn "deadeye" count=2 gap=2 at=5
 }
 wave "w09" title="The Whole Graveyard" {
-    spawn "bulwark" count=1
-    spawn "mender" count=1 at=1
-    spawn "mortar" count=2 gap=1 at=2
-    spawn "phantom" count=2 gap=1 at=5
-    spawn "wasp" count=3 gap=0.8 at=8
-    spawn "sniper" count=2 gap=1.5 at=9
-    spawn "drone" count=10 gap=0.25 at=10
+    spawn "warden" count=1
+    spawn "necromancer" count=1 at=1
+    spawn "catapult" count=2 gap=1 at=2
+    spawn "wraith" count=2 gap=1 at=5
+    spawn "banshee" count=3 gap=0.8 at=8
+    spawn "deadeye" count=2 gap=1.5 at=9
+    spawn "skeleton" count=10 gap=0.25 at=10
 }
 wave "w10" title="The Bone Colossus" {
     spawn "colossus"
-    spawn "mender" count=1 at=4
-    spawn "bomber" count=4 gap=0.6 at=10
+    spawn "necromancer" count=1 at=4
+    spawn "blightskull" count=4 gap=0.6 at=10
 }

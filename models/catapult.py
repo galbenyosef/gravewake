@@ -1,4 +1,4 @@
-# Catapult (the Mortar): a siege engine the dead built out of the dead. A rotten timber frame on wheels of ribs,
+# Catapult: a siege engine the dead built out of the dead. A rotten timber frame on wheels of ribs,
 # a throwing arm made of a giant's femur with a basket of skulls, and a grave-fire skull ready in the cup; it rocks
 # back and hurls on every lob.
 from kit import *

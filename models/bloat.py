@@ -1,4 +1,4 @@
-# Bloat (the Splitter): a corpse swollen to bursting. A drum of a belly held shut with stitches, skulls pressing out
+# Bloat: a corpse swollen to bursting. A drum of a belly held shut with stitches, skulls pressing out
 # through the skin, grave-light leaking from the seams; a small lolling head and stumpy arms. It bursts, and what
 # was inside comes skittering out.
 from kit import *

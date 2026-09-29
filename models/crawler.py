@@ -1,4 +1,4 @@
-# Crawler (the Mite): a skull that walks on the bones of a hand. Six long finger-legs, knuckled and splayed like a
+# Crawler: a skull that walks on the bones of a hand. Six long finger-legs, knuckled and splayed like a
 # spider's, carry it low and fast; its jaw chatters and it lunges when it gets close.
 from kit import *
 

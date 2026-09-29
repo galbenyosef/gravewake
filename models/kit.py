@@ -1,5 +1,5 @@
 # The modelling kit: every model script in this folder imports it (`from kit import *`), builds a character out of
-# its words, keys three clips and calls `export(__file__)`. Run `npm run models` (all) or `npm run models -- drone`
+# its words, keys three clips and calls `export(__file__)`. Run `npm run models` (all) or `npm run models -- skeleton`
 # (some); the .glb lands next to its script and is committed, so the game builds without Blender.
 #
 # The rig contract the game relies on (src/view/models.ts reads it; src/models.test.ts checks every .glb):

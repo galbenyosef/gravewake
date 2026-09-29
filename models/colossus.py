@@ -1,4 +1,4 @@
-# Golem (the Colossus): a giant built of a whole graveyard's bones. A hunched mass of fused ribs and skulls round a
+# Bone Colossus: a giant built of a whole graveyard's bones. A hunched mass of fused ribs and skulls round a
 # caged soul that burns in its chest, a small horned skull sunk between mountainous shoulders, arms like trunks that
 # end in fists of knuckle-bone, a spine of long vertebrae. It stomps you down and slams the ground; it falls apart
 # into the corpses it was made of.
@@ -6,7 +6,7 @@ from kit import *
 
 
 def cranium(s, loc, rot):
-    """Just the braincase of a skull (the golem is packed with them)."""
+    """Just the braincase of a skull (the colossus is packed with them)."""
     sk = skull(s)
     for o in sk[1:]: bpy.data.objects.remove(o, do_unlink=True)
     sk[0].location, sk[0].rotation_euler = loc, Euler([D(a) for a in rot])

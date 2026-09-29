@@ -43,19 +43,19 @@
   --soulfire: #5cc8ff;
 
   /* One per enemy in content/enemies.kdl (a test checks the pairing): bone, rot and cold blue. */
-  --enemy-mite: #b8ad92;
-  --enemy-drone: #d2c8ab;
-  --enemy-lancer: #8b9173;
-  --enemy-wasp: #a3b6cb;
-  --enemy-splitter: #7c8660;
-  --enemy-bulwark: #a39c8a;
-  --enemy-bomber: #cbc1a3;
-  --enemy-mender: #5d5869;
-  --enemy-hive: #6b6153;
-  --enemy-phantom: #7089b2;
-  --enemy-mortar: #8e7e62;
-  --enemy-sniper: #c1b79b;
-  --enemy-seraph: #9490ad;
+  --enemy-crawler: #b8ad92;
+  --enemy-skeleton: #d2c8ab;
+  --enemy-ghoul: #8b9173;
+  --enemy-banshee: #a3b6cb;
+  --enemy-bloat: #7c8660;
+  --enemy-warden: #a39c8a;
+  --enemy-blightskull: #cbc1a3;
+  --enemy-necromancer: #5d5869;
+  --enemy-barrow: #6b6153;
+  --enemy-wraith: #7089b2;
+  --enemy-catapult: #8e7e62;
+  --enemy-deadeye: #c1b79b;
+  --enemy-lich: #9490ad;
   --enemy-colossus: #d8ceb2;
 
   /* The look (tokens.ts, view/look.ts): how the render sees the palette's hues. Plain numbers; the unit is the name's

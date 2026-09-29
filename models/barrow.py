@@ -1,4 +1,4 @@
-# Barrow (the Hive): an old grave that will not close. A heaped mound of black earth split open round a stone
+# Barrow: an old grave that will not close. A heaped mound of black earth split open round a stone
 # sarcophagus, its lid shoved askew, grave-light welling up from inside; a leaning headstone burns with a rune, and
 # skeletal arms claw out of the dirt. When it summons, the lid heaves and the arms reach.
 from kit import *

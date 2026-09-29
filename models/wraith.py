@@ -1,4 +1,4 @@
-# Wraith (the Phantom): a hooded shadow with a reaper's scythe. A deep cowl with nothing inside but two cold eyes,
+# Wraith: a hooded shadow with a reaper's scythe. A deep cowl with nothing inside but two cold eyes,
 # a cloak that frays into smoke, long clawed hands on a crooked snath. It blinks in beside you, throws the cloak open
 # and scythes a fan of bolts.
 from kit import *

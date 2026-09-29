@@ -13,7 +13,7 @@ import { rand } from './rng';
 import { T } from './tuning';
 
 /** Characters the shell can build: each is models/<name>.py, exported to models/<name>.glb (view/models.ts loads them). */
-export const MODELS = ['skeleton', 'crawler', 'ghoul', 'banshee', 'blightskull', 'warden', 'barrow', 'wraith', 'bloat', 'necromancer', 'catapult', 'lich', 'golem', 'archer'] as const;
+export const MODELS = ['skeleton', 'crawler', 'ghoul', 'banshee', 'blightskull', 'warden', 'barrow', 'wraith', 'bloat', 'necromancer', 'catapult', 'lich', 'colossus', 'archer'] as const;
 export type Model = (typeof MODELS)[number];
 /** Scenery models round the clearing (models/<name>.py like the characters; content/arena.kdl places them). */
 export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar', 'ruin', 'lantern', 'statue', 'snag'] as const;

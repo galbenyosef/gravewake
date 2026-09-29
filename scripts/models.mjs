@@ -1,4 +1,4 @@
-// Rebuild the 3D models from their Blender scripts: `npm run models` (all) or `npm run models -- drone seraph`.
+// Rebuild the 3D models from their Blender scripts: `npm run models` (all) or `npm run models -- skeleton lich`.
 // Each models/<name>.py runs in a fresh headless Blender and writes models/<name>.glb (committed, so the game builds
 // without Blender). BLENDER overrides the binary.
 import { execFile } from 'node:child_process';

@@ -1,4 +1,4 @@
-# Necromancer (the Mender): a tall, starved priest of the grave in layered robes, a high spiked collar framing a
+# Necromancer: a tall, starved priest of the grave in layered robes, a high spiked collar framing a
 # bone mask, and a staff topped with a caged skull-lantern whose soulfire knits the dead back together. It raises the
 # lantern when it mends.
 from kit import *

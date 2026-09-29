@@ -37,7 +37,7 @@ export const Codex: Story = {
 
 export const Hud: Story = {
   render: () => stage(() => ({
-    run: { ...fight([['drone', 4, -4], ['drone', 6, 3], ['lancer', 10, -1], ['wasp', 2, 6], ['bomber', 12, 5]], { px: -6 }), score: 12840, mult: 2.35 },
+    run: { ...fight([['skeleton', 4, -4], ['skeleton', 6, 3], ['ghoul', 10, -1], ['banshee', 2, 6], ['blightskull', 12, 5]], { px: -6 }), score: 12840, mult: 2.35 },
     ui: { screen: 'play' },
   }), 700),
   play: async ({ args }) => {
@@ -63,7 +63,7 @@ export const Upgrade: Story = {
 export const GameOver: Story = {
   render: () => stage(() => {
     game.setState({ meta: { best: 50210, bestWave: 9, runs: 12, muted: false } });
-    return { run: { ...fight([['drone', 3, 3], ['hive', 8, -4]]), phase: 'dead', score: 48210, wave: 7, kills: 312, player: { ...newRun(1).player, hp: 0 } }, ui: { screen: 'play' } };
+    return { run: { ...fight([['skeleton', 3, 3], ['barrow', 8, -4]]), phase: 'dead', score: 48210, wave: 7, kills: 312, player: { ...newRun(1).player, hp: 0 } }, ui: { screen: 'play' } };
   }),
   play: async ({ args }) => {
     if (!args.runInteraction) return;
@@ -77,7 +77,7 @@ export const GameOver: Story = {
 };
 
 export const Pause: Story = {
-  render: () => stage(() => ({ run: fight([['drone', 4, -2], ['splitter', 8, 4]]), ui: { screen: 'play' } }), 300),
+  render: () => stage(() => ({ run: fight([['skeleton', 4, -2], ['bloat', 8, 4]]), ui: { screen: 'play' } }), 300),
   play: async ({ args }) => {
     if (!args.runInteraction) return;
     await ready();

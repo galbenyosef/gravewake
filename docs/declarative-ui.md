@@ -134,19 +134,19 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--laser` | sniper sight lines and their lock flash |
 | `--trim` | iron on every model (the `trim` material), painted in the model; hue from here |
 | `--soulfire` | the `glow` material of every undead: eyes, runes, grave-light |
-| `--enemy-mite` | mite |
-| `--enemy-drone` | drone |
-| `--enemy-lancer` | lancer |
-| `--enemy-wasp` | wasp |
-| `--enemy-splitter` | splitter |
-| `--enemy-bulwark` | bulwark |
-| `--enemy-bomber` | bomber |
-| `--enemy-mender` | mender |
-| `--enemy-hive` | hive |
-| `--enemy-phantom` | phantom |
-| `--enemy-mortar` | mortar |
-| `--enemy-sniper` | sniper |
-| `--enemy-seraph` | seraph |
+| `--enemy-crawler` | crawler |
+| `--enemy-skeleton` | skeleton |
+| `--enemy-ghoul` | ghoul |
+| `--enemy-banshee` | banshee |
+| `--enemy-bloat` | bloat |
+| `--enemy-warden` | warden |
+| `--enemy-blightskull` | blightskull |
+| `--enemy-necromancer` | necromancer |
+| `--enemy-barrow` | barrow |
+| `--enemy-wraith` | wraith |
+| `--enemy-catapult` | catapult |
+| `--enemy-deadeye` | deadeye |
+| `--enemy-lich` | lich |
 | `--enemy-colossus` | colossus |
 
 
@@ -282,20 +282,20 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | Model | Use |
 |---|---|
 | `wizard` | the player: hooded wanderer in a torn cloak, pointed hood, ember eyes, gnarled staff with witchfire that jabs on each spell |
-| `skeleton` | Skeleton (drone): big-skulled, chunky-boned soldier, rusted pauldron, notched sword; shambles, hacks overhead |
-| `crawler` | Crawler (mite): a skull on six finger-bone legs; skitters, rears and snaps |
-| `ghoul` | Ghoul (lancer): starved corpse on its knuckles, knobbed spine, hooked claws; rears back and flings itself on the charge |
-| `banshee` | Banshee (wasp): legless ghost, gown fraying to streamers, hair blown back, arms wide; screams with a glowing mouth |
-| `bloat` | Bloat (splitter): swollen, stitched corpse with skulls pressing through its belly and light leaking from the seams; bursts |
-| `warden` | Grave Warden (bulwark): dead knight in rusted plate, horned great-helm, coffin-lid shield with a burning sigil; shield-bashes |
-| `blightskull` | Blightskull (bomber): a great horned skull adrift in streaming soulfire; swells and splits its jaw, bursts |
-| `necromancer` | Necromancer (mender): tall robed priest, spiked collar, bone mask, staff with a caged skull-lantern it raises to mend |
-| `barrow` | Barrow (hive): a split grave mound round a sarcophagus, lid askew, rune headstone, arms clawing out; the lid heaves to summon |
-| `wraith` | Wraith (phantom): empty cowl with two cold eyes, cloak fraying to smoke, a scythe; the cloak flares and the scythe sweeps |
-| `catapult` | Bone Catapult (mortar): rotten frame on rib wheels, a femur arm with a burning skull in the cup; rocks back and hurls |
-| `archer` | Deadeye (sniper): hooded skeleton with a bow taller than itself and a quiver; draws, holds, looses |
-| `lich` | The Lich (seraph): floating crowned skull in robes of state, a blazing phylactery, six blades turning in a ring; arms up to cast |
-| `golem` | Bone Colossus (colossus): a giant of fused bones and skulls round a caged soul, trunk arms and knuckle fists; slams the ground |
+| `skeleton` | Skeleton (skeleton): big-skulled, chunky-boned soldier, rusted pauldron, notched sword; shambles, hacks overhead |
+| `crawler` | Crawler (crawler): a skull on six finger-bone legs; skitters, rears and snaps |
+| `ghoul` | Ghoul (ghoul): starved corpse on its knuckles, knobbed spine, hooked claws; rears back and flings itself on the charge |
+| `banshee` | Banshee (banshee): legless ghost, gown fraying to streamers, hair blown back, arms wide; screams with a glowing mouth |
+| `bloat` | Bloat (bloat): swollen, stitched corpse with skulls pressing through its belly and light leaking from the seams; bursts |
+| `warden` | Grave Warden (warden): dead knight in rusted plate, horned great-helm, coffin-lid shield with a burning sigil; shield-bashes |
+| `blightskull` | Blightskull (blightskull): a great horned skull adrift in streaming soulfire; swells and splits its jaw, bursts |
+| `necromancer` | Necromancer (necromancer): tall robed priest, spiked collar, bone mask, staff with a caged skull-lantern it raises to mend |
+| `barrow` | Barrow (barrow): a split grave mound round a sarcophagus, lid askew, rune headstone, arms clawing out; the lid heaves to summon |
+| `wraith` | Wraith (wraith): empty cowl with two cold eyes, cloak fraying to smoke, a scythe; the cloak flares and the scythe sweeps |
+| `catapult` | Bone Catapult (catapult): rotten frame on rib wheels, a femur arm with a burning skull in the cup; rocks back and hurls |
+| `archer` | Deadeye (deadeye): hooded skeleton with a bow taller than itself and a quiver; draws, holds, looses |
+| `lich` | The Lich (lich): floating crowned skull in robes of state, a blazing phylactery, six blades turning in a ring; arms up to cast |
+| `colossus` | Bone Colossus (colossus): a giant of fused bones and skulls round a caged soul, trunk arms and knuckle fists; slams the ground |
 | `tree` | scenery: a dead oak on clawing roots, bare crown (stands on z = 0, 1 unit about a metre) |
 | `grave` | scenery: a leaning, bitten headstone on a plinth, a mound and a broken iron cross |
 | `roots` | scenery: a snapped, rotten stump and the roots it throws across the ground |

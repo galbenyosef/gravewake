@@ -1,4 +1,4 @@
-# Skeleton (the Drone): the dead's rank and file. A big-skulled, chunky-boned soldier in a rusted pauldron, dragging
+# Skeleton: the dead's rank and file. A big-skulled, chunky-boned soldier in a rusted pauldron, dragging
 # a notched sword. It shambles in step with no one, hacks overhead when it reaches you, and falls into a pile of bones.
 from kit import *
 

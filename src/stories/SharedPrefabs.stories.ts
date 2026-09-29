@@ -46,7 +46,7 @@ function draw() {
     buttons: [btn('PLAIN', hit('plain')), btn('PRIMARY', hit('primary'), 'primary'), btn('DANGER', hit('danger'), 'danger'), btn('OFF', hit('off'), 'off')],
     bar: [bar('BOSS', 0.62)],
     cards: ['overclock', 'hollow-point', 'split-barrel', 'plating'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
-    enemies: ['drone', 'lancer', 'bulwark', 'hive', 'seraph', 'colossus'].map(enemyCard),
+    enemies: ['skeleton', 'ghoul', 'warden', 'barrow', 'lich', 'colossus'].map(enemyCard),
   }));
 }
 

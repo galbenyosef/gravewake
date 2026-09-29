@@ -1,4 +1,4 @@
-# Ghoul (the Lancer): a starved corpse that runs on its knuckles. A hunched, knobbed spine, a low jutting head with
+# Ghoul: a starved corpse that runs on its knuckles. A hunched, knobbed spine, a low jutting head with
 # a split jaw, and arms far too long, ending in hooked claws. It crouches, rears back, and throws itself down a lane.
 from kit import *
 

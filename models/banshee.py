@@ -1,4 +1,4 @@
-# Banshee (the Wasp): a drowned woman's ghost, circling. No legs: a torn gown that thins to streamers, long hair
+# Banshee: a drowned woman's ghost, circling. No legs: a torn gown that thins to streamers, long hair
 # blown straight back, bone-thin arms held wide, and a mouth that glows when she screams a bolt at you.
 from kit import *
 

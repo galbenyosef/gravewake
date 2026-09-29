@@ -2,71 +2,71 @@
 // Words and their units are in src/enemies.ts. Colours are CSS: --enemy-<id> in src/screens/shared.css.
 // At most one movement word per enemy: chase, keep-away, orbit, dash, blink, anchor.
 
-enemy "mite" name="Crawler" tier="minion" hp=1 r=0.28 score=5 model="crawler" blurb="A skull on the bones of a hand. Fast, frail, never alone." {
+enemy "crawler" name="Crawler" tier="minion" hp=1 r=0.28 score=5 model="crawler" blurb="A skull on the bones of a hand. Fast, frail, never alone." {
     chase 6.5
 }
 
-enemy "drone" name="Skeleton" hp=3 r=0.5 score=10 model="skeleton" blurb="The dead's rank and file. Slow, steady, many." {
+enemy "skeleton" name="Skeleton" hp=3 r=0.5 score=10 model="skeleton" blurb="The dead's rank and file. Slow, steady, many." {
     chase 3.2
 }
 
-enemy "lancer" name="Ghoul" hp=4 r=0.55 score=25 model="ghoul" blurb="Crouches, rears back, and throws itself down a line. Step aside." {
+enemy "ghoul" name="Ghoul" hp=4 r=0.55 score=25 model="ghoul" blurb="Crouches, rears back, and throws itself down a line. Step aside." {
     dash 0.7 17
 }
 
-enemy "wasp" name="Banshee" hp=4 r=0.5 score=30 model="banshee" blurb="Circles at range and screams bolts at you." {
+enemy "banshee" name="Banshee" hp=4 r=0.5 score=30 model="banshee" blurb="Circles at range and screams bolts at you." {
     orbit 6.5 4.5
     shoot 1.8 8
 }
 
-enemy "splitter" name="Bloat" hp=8 r=0.8 score=40 model="bloat" spawns="mite" blurb="Burst it and four crawlers pour out." {
+enemy "bloat" name="Bloat" hp=8 r=0.8 score=40 model="bloat" spawns="crawler" blurb="Burst it and four crawlers pour out." {
     chase 2.2
     split 4
 }
 
-enemy "bulwark" name="Grave Warden" tier="elite" hp=22 r=0.95 score=90 model="warden" blurb="Walks you down behind its coffin lid but never rams. It turns slowly: get round the back." {
+enemy "warden" name="Grave Warden" tier="elite" hp=22 r=0.95 score=90 model="warden" blurb="Walks you down behind its coffin lid but never rams. It turns slowly: get round the back." {
     keep-away 4 1.6
     shield 120
 }
 
-enemy "bomber" name="Blightskull" hp=2 r=0.5 score=20 model="blightskull" blurb="Rushes you and bursts. Break it early." {
+enemy "blightskull" name="Blightskull" hp=2 r=0.5 score=20 model="blightskull" blurb="Rushes you and bursts. Break it early." {
     chase 5
     explode 2.4
 }
 
-enemy "mender" name="Necromancer" hp=6 r=0.55 score=60 model="necromancer" blurb="Keeps its distance and knits the dead back together." {
+enemy "necromancer" name="Necromancer" hp=6 r=0.55 score=60 model="necromancer" blurb="Keeps its distance and knits the dead back together." {
     keep-away 9 3.2
     heal 5 3
 }
 
-enemy "hive" name="Barrow" tier="elite" hp=30 r=1.2 score=120 model="barrow" spawns="drone" blurb="An open grave that sends up skeletons until you break it." {
+enemy "barrow" name="Barrow" tier="elite" hp=30 r=1.2 score=120 model="barrow" spawns="skeleton" blurb="An open grave that sends up skeletons until you break it." {
     anchor
     summon 2.6 5
 }
 
-enemy "phantom" name="Wraith" hp=5 r=0.55 score=55 model="wraith" blurb="Blinks beside you and scythes a fan of bolts on arrival." {
+enemy "wraith" name="Wraith" hp=5 r=0.55 score=55 model="wraith" blurb="Blinks beside you and scythes a fan of bolts on arrival." {
     blink 2.8 5
     burst 2.8 5 70
 }
 
-enemy "mortar" name="Bone Catapult" hp=7 r=0.7 score=50 model="catapult" blurb="Hurls burning skulls where you are going. Watch the rings." {
+enemy "catapult" name="Bone Catapult" hp=7 r=0.7 score=50 model="catapult" blurb="Hurls burning skulls where you are going. Watch the rings." {
     keep-away 11 2.2
     mortar 2.6 2.2
 }
 
-enemy "sniper" name="Deadeye" hp=5 r=0.6 score=70 model="archer" blurb="Draws at the treeline and paints you red. When the line freezes, move." {
+enemy "deadeye" name="Deadeye" hp=5 r=0.6 score=70 model="archer" blurb="Draws at the treeline and paints you red. When the line freezes, move." {
     keep-away 17 3
     snipe 3.2 1 42
 }
 
-enemy "seraph" name="The Lich" tier="boss" hp=260 r=2 score=2000 model="lich" spawns="wasp" blurb="A dead king with six blades at its back, and a spiral you have to thread." {
+enemy "lich" name="The Lich" tier="boss" hp=260 r=2 score=2000 model="lich" spawns="banshee" blurb="A dead king with six blades at its back, and a spiral you have to thread." {
     keep-away 7 1.4
     spiral 0.18 4
     burst 3.2 9 80
     summon 7 3
 }
 
-enemy "colossus" name="Bone Colossus" tier="boss" hp=420 r=2.3 score=3500 model="golem" spawns="splitter" blurb="Walks you down firing rings; falls apart into bloats." {
+enemy "colossus" name="Bone Colossus" tier="boss" hp=420 r=2.3 score=3500 model="colossus" spawns="bloat" blurb="Walks you down firing rings; falls apart into bloats." {
     chase 1.3
     burst 1.5 14 360
     mortar 4 3

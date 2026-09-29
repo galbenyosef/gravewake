@@ -19,7 +19,7 @@ export type Enemy = {
   flash: number;
   /** Scratch per behaviour, `mem[i]` belongs to the enemy's i-th behaviour (timers, modes, a target point). */
   mem: number[][];
-  /** Who summoned it, so a hive counts its own brood. */
+  /** Who summoned it, so a barrow counts its own brood. */
   parent: number;
   /** Size multiplier from its wave's `spawn scale=` (absent = 1): collision and mesh both. */
   scale?: number;
@@ -133,7 +133,7 @@ export type World = {
   emit: (e: GameEvent) => void;
   /** Open a warp gate for `kind` that delivers it at (x, y) after the warp time; `parent` is the summoner. */
   summon: (kind: string, x: number, y: number, parent: number, scale?: number) => void;
-  /** Put `kind` straight into play (a splitter's children don't wait for a gate). */
+  /** Put `kind` straight into play (a bloat's children don't wait for a grave). */
   spawn: (kind: string, x: number, y: number, parent: number) => Enemy;
   shoot: (x: number, y: number, angle: number, speed: number) => void;
   lob: (x: number, y: number, tx: number, ty: number, blast: number) => void;

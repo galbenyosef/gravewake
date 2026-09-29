@@ -81,10 +81,10 @@ describe('waves', () => {
     expect([s.phase, s.wave, s.taken.length]).toEqual(['fight', 2, 1]);
   });
   it('reads tint= and spawn scale=, and a scaled enemy collides at its scaled size', () => {
-    const w = loadKdl('wave "x" title="X" tint="--ice" {\n spawn "drone" scale=2\n}', { wave: WaveSchema }).wave.x!;
+    const w = loadKdl('wave "x" title="X" tint="--ice" {\n spawn "skeleton" scale=2\n}', { wave: WaveSchema }).wave.x!;
     expect([w.tint, w.spawns[0]!.scale]).toEqual(['--ice', 2]);
-    const gap = ENEMIES.drone!.r * 1.5 + T.PLAYER_R_U; // inside 2r, outside r
-    const touches = (scale?: number) => { const s0 = arena([['drone', gap, 0]]); return types(step({ ...s0, enemies: [{ ...s0.enemies[0]!, scale }] }, IDLE, DT)).includes('hurt'); };
+    const gap = ENEMIES.skeleton!.r * 1.5 + T.PLAYER_R_U; // inside 2r, outside r
+    const touches = (scale?: number) => { const s0 = arena([['skeleton', gap, 0]]); return types(step({ ...s0, enemies: [{ ...s0.enemies[0]!, scale }] }, IDLE, DT)).includes('hurt'); };
     expect([touches(), touches(2)]).toEqual([false, true]);
   });
   it('plating repairs to the new maximum', () => {
@@ -95,89 +95,89 @@ describe('waves', () => {
 });
 
 describe('the roster behaves', () => {
-  it('drones chase', () => {
-    const s = run(arena([['drone', 10, 0]]), 1);
+  it('skeletons chase', () => {
+    const s = run(arena([['skeleton', 10, 0]]), 1);
     expect(s.enemies[0]!.x).toBeLessThan(9);
   });
-  it('splitters burst into mites', () => {
-    const s0 = arena([['splitter', 5, 0]]);
+  it('bloats burst into crawlers', () => {
+    const s0 = arena([['bloat', 5, 0]]);
     const s = step({ ...s0, enemies: [{ ...s0.enemies[0]!, hp: 0 }] }, IDLE, DT);
-    expect(s.enemies.map((e) => e.kind)).toEqual(['mite', 'mite', 'mite', 'mite']);
+    expect(s.enemies.map((e) => e.kind)).toEqual(['crawler', 'crawler', 'crawler', 'crawler']);
   });
-  it('bulwark shields eat frontal shots but not shots from behind', () => {
+  it('warden shields eat frontal shots but not shots from behind', () => {
     const hitFrom = (x: number) => {
-      const s0 = arena([['bulwark', 0, 5]]);
+      const s0 = arena([['warden', 0, 5]]);
       const e = { ...s0.enemies[0]!, facing: x < 0 ? Math.PI : 0 }; // shield faces the incoming side, or away from it
       let s: GameState = { ...s0, player: { ...s0.player, x: -10, y: 5 }, enemies: [e] };
       s = run(s, 0.4, { mx: 0, my: 0, aim: { x: 1, y: 0 } });
       return s;
     };
     const front = hitFrom(-1), back = hitFrom(1);
-    expect(front.enemies[0]!.hp).toBe(ENEMIES.bulwark!.hp);
-    expect(back.enemies[0]!.hp).toBeLessThan(ENEMIES.bulwark!.hp);
+    expect(front.enemies[0]!.hp).toBe(ENEMIES.warden!.hp);
+    expect(back.enemies[0]!.hp).toBeLessThan(ENEMIES.warden!.hp);
   });
-  it('bulwarks press in but never pin a cornered ship', () => {
-    const s0 = arena([['bulwark', 10, 3], ['bulwark', 13, 7]]);
+  it('wardens press in but never pin a cornered wizard', () => {
+    const s0 = arena([['warden', 10, 3], ['warden', 13, 7]]);
     const corner = { ...s0, player: { ...s0.player, x: T.ARENA_W_U / 2 - 1, y: T.ARENA_H_U / 2 - 1 } };
     const s = run(corner, 15);
     expect(s.player.hp).toBe(T.PLAYER_HP);
     const p = s.player, near = Math.min(...s.enemies.map((e) => Math.hypot(e.x - p.x, e.y - p.y)));
     expect(near).toBeLessThan(6); // it still closes in
   });
-  it('bombers explode on contact', () => {
-    const s0 = arena([['bomber', 0.5, 0]]);
+  it('blightskulls explode on contact', () => {
+    const s0 = arena([['blightskull', 0.5, 0]]);
     const s = step(s0, IDLE, DT);
     expect(types(s)).toContain('blast');
     expect(s.player.hp).toBe(T.PLAYER_HP - 1);
   });
-  it('menders heal the wounded', () => {
-    const s0 = arena([['mender', 8, 0], ['drone', 9, 0]]);
+  it('necromancers heal the wounded', () => {
+    const s0 = arena([['necromancer', 8, 0], ['skeleton', 9, 0]]);
     const s = run({ ...s0, enemies: [s0.enemies[0]!, { ...s0.enemies[1]!, hp: 1 }] }, 0.5);
     expect(s.enemies[1]!.hp).toBeGreaterThan(1);
   });
-  it('hives summon drones', () => {
-    const s = run(arena([['hive', 10, 5]]), 4);
-    expect(s.enemies.filter((e) => e.kind === 'drone').length + s.warps.length).toBeGreaterThan(0);
+  it('barrows summon skeletons', () => {
+    const s = run(arena([['barrow', 10, 5]]), 4);
+    expect(s.enemies.filter((e) => e.kind === 'skeleton').length + s.warps.length).toBeGreaterThan(0);
   });
-  it('lancers telegraph, then charge', () => {
+  it('ghouls telegraph, then charge', () => {
     let warned = false, charged = false;
-    run(arena([['lancer', 8, 0]]), 4, (x) => {
+    run(arena([['ghoul', 8, 0]]), 4, (x) => {
       warned ||= x.events.some((e) => e.type === 'telegraph' && e.what === 'dash');
       charged ||= warned && x.enemies.some((e) => Math.hypot(e.vx, e.vy) > 10);
       return IDLE;
     });
     expect([warned, charged]).toEqual([true, true]);
   });
-  it('mortars lob rounds that land as blasts', () => {
+  it('catapults hurl skulls that land as blasts', () => {
     let blasts = 0;
-    run(arena([['mortar', 10, 0]]), 5, (x) => { blasts += x.events.filter((e) => e.type === 'blast').length; return IDLE; });
+    run(arena([['catapult', 10, 0]]), 5, (x) => { blasts += x.events.filter((e) => e.type === 'blast').length; return IDLE; });
     expect(blasts).toBeGreaterThan(0);
   });
-  it('phantoms blink', () => {
-    const s = run(arena([['phantom', 12, 8]]), 4);
+  it('wraiths blink', () => {
+    const s = run(arena([['wraith', 12, 8]]), 4);
     expect(Math.hypot(s.enemies[0]!.x - 12, s.enemies[0]!.y - 8)).toBeGreaterThan(3);
   });
-  it('wasps orbit and shoot', () => {
+  it('banshees orbit and shoot', () => {
     let fired = 0;
-    const s = run(arena([['wasp', 6.5, 0]]), 3, (x) => { fired += x.events.filter((e) => e.type === 'enemy-fire').length; return IDLE; });
+    const s = run(arena([['banshee', 6.5, 0]]), 3, (x) => { fired += x.events.filter((e) => e.type === 'enemy-fire').length; return IDLE; });
     expect(fired).toBeGreaterThan(0);
     expect(Math.hypot(s.enemies[0]!.x, s.enemies[0]!.y)).toBeGreaterThan(4); // still out on its ring
   });
-  it('snipers hang back at the wall and land one fast shot', () => {
+  it('deadeyes hang back at the wall and land one fast shot', () => {
     let fast = 0;
-    const s = run(arena([['sniper', 6, 0]]), 5, (x) => { fast = Math.max(fast, ...x.shots.filter((b) => b.hostile).map((b) => Math.hypot(b.vx, b.vy))); return IDLE; });
+    const s = run(arena([['deadeye', 6, 0]]), 5, (x) => { fast = Math.max(fast, ...x.shots.filter((b) => b.hostile).map((b) => Math.hypot(b.vx, b.vy))); return IDLE; });
     const e = s.enemies[0]!;
     expect(Math.max(Math.abs(e.x) - T.ARENA_W_U / 2, Math.abs(e.y) - T.ARENA_H_U / 2)).toBeGreaterThan(-2); // within 2u of a wall
     expect(fast).toBeGreaterThan(30);
     expect(s.player.hp).toBe(T.PLAYER_HP - 1); // a ship that stands still gets hit
   });
-  it('the seraph fills the air', () => {
-    const s = run(arena([['seraph', 8, 0]]), 2);
+  it('the lich fills the air', () => {
+    const s = run(arena([['lich', 8, 0]]), 2);
     expect(s.shots.filter((b) => b.hostile).length).toBeGreaterThan(20);
-    expect(boss(s)?.kind).toBe('seraph');
+    expect(boss(s)?.kind).toBe('lich');
   });
   it('being hit resets the multiplier and grants invulnerability', () => {
-    const s0 = arena([['drone', 0, 0]]);
+    const s0 = arena([['skeleton', 0, 0]]);
     const s = step({ ...s0, mult: 3 }, IDLE, DT);
     expect([s.mult, s.player.hp, s.player.invuln > 0]).toEqual([1, T.PLAYER_HP - 1, true]);
   });
@@ -186,7 +186,7 @@ describe('the roster behaves', () => {
 describe('behaviour words', () => {
   it('snipe paints a tracking laser, locks, then fires one fast shot along the locked line', () => {
     const b = BEHAVIOURS.snipe!(1, 1, 40), m = b.mem(() => 0);
-    const e = arena([['drone', 10, 0]]).enemies[0]!;
+    const e = arena([['skeleton', 10, 0]]).enemies[0]!;
     const s = newRun(1), shots: [number, number][] = [], events: GameEvent[] = [];
     const w = { s, emit: (x: GameEvent) => events.push(x), shoot: (_x: number, _y: number, a: number, v: number) => shots.push([a, v]) } as unknown as World;
     const tick = (secs: number) => { for (let t = 0; t < secs; t += DT) b.tick!(m, w, e, DT, ''); };

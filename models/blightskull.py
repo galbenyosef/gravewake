@@ -1,4 +1,4 @@
-# Blightskull (the Bomber): a great skull adrift in its own grave-fire. Horns curling back, a cracked brow leaking
+# Blightskull: a great skull adrift in its own grave-fire. Horns curling back, a cracked brow leaking
 # light, tongues of soulfire streaming behind it as it rushes you; it swells and splits when it gets close, and
 # bursts in a shower of bone.
 from kit import *

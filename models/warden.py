@@ -1,4 +1,4 @@
-# Warden (the Bulwark): a dead knight that guards the graves. Rusted plate over bone, a horned great-helm with a
+# Warden: a dead knight that guards the graves. Rusted plate over bone, a horned great-helm with a
 # slit of soulfire, and for a shield the lid of its own coffin, iron-bound and carved with a burning sigil. It walks
 # you down behind the lid and bashes with it. Its front is armoured: get round the back.
 from kit import *

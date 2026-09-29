@@ -1,4 +1,4 @@
-# Lich (the Seraph): a dead king who would not stop. Floating in heavy robes of state that fray to smoke, a gaunt
+# Lich: a dead king who would not stop. Floating in heavy robes of state that fray to smoke, a gaunt
 # crowned skull with burning sockets, a phylactery blazing in its open ribcage, and six spectral blades turning in a
 # ring behind it, like wings. Its hands are raised; when it casts the blades flare and the phylactery flares.
 from kit import *

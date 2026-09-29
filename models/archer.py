@@ -1,4 +1,4 @@
-# Archer (the Sniper): a skeleton marksman in a rotted hood and a tattered half-cloak, with a war bow taller than
+# Archer (the Deadeye): a skeleton marksman in a rotted hood and a tattered half-cloak, with a war bow taller than
 # itself and a quiver of black-fletched arrows. It plants its feet at the treeline, draws, holds on you, and looses.
 from kit import *
 
