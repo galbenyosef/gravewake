@@ -83,8 +83,10 @@ export type GameEvent =
   | { type: 'telegraph'; id: number; what: 'dash' | 'lob' | 'blink' | 'snipe'; x: number; y: number; tx: number; ty: number; dur: number }
   | { type: 'blast'; x: number; y: number; r: number }
   | { type: 'block'; x: number; y: number }
-  | { type: 'heal'; id: number; x: number; y: number }
-  | { type: 'enemy-fire'; x: number; y: number }
+  /** `id` was mended by `by`. */
+  | { type: 'heal'; id: number; by: number; x: number; y: number }
+  /** Enemy `id` fired (the shell plays its attack clip). */
+  | { type: 'enemy-fire'; id: number; x: number; y: number }
   | { type: 'pickup'; kind: Pickup['kind']; x: number; y: number }
   | { type: 'wave'; n: number; boss: string | null }
   | { type: 'cleared'; n: number }

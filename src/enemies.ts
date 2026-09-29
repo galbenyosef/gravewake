@@ -134,7 +134,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
   /** An aimed shot every `interval` s at `speed` u/s. */
   shoot: (interval, speed) => ({
     mem: (r) => [r() * interval * 0.5],
-    tick: (m, w, e, dt) => { if (every(m, 0, dt, interval)) { w.shoot(e.x, e.y, aimAt(e, w), speed); w.emit({ type: 'enemy-fire', x: e.x, y: e.y }); } },
+    tick: (m, w, e, dt) => { if (every(m, 0, dt, interval)) { w.shoot(e.x, e.y, aimAt(e, w), speed); w.emit({ type: 'enemy-fire', id: e.id, x: e.x, y: e.y }); } },
   }),
 
   /** A fan of `count` shots across `arc` degrees aimed at the ship, every `interval` s (360 is a ring). */
@@ -144,7 +144,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
       if (!every(m, 0, dt, interval)) return;
       const mid = aimAt(e, w), full = arc >= 360, step = full ? (Math.PI * 2) / count : count > 1 ? (arc * DEG) / (count - 1) : 0;
       for (let i = 0; i < count; i++) w.shoot(e.x, e.y, mid + (full ? i * step : (i - (count - 1) / 2) * step), T.BURST_SHOT_U_PER_S);
-      w.emit({ type: 'enemy-fire', x: e.x, y: e.y });
+      w.emit({ type: 'enemy-fire', id: e.id, x: e.x, y: e.y });
     },
   }),
 
@@ -187,7 +187,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
         w.emit({ type: 'telegraph', id: e.id, what: 'snipe', x: e.x, y: e.y, tx, ty, dur: T.SNIPE_LOCK_S });
       } else if (m[0]! >= paint) {
         w.shoot(e.x, e.y, e.laser!, speed);
-        w.emit({ type: 'enemy-fire', x: e.x, y: e.y });
+        w.emit({ type: 'enemy-fire', id: e.id, x: e.x, y: e.y });
         delete e.laser; m[0] = 0; m[1] = 0;
       }
     },
@@ -239,7 +239,7 @@ export const BEHAVIOURS: Record<string, (...args: number[]) => Behaviour> = {
       for (const o of w.s.enemies) {
         if (o === e || o.hp >= o.maxHp || o.hp <= 0 || dist(e.x, e.y, o.x, o.y) > radius) continue;
         o.hp = Math.min(o.maxHp, o.hp + rate * dt);
-        if (pulse) w.emit({ type: 'heal', id: o.id, x: o.x, y: o.y });
+        if (pulse) w.emit({ type: 'heal', id: o.id, by: e.id, x: o.x, y: o.y });
       }
     },
   }),
