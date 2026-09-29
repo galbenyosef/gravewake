@@ -1,3 +1,4 @@
+/* The pause menu (pause.kdl), over the shared scrim. Sizes are design px. */
 .pause { gap: 22px }
 .pause-title { font-family: var(--title-font); font-size: 36px; letter-spacing: 10px }
 .pause-buttons { gap: 12px }

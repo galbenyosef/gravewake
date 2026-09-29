@@ -1,3 +1,5 @@
+/* The bestiary (codex.kdl): the roster as a grid of shared enemy-cards, narrower than the default card so three fit a
+   row. Sizes are design px (the screen is 390 tall); colours are palette tokens from shared.css. */
 .codex { opacity: .94; gap: 6px; padding: 6px 0; justify-content: flex-start }
 .codex-head { width: 780px; height: max(40px, var(--touch-size)); align-items: center; justify-content: center }
 .codex-back { position: absolute; left: 0; top: 0 }

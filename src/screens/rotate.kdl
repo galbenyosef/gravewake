@@ -1,3 +1,4 @@
+// Portrait prompt: covers everything while the device is upright.
 prefab "rotate" {
     panel class="rotate" {
         text class="rotate-glyph" "⟳"

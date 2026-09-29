@@ -1,8 +1,8 @@
-# Prismfall vocabulary catalog
+# Gravewake vocabulary catalog
 
 Every piece of shared vocabulary, where it lives, and one line on how to use it. `src/catalog.test.ts` fails when
 this file and the code disagree, so a new word lands here in the same commit as its code. How the engine works
-(prefabs, the CSS dialect, reconcile, motion recipes) is in [engine.md](engine.md), copied verbatim from the game bible.
+(prefabs, the CSS dialect, reconcile, motion recipes) is deadwood's to document: `src/decl` is copied from it, see [engine.md](engine.md).
 
 Homes:
 
@@ -77,7 +77,7 @@ Built-ins (engine) and game-defined (`defineProp` in shared.ts).
 | `sprite` | atlas texture; unused here (the engine's texture hook throws) |
 | `meter` | `meter value=(bind)"fill"`: a fill of `w * value`, coloured by `tint` |
 | `pips` | `pips count=(bind)"max" value=(bind)"hp"`: vigour diamonds, lit up to value |
-| `corners` | sci-fi corner brackets over the whole parent box, coloured by `tint` |
+| `corners` | corner brackets over the whole parent box, coloured by `tint` |
 | `enemy-glyph` | `enemy-glyph kind=(bind)"kind"`: an enemy's 2D glyph in its palette colour |
 
 ## Shared prefabs
@@ -99,7 +99,6 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 |---|---|
 | `--ink` | the darkest background |
 | `--panel` | card fill |
-| `--panel-hi` | raised card fill |
 | `--edge` | card and button border (bronze) |
 | `--text` | body text (parchment) |
 | `--dim` | secondary text |
@@ -107,7 +106,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--blood` | secondary UI accent: danger buttons, elite tier, boss bar, vigour pips |
 | `--gold` | score, multiplier, bosses |
 | `--danger` | hurt, game over |
-| `--good` | positive |
+| `--scrim` | the dark behind a modal and the title |
 | `--pop` | overshoot easing |
 | `--title-font` | Cinzel (`@fontsource/cinzel`, weight 600) |
 | `--body-font` | Georgia, serif |
@@ -115,8 +114,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--moss` | rot and moss patches on the floor, dead grass (`grass`) |
 | `--moon` | moonlight: key light, the cold rim on every model's edge, the move stick |
 | `--fog` | ground fog and the distance |
-| `--wood` | dead trees and roots (`tree`, `roots`) |
-| `--stone` | gravestones and stones (`grave`, `rocks`), stones in the floor |
+| `--wood` | dead wood (`tree`, `snag`, `roots`), and in `content/arena.kdl` also the floor's `rocks`, the `altar` and the `lantern` posts |
+| `--stone` | gravestones and standing stones (`grave`, `ruin`, `statue`), stones in the floor |
 | `--bone` | old bones lying in the clearing (`bones`) |
 | `--wizard` | the wizard's robe |
 | `--wizard-glow` | the wizard's light: staff flame, the light pool round him, his trail |
@@ -276,7 +275,7 @@ Under an `upgrade` node in `content/upgrades.kdl`.
 ## Models
 
 One Blender script per character, `models/<name>.py`. `enemy model=` in `content/enemies.kdl` names one; `wizard` is the
-player; `tree`, `grave` and `roots` are scenery (`SCENERY` in `src/content.ts`, placed by `content/arena.kdl`).
+player; the rest are scenery (`SCENERY` in `src/content.ts`, placed by `content/arena.kdl`).
 See each in Storybook under Models (idle, attack and die side by side; `still` freezes them for screenshots).
 
 | Model | Use |

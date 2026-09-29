@@ -1,3 +1,4 @@
+/* The run is over (gameover.kdl): the fall, the score, the record, retry. Sizes are design px, times in s. */
 .gameover { opacity: .92; gap: 10px }
 .go-title { font-family: var(--title-font); font-size: 44px; letter-spacing: 8px; font-color: var(--danger); text-stroke-color: #1a0004; text-stroke-width: 6px; animation: go-in .7s var(--pop) }
 @keyframes go-in { from { opacity: 0; scale: 1.8; letter-spacing: 30px } }

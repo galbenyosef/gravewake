@@ -1,3 +1,4 @@
+// The pause menu: a title over the shared scrim, its buttons from pause.ts.
 prefab "pause" {
     panel class="shared-scrim pause" {
         text class="pause-title" "PAUSED"

@@ -40,7 +40,7 @@ defineElement('pips', ({ count, value }, { w, h }) => {
   return c;
 });
 
-/** Sci-fi corner brackets on the box's four corners, coloured by `tint`: `corners` (CSS makes it full-size). */
+/** Corner brackets on the box's four corners, coloured by `tint`: `corners` (CSS makes it full-size). */
 const CORNER_PX = 12;
 defineElement('corners', (_p, { w, h }) => {
   const g = new Graphics(), k = CORNER_PX;

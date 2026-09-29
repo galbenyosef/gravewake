@@ -1,5 +1,7 @@
-// Waves in order: each `spawn` opens `count` graves `gap` seconds apart, the first `at` seconds into the wave.
-// Past the last wave the list loops with tougher enemies (LOOP_HP_MULT in src/tuning.ts).
+// Waves in play order. `wave "id" title=` is the banner; `tint="--token"` recolours every enemy in the wave with that
+// palette colour. Each `spawn "enemy"` opens `count` graves `gap` seconds apart, the first `at` seconds into the wave;
+// `scale` sizes that enemy (collision and mesh, 2 is double). Past the last wave the list loops with tougher enemies
+// (LOOP_HP_MULT in src/tuning.ts).
 
 wave "w01" title="The First Grave" {
     spawn "skeleton" count=8 gap=0.6

@@ -1,4 +1,4 @@
-// Between waves: three upgrade cards; tap one to take it and start the next wave.
+// Between waves: three boons as upgrade cards; tap one to take it and start the next wave.
 prefab "upgrade" {
     panel class="shared-scrim upgrade" {
         text class="up-kicker" bind="kicker"

@@ -4,7 +4,6 @@
   /* UI: black iron, parchment, tarnished gold; blood for danger */
   --ink: #050507;
   --panel: #0e0d10;
-  --panel-hi: #1a171b;
   --edge: #4b3f31;
   --text: #e6dcc6;
   --dim: #8c8372;
@@ -12,7 +11,7 @@
   --blood: #c0242f;
   --gold: #e8c46e;
   --danger: #e0313b;
-  --good: #9cc46e;
+  --scrim: #020203;
   --pop: cubic-bezier(.3, 1.7, .5, 1);
   --title-font: Cinzel;
   --body-font: Georgia, serif;
@@ -190,7 +189,7 @@ text { font-family: var(--body-font); font-color: var(--text); font-size: 16px }
 
 /* A modal's tap-swallowing backdrop; a screen overrides only its opacity or layout. */
 .shared-scrim {
-  width: 100%; height: 100%; background-color: #020203; opacity: .86; pointer-events: auto;
+  width: 100%; height: 100%; background-color: var(--scrim); opacity: .86; pointer-events: auto;
   align-items: center; justify-content: center; gap: 14px;
   animation: shared-fade .25s ease-out;
 }

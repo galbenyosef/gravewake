@@ -1,3 +1,5 @@
+/* The boon picker between waves (upgrade.kdl): kicker, title and three shared upgrade-cards. Sizes are design px,
+   times in s. */
 .upgrade { opacity: .9; gap: 10px }
 .up-kicker { font-family: var(--title-font); font-size: 13px; letter-spacing: 6px; font-color: var(--accent) }
 .up-title { font-family: var(--title-font); font-size: 26px; letter-spacing: 4px; animation: up-title-in .4s var(--pop) }

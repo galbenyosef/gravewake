@@ -1,5 +1,8 @@
 // The roster: the dead of the clearing. Each enemy is props (what it is) plus behaviour words (what it does), one per line.
-// Words and their units are in src/enemies.ts. Colours are CSS: --enemy-<id> in src/screens/shared.css.
+// Props: name= and blurb= (the codex), hp=, r= (collision radius, u), score=, model= (models/<name>.py), tier=
+// (minion, regular, elite, boss), touch= (contact damage, default 1), spawns= (the enemy a split or summon makes).
+// Words and their units are in the catalog (docs/declarative-ui.md) and src/enemies.ts. Colours are CSS:
+// --enemy-<id> in src/screens/shared.css.
 // At most one movement word per enemy: chase, keep-away, orbit, dash, blink, anchor.
 
 enemy "crawler" name="Crawler" tier="minion" hp=1 r=0.28 score=5 model="crawler" blurb="A skull on the bones of a hand. Fast, frail, never alone." {
