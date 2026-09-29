@@ -50,15 +50,8 @@ def _bevel(bm, width, segments=1):
         bmesh.ops.bevel(bm, geom=list(bm.edges) + list(bm.verts), offset=width, segments=segments, affect='EDGES', clamp_overlap=True)
 
 
-def lathe(name, profile, mat='body', seg=16):
-    """A body of revolution around Z: `profile` is [(radius, z), ...] bottom to top; radius 0 closes a pole."""
-    bm = bmesh.new()
-    rings = []
-    for r, z in profile:
-        if r <= 1e-6:
-            rings.append([bm.verts.new((0, 0, z))])
-        else:
-            rings.append([bm.verts.new((math.cos(a) * r, math.sin(a) * r, z)) for a in (i / seg * math.tau for i in range(seg))])
+def _skin(bm, rings, seg):
+    """Quads between consecutive rings of `seg` verts (a 1-vert ring is a pole), caps on open ends; normals outward."""
     for lo, hi in zip(rings, rings[1:]):
         for i in range(seg):
             j = (i + 1) % seg
@@ -70,6 +63,37 @@ def lathe(name, profile, mat='body', seg=16):
             f = bm.faces.new(cap)
             if flip: f.normal_flip()
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+
+
+def lathe(name, profile, mat='body', seg=16):
+    """A body of revolution around Z: `profile` is [(radius, z), ...] bottom to top; radius 0 closes a pole."""
+    bm = bmesh.new()
+    rings = []
+    for r, z in profile:
+        if r <= 1e-6:
+            rings.append([bm.verts.new((0, 0, z))])
+        else:
+            rings.append([bm.verts.new((math.cos(a) * r, math.sin(a) * r, z)) for a in (i / seg * math.tau for i in range(seg))])
+    _skin(bm, rings, seg)
+    return _obj(name, bm, mat)
+
+
+def tube(name, pts, radii, mat='body', seg=8):
+    """A tube swept along the points [(x, y, z), ...] with a radius per point (or one for all; 0 closes a point):
+    bones, limbs, branches, roots, ribs, tails, rags."""
+    pts = [Vector(p) for p in pts]
+    radii = list(radii) if isinstance(radii, (list, tuple)) else [radii] * len(pts)
+    bm = bmesh.new()
+    n = (pts[1] - pts[0]).normalized().orthogonal().normalized()
+    rings = []
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        n = (n - t * n.dot(t)).normalized()  # parallel transport: the ring doesn't twist along a bend
+        b = t.cross(n)
+        r = radii[i]
+        if r <= 1e-6: rings.append([bm.verts.new(p)])
+        else: rings.append([bm.verts.new(p + (n * math.cos(a) + b * math.sin(a)) * r) for a in (k / seg * math.tau for k in range(seg))])
+    _skin(bm, rings, seg)
     return _obj(name, bm, mat)
 
 
@@ -128,6 +152,14 @@ def deform(ob, fn):
     """Move every vertex (local space): fn(Vector) -> Vector. Taper, bulge, bend, squash."""
     for v in ob.data.vertices:
         v.co = fn(v.co.copy())
+    ob.data.update()
+    return ob
+
+
+def rough(ob, amp=0.04, freq=3.0, seed=0):
+    """Push every vertex along its normal by noise: bark, rot, stone, torn cloth. Smooth first for enough vertices."""
+    for v in ob.data.vertices:
+        v.co += v.normal * amp * noise.noise(v.co * freq + Vector((seed * 7.1, seed * 3.3, 0)))
     ob.data.update()
     return ob
 
@@ -213,6 +245,37 @@ def part(name, *obs, pivot=(0, 0, 0), parent=None):
     base.matrix_parent_inverse = Matrix.Identity(4)
     base.location = Vector(pivot) - p.matrix_world.translation
     return base
+
+
+# ---------- anatomy: each returns a list of objects for part() ----------
+
+def skull(s=1.0, loc=(0, 0, 0), mat='body', eyes='glow', jaw=0.0):
+    """A skull `s` units long facing +X at `loc`: cranium, cheekbones, open jaw (`jaw` degrees), dark nose, lit sockets."""
+    x, y, z = loc
+    cr = smooth(ball('cranium', 0.5 * s, mat, 12, 8))
+    deform(cr, lambda v: Vector((v.x * (1.05 if v.x < 0 else 0.9), v.y * 0.82, v.z * (0.92 if v.z > 0 else 0.7))))
+    face = at(smooth(box('face', (0.36 * s, 0.62 * s, 0.34 * s), mat, 0.08 * s)), (x + 0.28 * s, y, z - 0.16 * s))
+    at(cr, loc)
+    jw = at(smooth(box('jaw', (0.34 * s, 0.46 * s, 0.14 * s), mat, 0.05 * s)), (x + 0.26 * s, y, z - 0.44 * s), (0, -jaw, 0))
+    nose = at(cone('nose', 0.07 * s, 0.0, 0.1 * s, 'trim', 3), (x + 0.44 * s, y, z - 0.22 * s), (0, 90, 0))
+    lit = [at(ball('socket', 0.085 * s, eyes, 8, 5), (x + 0.4 * s, y + d * 0.15 * s, z - 0.06 * s), scale=(0.6, 1, 0.8)) for d in (1, -1)]
+    rims = [at(torus('rim', 0.11 * s, 0.035 * s, 'trim', 10, 4), (x + 0.42 * s, y + d * 0.15 * s, z - 0.06 * s), (0, 90, 0)) for d in (1, -1)]
+    return [cr, face, jw, nose, *lit, *rims]
+
+
+def ribcage(w=0.36, h=0.5, n=4, loc=(0, 0, 0), mat='body', r=0.035):
+    """A spine and `n` pairs of ribs curving forward (+X) from it, `w` wide and `h` tall, top at `loc`."""
+    x, y, z = loc
+    obs = [tube('spine', [(x - w * 0.55, y, z + 0.08), (x - w * 0.7, y, z - h * 0.5), (x - w * 0.55, y, z - h * 1.15)], [r * 1.6, r * 1.8, r * 1.4], mat, 6)]
+    for i in range(n):
+        zz = z - i * h / n
+        k = 1 - 0.3 * abs(i - n * 0.4) / n
+        for sd in (1, -1):
+            pts = [(x - w * 0.62 + w * 1.3 * (a / 6) * (1 - 0.25 * (a / 6) ** 2),
+                    y + sd * w * k * math.sin(min(1, a / 5) * math.pi * 0.62 + 0.2),
+                    zz - 0.08 * (a / 6)) for a in range(7)]
+            obs.append(tube('rib', pts, [r, r, r, r * 0.9, r * 0.8, r * 0.7, r * 0.4], mat, 5))
+    return obs
 
 
 # ---------- clips ----------

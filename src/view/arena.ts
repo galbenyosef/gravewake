@@ -122,17 +122,17 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   // Floor and walls
   const floorU = THREE.UniformsUtils.clone(floorShader.uniforms);
-  floorU.uGrid.value.set(token('--grid')); floorU.uFloor.value.set(token('--floor')); floorU.uWall.value.set(token('--wall'));
+  floorU.uGrid.value.set(token('--moss')); floorU.uFloor.value.set(token('--floor')); floorU.uWall.value.set(token('--moon'));
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 100).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ ...floorShader, uniforms: floorU, extensions: { derivatives: true } as never }));
   scene.add(floor);
   const walls = new THREE.Group();
-  const wallMat = glowMaterial(token('--wall'), 1.3), wallAlt = glowMaterial(token('--wall-alt'), 1.3);
+  const wallMat = glowMaterial(token('--moon'), 1.3), wallAlt = glowMaterial(token('--moon'), 1.3);
   for (const [x, z, w, d, m] of [[0, -HALF_H, T.ARENA_W_U, 0.12, wallMat], [0, HALF_H, T.ARENA_W_U, 0.12, wallMat], [-HALF_W, 0, 0.12, T.ARENA_H_U, wallAlt], [HALF_W, 0, 0.12, T.ARENA_H_U, wallAlt]] as const) {
     const bar = new THREE.Mesh(shared.box, m);
     bar.scale.set(w, 0.25, d); bar.position.set(x, 0.12, z);
     walls.add(bar);
   }
-  const pylonMat = metalMaterial(token('--wall-alt'));
+  const pylonMat = metalMaterial(token('--stone'));
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
     const py = new THREE.Mesh(shared.octa, pylonMat);
     py.scale.set(0.55, 1.4, 0.55); py.position.set(sx * HALF_W, 1.2, sz * HALF_H);

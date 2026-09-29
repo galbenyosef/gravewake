@@ -97,36 +97,39 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--ink` | the darkest background |
 | `--panel` | card fill |
 | `--panel-hi` | raised card fill |
-| `--edge` | card border |
-| `--text` | body text |
+| `--edge` | card and button border (bronze) |
+| `--text` | body text (parchment) |
 | `--dim` | secondary text |
-| `--cyan` | primary accent, move stick |
-| `--magenta` | secondary accent, aim stick |
+| `--accent` | primary UI accent (tarnished gold): primary buttons, kickers, corners |
+| `--blood` | secondary UI accent: danger buttons, elite tier, boss bar, hull pips |
 | `--gold` | score, multiplier, bosses |
 | `--danger` | hurt, game over |
 | `--good` | positive |
 | `--pop` | overshoot easing |
-| `--title-font` | Orbitron |
-| `--body-font` | sans-serif |
-| `--floor` | arena floor and sky |
-| `--grid` | floor grid lines and ripples |
-| `--wall` | top/bottom walls |
-| `--wall-alt` | side walls and pylons |
-| `--player` | ship hull |
-| `--player-glow` | ship glow, engine trail, aim line |
-| `--player-shot` | player bolts |
-| `--hostile-shot` | enemy shots |
-| `--lob` | mortar rounds and landing zones |
-| `--shard` | score shards |
-| `--repair` | repair kits |
-| `--warp` | warp gates |
-| `--telegraph` | dash lanes |
+| `--title-font` | Cinzel (`@fontsource/cinzel`, weight 600) |
+| `--body-font` | Georgia, serif |
+| `--floor` | the clearing's earth, and the night sky behind the fog |
+| `--moss` | rot and moss patches on the floor |
+| `--moon` | moonlight: key light, the cold rim on every model's edge, the move stick |
+| `--fog` | ground fog and the distance |
+| `--wood` | dead trees and roots (`tree`, `roots`) |
+| `--stone` | gravestones (`grave`) |
+| `--player` | the wizard's robe |
+| `--player-glow` | the wizard's light: staff flame, the light pool round him, his trail |
+| `--player-shot` | spells, their light on the ground, the aim stick |
+| `--hostile-shot` | enemy spells (necrotic) |
+| `--lob` | hurled rounds and landing zones |
+| `--shard` | souls (score pickups) |
+| `--repair` | blood vials (hull pickups) |
+| `--warp` | graves opening (enemy arrival) |
+| `--telegraph` | charge lanes |
 | `--blink` | blink marks |
-| `--shield` | shield arcs and blocks |
+| `--shield` | shield wards and blocks |
 | `--heal` | mend pulses |
-| `--ice` | a wave tint: every enemy in the wave, icy blue |
+| `--ice` | a wave tint: every enemy in the wave, hoarfrost |
 | `--laser` | sniper sight lines and their lock flash |
-| `--trim` | armour metal on every model (the `trim` material), painted in the model; hue from here |
+| `--trim` | iron on every model (the `trim` material), painted in the model; hue from here |
+| `--soulfire` | the `glow` material of every undead: eyes, runes, grave-light |
 | `--enemy-mite` | mite |
 | `--enemy-drone` | drone |
 | `--enemy-lancer` | lancer |
@@ -228,13 +231,17 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `ball` | `ball(name, r, mat, seg, rings)`: a UV sphere |
 | `cone` | `cone(name, r1, r2, depth, mat, seg)`: along +Z; r2 = r1 is a cylinder, 0 a spike |
 | `torus` | `torus(name, R, r, mat)`: a ring in the XY plane |
+| `tube` | `tube(name, [(x, y, z), ...], radii, mat, seg)`: a tube swept along points, a radius per point: bones, limbs, branches, roots, ribs, rags |
 | `at` | `at(ob, loc, rot_degrees, scale)`: place a shape |
 | `aim` | `aim(ob, direction, loc)`: point a shape's +Z along a direction |
 | `deform` | `deform(ob, fn)`: move every vertex: taper, bulge, bend |
+| `rough` | `rough(ob, amp, freq, seed)`: push vertices along their normals by noise: bark, rot, stone, torn cloth |
 | `smooth` | `smooth(ob, levels)`: subdivide (soft chunky forms, and vertices to hold the paint) |
 | `shell` | `shell(ob, thickness)`: give an open surface thickness |
 | `cut` | `cut(ob, keep)`: delete faces whose centre fails `keep`: open a hood, split plates |
 | `sphere_dirs` | `sphere_dirs(n, zmin)`: evenly spread directions (spikes, crystals) |
+| `skull` | `skull(s, loc, mat, eyes, jaw)`: a skull facing +X with lit sockets (`eyes` material) and an open jaw; returns objects for `part` |
+| `ribcage` | `ribcage(w, h, n, loc, mat, r)`: a spine and `n` rib pairs curving forward, top at `loc`; returns objects for `part` |
 | `part` | `part(name, *shapes, pivot, parent)`: merge shapes into one moving rig part |
 | `key` | `key(part, clip, [(s, {loc, rot, scale}), ...])`: key a clip relative to rest; one per part per clip |
 | `loop` | `loop(part, period, n, steps, phase, loc=, rot=, scale=)`: a sine idle loop |

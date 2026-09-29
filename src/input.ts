@@ -90,7 +90,7 @@ export function readInput(): Input {
 
 function drawSticks() {
   gfx.clear();
-  for (const [s, col] of [[move, token('--cyan')], [aim, token('--magenta')]] as const) {
+  for (const [s, col] of [[move, token('--moon')], [aim, token('--player-shot')]] as const) {
     if (!s) continue;
     const v = vec(s);
     gfx.circle(s.ox, s.oy, STICK_R_PX).fill({ color: col, alpha: 0.08 }).stroke({ color: col, alpha: 0.5, width: 2 });

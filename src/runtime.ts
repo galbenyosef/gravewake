@@ -1,6 +1,6 @@
 // Everything whose lifetime is the game's starts here and is torn down by the disposer boot() returns: the two
 // canvases, the clock, input, the store subscriptions that draw the screens, and resize handling.
-import '@fontsource/orbitron';
+import '@fontsource/cinzel/600.css';
 import { UPDATE_PRIORITY } from 'pixi.js';
 import * as Actions from './actions';
 import { unlockAudio } from './audio';
@@ -38,7 +38,7 @@ export async function boot(el: HTMLElement): Promise<() => void> {
   await loadModels();
   arena = createArena(el, w, h);
   await initPixi(el, w, h);
-  await document.fonts.load('20px Orbitron').catch(() => undefined);
+  await document.fonts.load('20px Cinzel').catch(() => undefined);
 
   const a = arena;
   const stopInput = startInput(pixi.canvas, {

@@ -30,7 +30,7 @@ function viewer() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   el.appendChild(renderer.domElement);
   const labels = document.createElement('div');
-  Object.assign(labels.style, { position: 'absolute', inset: '0', display: 'flex', pointerEvents: 'none', font: '12px Orbitron, sans-serif', letterSpacing: '3px', color: '#8a93b8' });
+  Object.assign(labels.style, { position: 'absolute', inset: '0', display: 'flex', pointerEvents: 'none', font: '12px Cinzel, serif', letterSpacing: '3px', color: '#8a93b8' });
   for (const c of CLIPS) {
     const l = document.createElement('div');
     l.textContent = c.toUpperCase();
@@ -47,7 +47,7 @@ function viewer() {
   const sun = new THREE.DirectionalLight(0xffffff, 1.2);
   sun.position.set(-8, 20, 6);
   scene.add(sun);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(token('--grid')).multiplyScalar(0.25) }));
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(1.6, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: new THREE.Color(token('--moss')).multiplyScalar(0.25) }));
   const camera = new THREE.PerspectiveCamera(24, W / H, 0.1, 50);
   camera.position.set(0, 8.5, 9.5);
   camera.lookAt(0, 0.1, 0);

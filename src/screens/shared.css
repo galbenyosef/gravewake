@@ -1,91 +1,94 @@
 /* The palette (the only :root), shared base styles, and the shared prefabs' styles. Every screen's sheet comes after
    this one, so a screen styles only its deltas. Colours the 3D arena needs live here too and are read by tokens.ts. */
 :root {
-  /* UI */
-  --ink: #04050c;
-  --panel: #0a1024;
-  --panel-hi: #121a3a;
-  --edge: #2b3d86;
-  --text: #e9f5ff;
-  --dim: #8392bd;
-  --cyan: #3cf2ff;
-  --magenta: #ff3cac;
-  --gold: #ffd24a;
-  --danger: #ff4a5e;
-  --good: #5dff9d;
+  /* UI: black iron, parchment, tarnished gold; blood for danger */
+  --ink: #050507;
+  --panel: #0e0d10;
+  --panel-hi: #1a171b;
+  --edge: #4b3f31;
+  --text: #e6dcc6;
+  --dim: #8c8372;
+  --accent: #c9a462;
+  --blood: #c0242f;
+  --gold: #e8c46e;
+  --danger: #e0313b;
+  --good: #9cc46e;
   --pop: cubic-bezier(.3, 1.7, .5, 1);
-  --title-font: Orbitron;
-  --body-font: sans-serif;
+  --title-font: Cinzel;
+  --body-font: Georgia, serif;
 
-  /* The arena (tokens.ts) */
-  --floor: #060814;
-  --grid: #1d4fd8;
-  --wall: #ff3cac;
-  --wall-alt: #3cf2ff;
-  --player: #dffbff;
-  --player-glow: #3cf2ff;
-  --player-shot: #9ffcff;
-  --hostile-shot: #ff7a3c;
-  --lob: #ff4a5e;
-  --shard: #ffd24a;
-  --repair: #5dff9d;
-  --warp: #b06bff;
-  --telegraph: #ff4a5e;
-  --blink: #b06bff;
-  --shield: #6fd2ff;
-  --heal: #5dff9d;
-  --ice: #3aa8ff;
-  --laser: #ff2250;
-  --trim: #8a93b8;
+  /* The clearing (tokens.ts): near-black earth, rot, cold moonlight. Saturated colour is only for magic. */
+  --floor: #0c0d0f;
+  --moss: #262d22;
+  --moon: #7d97c9;
+  --fog: #0a0e15;
+  --wood: #4d463d;
+  --stone: #6b6d70;
+  --player: #3b3548;
+  --player-glow: #ff8c2e;
+  --player-shot: #ffb347;
+  --hostile-shot: #8dff5c;
+  --lob: #ff4a26;
+  --shard: #a6d6ff;
+  --repair: #ff2f48;
+  --warp: #58ff9e;
+  --telegraph: #ff2b2b;
+  --blink: #7fb4ff;
+  --shield: #9ec3ff;
+  --heal: #6dff8a;
+  --ice: #cfe8ff;
+  --laser: #ff2a3a;
+  --trim: #3c3a3f;
+  --soulfire: #5cc8ff;
 
-  /* One per enemy in content/enemies.kdl (a test checks the pairing). */
-  --enemy-mite: #ff9a3c;
-  --enemy-drone: #ff3c6e;
-  --enemy-lancer: #ffe03c;
-  --enemy-wasp: #c6ff3c;
-  --enemy-splitter: #3cffb4;
-  --enemy-bulwark: #3c9bff;
-  --enemy-bomber: #ff5a1f;
-  --enemy-mender: #5dff9d;
-  --enemy-hive: #d05cff;
-  --enemy-phantom: #9f7bff;
-  --enemy-mortar: #ff7ad9;
-  --enemy-sniper: #ff6f91;
-  --enemy-seraph: #ffc86b;
-  --enemy-colossus: #ff2a3c;
+  /* One per enemy in content/enemies.kdl (a test checks the pairing): bone, rot and cold blue. */
+  --enemy-mite: #b8ad92;
+  --enemy-drone: #d2c8ab;
+  --enemy-lancer: #8b9173;
+  --enemy-wasp: #a3b6cb;
+  --enemy-splitter: #7c8660;
+  --enemy-bulwark: #a39c8a;
+  --enemy-bomber: #cbc1a3;
+  --enemy-mender: #5d5869;
+  --enemy-hive: #6b6153;
+  --enemy-phantom: #7089b2;
+  --enemy-mortar: #8e7e62;
+  --enemy-sniper: #c1b79b;
+  --enemy-seraph: #9490ad;
+  --enemy-colossus: #d8ceb2;
 }
 
 text { font-family: var(--body-font); font-color: var(--text); font-size: 16px }
 
 /* A modal's tap-swallowing backdrop; a screen overrides only its opacity or layout. */
 .shared-scrim {
-  width: 100%; height: 100%; background-color: #03040a; opacity: .86; pointer-events: auto;
+  width: 100%; height: 100%; background-color: #020203; opacity: .86; pointer-events: auto;
   align-items: center; justify-content: center; gap: 14px;
   animation: shared-fade .25s ease-out;
 }
 @keyframes shared-fade { from { opacity: 0 } }
 
-/* A neon button: the consumer sets width/height when the default doesn't fit. */
+/* A black-iron button: the consumer sets width/height when the default doesn't fit. */
 button {
   width: 200px; height: max(46px, var(--touch-size)); align-items: center; justify-content: center;
-  background-color: #0c1638; border-color: var(--cyan); border-width: 2px;
+  background-color: #141114; border-color: var(--edge); border-width: 2px;
   transition: scale .08s ease-out, background-color .12s;
 }
-button:hover { background-color: #14245a }
-button:pressed { scale: .94; background-color: #1c3378 }
-button.primary { background-color: #0f3b5c; border-color: var(--cyan) }
-button.danger { border-color: var(--magenta) }
+button:hover { background-color: #221c1c; border-color: var(--accent) }
+button:pressed { scale: .94; background-color: #2e2320 }
+button.primary { background-color: #2b1510; border-color: var(--accent) }
+button.danger { border-color: var(--blood) }
 button.off { opacity: .45 }
 .shared-btn-label { font-family: var(--title-font); font-size: 17px; letter-spacing: 3px; font-color: var(--text) }
 
 /* Corner brackets hugging a box: the consumer makes them full-size and absolute. */
-corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: var(--cyan) }
+corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: var(--accent) }
 
 /* A labelled bar. */
 .shared-bar { gap: 4px; align-items: center }
 .shared-bar-label { font-family: var(--title-font); font-size: 12px; letter-spacing: 3px; font-color: var(--gold) }
-.shared-bar-track { width: 100%; height: 8px; background-color: #1a0d20; border-color: #5a2040; border-width: 1px }
-.shared-bar-fill { width: 100%; height: 100%; tint: var(--magenta) }
+.shared-bar-track { width: 100%; height: 8px; background-color: #160a0b; border-color: #4a1a1e; border-width: 1px }
+.shared-bar-fill { width: 100%; height: 100%; tint: var(--blood) }
 
 /* An upgrade choice. */
 .upgrade-card {
@@ -94,14 +97,14 @@ corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: 
   transition: scale .1s ease-out, border-color .15s;
   animation: shared-card-in .45s var(--pop) backwards;
 }
-.upgrade-card:hover { border-color: var(--cyan) }
+.upgrade-card:hover { border-color: var(--accent) }
 .upgrade-card:pressed { scale: .95 }
 .upgrade-card.n1 { animation: shared-card-in .45s var(--pop) .08s backwards }
 .upgrade-card.n2 { animation: shared-card-in .45s var(--pop) .16s backwards }
 @keyframes shared-card-in { from { opacity: 0; translate: 0 40px; scale: .8 } }
 .shared-card-icon {
   width: 64px; height: 64px; align-items: center; justify-content: center;
-  border-color: var(--gold); border-width: 2px; rotate: 0; background-color: #1a1406;
+  border-color: var(--gold); border-width: 2px; rotate: 0; background-color: #1a1208;
 }
 .shared-card-glyph { font-family: var(--title-font); font-size: 18px; font-color: var(--gold) }
 .shared-card-name { font-family: var(--title-font); font-size: 14px; letter-spacing: 1px; text-align: center }
@@ -113,11 +116,11 @@ corners { position: absolute; left: 0; top: 0; width: 100%; height: 100%; tint: 
   background-color: var(--panel); border-color: var(--edge); border-width: 1px;
 }
 .enemy-card.boss { border-color: var(--gold) }
-.enemy-card.elite { border-color: var(--magenta) }
+.enemy-card.elite { border-color: var(--blood) }
 .shared-enemy-glyph { width: 52px; height: 52px }
 .shared-enemy-text { gap: 2px; flex-grow: 1 }
 .shared-enemy-name { font-family: var(--title-font); font-size: 13px; letter-spacing: 1px }
 .shared-enemy-blurb { font-size: 12px; font-color: var(--dim); text-wrap: wrap; width: 170px }
 /* Top-right of the card, whatever the consumer's width (sized for the default 250px card; a narrower consumer moves it). */
-.shared-enemy-tier { position: absolute; left: 176px; top: 5px; width: 60px; text-align: right; font-family: var(--title-font); font-size: 8px; letter-spacing: 2px; font-color: var(--magenta) }
+.shared-enemy-tier { position: absolute; left: 176px; top: 5px; width: 60px; text-align: right; font-family: var(--title-font); font-size: 8px; letter-spacing: 2px; font-color: var(--blood) }
 .boss .shared-enemy-tier { font-color: var(--gold) }
