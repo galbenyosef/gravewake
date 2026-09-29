@@ -4,7 +4,6 @@
 from kit import *
 
 stone = box('menhir', (0.55, 0.8, 2.6), 'body', 0.08)
-smooth(stone, 2)
 deform(stone, lambda v: Vector((v.x * (1 - 0.18 * (v.z + 1.3) / 2.6), v.y * (1 - 0.25 * (v.z + 1.3) / 2.6), v.z + 1.3)))
 smooth(stone)
 deform(stone, lambda v: Vector((v.x, v.y, min(v.z, 2.1 + 0.5 * v.y))))  # snapped off at a slant

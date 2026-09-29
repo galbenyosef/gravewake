@@ -172,6 +172,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `SCENERY_RIM` | scenery's weaker rim |
 | `SURFACE_GRAIN` | how much models' procedural grain and stains vary their paint |
 | `SURFACE_BUMP` | depth of that grain's bump |
+| `GROUND_TEXELS_PER_U` | the procedural ground is baked once into textures at this resolution (texels per u) |
 | `FLOOR_RELIEF` | height of the floor's procedural relief, so light rakes across stones and cracks |
 | `FOG_Y_U` | ground fog height, u |
 | `FOG_VEIL` | ground fog thickness in the open |

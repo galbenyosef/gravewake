@@ -32,6 +32,8 @@ export const LOOK = {
   SURFACE_BUMP: 0.06,
   /** How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
   FLOOR_RELIEF: 1.8,
+  /** The ground is baked once into textures at this many texels per u (GPU memory: 8 bytes a texel over 76x54 u). */
+  GROUND_TEXELS_PER_U: 20,
   /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
   FOG_Y_U: 0.35,
   FOG_VEIL: 0.18,

@@ -26,8 +26,7 @@ def branch(p, d, length, r, depth, out):
         branch(pts[j + 1], (d * 0.5 + side).normalized(), length * rnd.uniform(0.5, 0.7), radii[j + 1] * 0.8, depth - 1, out)
 
 
-trunk = tube('trunk', [(0, 0, -0.1), (0.05, 0, 0.6), (-0.1, 0.05, 1.4), (0.08, -0.05, 2.2), (0.0, 0.0, 2.7)], [0.42, 0.3, 0.26, 0.22, 0.16], 'body', 12)
-smooth(trunk)
+trunk = tube('trunk', [(0, 0, -0.1), (0.05, 0, 0.6), (-0.1, 0.05, 1.4), (0.08, -0.05, 2.2), (0.0, 0.0, 2.7)], [0.42, 0.3, 0.26, 0.22, 0.16], 'body', 9)
 rough(trunk, 0.05, 2.5, 1)
 deform(trunk, lambda v: Vector((v.x * (1 + 0.25 * math.sin(v.z * 3)), v.y * (1 + 0.2 * math.cos(v.z * 2.3)), v.z)))
 roots = []
@@ -36,14 +35,14 @@ for i in range(6):
     ln = rnd.uniform(0.4, 0.6)
     pts = [(math.cos(a) * 0.15, math.sin(a) * 0.15, 0.45), (math.cos(a) * 0.45, math.sin(a) * 0.45, 0.12),
            (math.cos(a) * ln * 0.7, math.sin(a) * ln * 0.7 + 0.1, 0.02), (math.cos(a + 0.2) * ln, math.sin(a + 0.2) * ln, -0.05)]
-    roots.append(tube('root', pts, [0.2, 0.14, 0.07, 0.02], 'body', 6))
-hollow = at(smooth(ball('hollow', 0.13, 'trim', 8, 6)), (0.3, 0.02, 1.0), scale=(0.5, 1, 1.6))
+    roots.append(tube('root', pts, [0.2, 0.14, 0.07, 0.02], 'body', 5))
+hollow = at(ball('hollow', 0.13, 'trim', 8, 6), (0.3, 0.02, 1.0), scale=(0.5, 1, 1.6))
 base = part('trunk', trunk, *roots, hollow)
 
 limbs = []
 for a, z, ln in ((0.3, 2.0, 1.9), (2.4, 2.3, 1.6), (4.2, 1.7, 1.8), (1.4, 2.65, 1.3), (5.3, 2.5, 1.4), (3.3, 1.4, 1.2), (0.9, 1.2, 1.0), (4.9, 2.8, 1.1)):
     d = Vector((math.cos(a), math.sin(a), 0.9)).normalized()
-    branch(Vector((0, 0, z)), d, ln, 0.11, 2 if ln < 1.3 else 3, limbs)
+    branch(Vector((0, 0, z)), d, ln, 0.11, 2, limbs)
 crown = part('crown', *limbs, pivot=(0, 0, 1.8), parent=base)
 
 loop(crown, 4.0, rot=(1.6, 1.2, 0))

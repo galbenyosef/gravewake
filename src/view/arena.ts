@@ -43,16 +43,97 @@ const NOISE = /* glsl */ `
     return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), id);
   }`;
 
+/** The part of the floor baked into textures (the camera sees inside it; past it the ground is dark under the trees). */
+const BAKE_HALF = new THREE.Vector2(38, 27);
+
+/** The clearing's ground as a function of world position: albedo, standing water, and the height's slope. Procedural
+ *  and too heavy to run per pixel per frame on a phone, so it is baked once into two textures (bakeGround). */
+const GROUND = /* glsl */ `
+  uniform vec3 uEarth, uMoss, uStone; uniform vec2 uHalf; uniform float uRelief;
+  ${NOISE}
+  float reliefH(vec2 q) {
+    vec3 st = cells(q * 0.8 + 40.0);
+    vec3 pl = cells(q * 0.9 + 3.0 + 0.4 * sin(q.yx * 0.7));
+    float dry = smoothstep(0.55, 0.7, fbm(q * 0.21));
+    // Dry plates stand proud with bevelled edges; the seams between them sink.
+    return 0.5 * fbm(q * 0.21) + 0.08 * vnoise(q * 2.3) + step(0.82, st.z) * 0.3 * smoothstep(0.28, 0.0, st.x) + dry * 0.12 * smoothstep(0.0, 0.12, pl.y);
+  }
+  // Albedo in rgb, standing water in a.
+  vec4 ground(vec2 p) {
+    vec2 warp = p + 1.6 * vec2(fbm(p * 0.15), fbm(p * 0.15 + 5.2));
+    float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
+    vec3 alb = uEarth * (0.5 + 1.0 * broad) * (0.85 + 0.3 * fine);
+    float moss = smoothstep(0.5, 0.72, fbm(warp * 0.33 + 3.1));
+    alb = mix(alb, mix(uMoss, vec3(dot(uMoss, vec3(0.33))), 0.4) * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.7);
+    // Dry ground cracks into plates: wide dark seams, only where it is dry and bare.
+    vec3 plate = cells(p * 0.9 + 3.0 + 0.4 * sin(p.yx * 0.7));
+    float dry = smoothstep(0.55, 0.7, broad) * (1.0 - moss);
+    float seam = (1.0 - smoothstep(0.02, 0.07 + 0.06 * fine, plate.y)) * dry * smoothstep(0.35, 0.6, fbm(p * 0.7 + 21.0));
+    alb *= (1.0 - seam * 0.7) * (0.9 + 0.2 * plate.z * dry);
+    vec3 stones = cells(p * 0.8 + 40.0);
+    float stone = step(0.82, stones.z) * smoothstep(0.28, 0.16, stones.x);
+    alb = mix(alb, uStone * 0.3 * (0.6 + fine), stone);
+    // Furrows: where old roots ran, soft dark grooves winding through.
+    float furrow = smoothstep(0.06, 0.0, abs(fbm(warp * 0.35 + 11.0) - 0.5)) * smoothstep(0.3, 0.6, fbm(p * 0.2 + 2.0));
+    alb *= 1.0 - furrow * 0.6;
+    // An old path, trodden flat and pale, winds across the clearing past the circle; stones kicked to its edges.
+    float pathY = 1.8 * sin(p.x * 0.17 + 0.6) + 1.2 * (fbm(vec2(p.x * 0.08, 3.0)) - 0.5) * 4.0 - 1.0;
+    float pathD = abs(p.y - pathY), path = smoothstep(1.5, 0.9, pathD + 0.4 * (fbm(p * 0.9) - 0.5));
+    float verge = smoothstep(0.35, 0.0, abs(pathD - 1.35)) * step(0.6, vnoise(p * 3.1));
+    alb = mix(alb, uEarth * (1.25 + 0.3 * fine) * vec3(1.05, 1.0, 0.92), path * 0.85);
+    alb = mix(alb, uStone * 0.35, verge * 0.7);
+    float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
+    float wet = smoothstep(0.245, 0.225, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
+    alb *= 1.0 - 0.75 * wet;
+    float edge = max(abs(p.x) - uHalf.x, abs(p.y) - uHalf.y);
+    alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
+    return vec4(alb, wet);
+  }`;
+
 /**
- * The clearing's floor, all procedural, on a lit standard material so the moon's shadows (trees, the dead, the canopy)
- * fall on it: dark earth with rot and moss, leaf litter, sunk stones, root-furrows and standing water, given relief by a
- * height from the same noise. The spells in flight add their own light (uLights, cheap: no point light each).
+ * Bake the ground once (the camera never moves off it): albedo and water into one texture (albedo stored as its square
+ * root so the darks keep their steps), the height's slope into another. Two lookups a pixel instead of a dozen noises.
  */
-function floorMaterial() {
-  const uniforms = {
-    uTime: { value: 0 }, uEarth: { value: new THREE.Color(token('--floor')) }, uMoss: { value: new THREE.Color(token('--moss')) },
+function bakeGround(renderer: THREE.WebGLRenderer, uniforms: Record<string, THREE.IUniform>) {
+  const w = Math.round(BAKE_HALF.x * 2 * LOOK.GROUND_TEXELS_PER_U), h = Math.round(BAKE_HALF.y * 2 * LOOK.GROUND_TEXELS_PER_U);
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
+  const scene = new THREE.Scene();
+  scene.add(quad);
+  const pass = (body: string) => {
+    const rt = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, generateMipmaps: false, depthBuffer: false });
+    quad.material = new THREE.ShaderMaterial({
+      uniforms: { ...uniforms, uBake: { value: BAKE_HALF } },
+      vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+      fragmentShader: `uniform vec2 uBake; varying vec2 vUv; ${GROUND}
+        void main() { vec2 p = (vUv * 2.0 - 1.0) * uBake; p.y = -p.y; ${body} }`,
+    });
+    renderer.setRenderTarget(rt);
+    renderer.render(scene, cam);
+    return rt;
+  };
+  const albedo = pass('vec4 g = ground(p); gl_FragColor = vec4(sqrt(g.rgb), g.a);');
+  // Slope over a few cm, packed round 0.5 (a slope of +-1 per u fills the byte).
+  const slope = pass(`const float E = 0.05; float h0 = reliefH(p);
+    gl_FragColor = vec4(0.5 + 0.5 * clamp((reliefH(p + vec2(E, 0.0)) - h0) / E, -1.0, 1.0), 0.5 + 0.5 * clamp((reliefH(p + vec2(0.0, E)) - h0) / E, -1.0, 1.0), 0.0, 1.0);`);
+  renderer.setRenderTarget(null);
+  (quad.material as THREE.Material).dispose(); quad.geometry.dispose();
+  return { albedo: albedo.texture, slope: slope.texture };
+}
+
+/**
+ * The clearing's floor on a lit standard material, so the moon's shadows (trees, the dead, the canopy) fall on it; its
+ * albedo, water and relief come from the baked ground. The spells in flight and the lanterns add their own light
+ * (uLights, cheap: no point light each).
+ */
+function floorMaterial(renderer: THREE.WebGLRenderer) {
+  const groundU = {
+    uEarth: { value: new THREE.Color(token('--floor')) }, uMoss: { value: new THREE.Color(token('--moss')) },
     uStone: { value: new THREE.Color(token('--stone')) }, uRelief: { value: LOOK.FLOOR_RELIEF }, uHalf: { value: new THREE.Vector2(HALF_W, HALF_H) },
-    uMoon: { value: new THREE.Color(token('--moon')) },
+  };
+  const baked = bakeGround(renderer, groundU);
+  const uniforms = {
+    uTime: { value: 0 }, uRelief: { value: LOOK.FLOOR_RELIEF }, uMoon: { value: new THREE.Color(token('--moon')) },
+    uAlbedo: { value: baked.albedo }, uSlope: { value: baked.slope }, uBake: { value: BAKE_HALF },
     uRipples: { value: Array.from({ length: MAX_RIPPLES }, () => new THREE.Vector4(0, 0, 0, 0)) },
     uLights: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Vector4(0, 0, 1, 0)) },
     uLightCol: { value: Array.from({ length: MAX_FLOOR_LIGHTS }, () => new THREE.Color()) },
@@ -67,67 +148,30 @@ function floorMaterial() {
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvPos = position.xz;');
     sh.fragmentShader = sh.fragmentShader
       .replace('#include <common>', `#include <common>
-        uniform float uTime, uRelief; uniform vec3 uEarth, uMoss, uStone, uMoon; uniform vec2 uHalf;
+        uniform float uTime, uRelief; uniform vec3 uMoon; uniform vec2 uBake; uniform sampler2D uAlbedo, uSlope;
         uniform vec4 uRipples[${MAX_RIPPLES}]; uniform vec4 uLights[${MAX_FLOOR_LIGHTS}]; uniform vec3 uLightCol[${MAX_FLOOR_LIGHTS}];
         uniform vec4 uStatic[${LOOK.STATIC_LIGHTS}]; uniform vec3 uStaticCol[${LOOK.STATIC_LIGHTS}];
-        varying vec2 vPos;
-        ${NOISE}
-        float reliefH(vec2 q) {
-          vec3 st = cells(q * 0.8 + 40.0);
-          vec3 pl = cells(q * 0.9 + 3.0 + 0.4 * sin(q.yx * 0.7));
-          float dry = smoothstep(0.55, 0.7, fbm(q * 0.21));
-          // Dry plates stand proud with bevelled edges; the seams between them sink.
-          return 0.5 * fbm(q * 0.21) + 0.08 * vnoise(q * 2.3) + step(0.82, st.z) * 0.3 * smoothstep(0.28, 0.0, st.x) + dry * 0.12 * smoothstep(0.0, 0.12, pl.y);
-        }`)
+        varying vec2 vPos;`)
       .replace('#include <color_fragment>', `#include <color_fragment>
-        vec2 p = vPos; float wave = 0.0;
+        vec2 p = vPos, buv = vec2(p.x / uBake.x, -p.y / uBake.y) * 0.5 + 0.5;
+        float wave = 0.0;
         for (int i = 0; i < ${MAX_RIPPLES}; i++) {
           vec4 r = uRipples[i];
           if (r.w <= 0.0) continue;
           float dist = length(p - r.xy), front = r.z * 16.0;
           wave += exp(-pow((dist - front) * 2.2, 2.0)) * r.w * max(0.0, 1.0 - r.z / 1.4);
         }
-        // Albedo: earth in broad patches, moss and rot, leaf litter, sunk stones, root-furrows, standing water.
-        vec2 warp = p + 1.6 * vec2(fbm(p * 0.15), fbm(p * 0.15 + 5.2));
-        float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
-        vec3 alb = uEarth * (0.5 + 1.0 * broad) * (0.85 + 0.3 * fine);
-        float moss = smoothstep(0.5, 0.72, fbm(warp * 0.33 + 3.1));
-        alb = mix(alb, mix(uMoss, vec3(dot(uMoss, vec3(0.33))), 0.4) * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.7);
-        // Dry ground cracks into plates: warped cells, wide dark seams, only where it is dry and bare.
-        vec3 plate = cells(p * 0.9 + 3.0 + 0.4 * sin(p.yx * 0.7));
-        float dry = smoothstep(0.55, 0.7, broad) * (1.0 - moss);
-        float seam = (1.0 - smoothstep(0.02, 0.07 + 0.06 * fine, plate.y)) * dry * smoothstep(0.35, 0.6, fbm(p * 0.7 + 21.0));
-        alb *= (1.0 - seam * 0.7) * (0.9 + 0.2 * plate.z * dry);
-        float litter = 0.0;
-        vec3 stones = cells(p * 0.8 + 40.0);
-        float stone = step(0.82, stones.z) * smoothstep(0.28, 0.16, stones.x);
-        alb = mix(alb, uStone * 0.3 * (0.6 + fine), stone);
-        // Furrows: where old roots ran, soft dark grooves winding through (domain-warped, not a crack net).
-        float furrow = smoothstep(0.06, 0.0, abs(fbm(warp * 0.35 + 11.0) - 0.5)) * smoothstep(0.3, 0.6, fbm(p * 0.2 + 2.0));
-        alb *= 1.0 - furrow * 0.6;
-        // An old path, trodden flat and pale, winds across the clearing past the circle; stones kicked to its edges.
-        float pathY = 1.8 * sin(p.x * 0.17 + 0.6) + 1.2 * (fbm(vec2(p.x * 0.08, 3.0)) - 0.5) * 4.0 - 1.0;
-        float pathD = abs(p.y - pathY), path = smoothstep(1.5, 0.9, pathD + 0.4 * (fbm(p * 0.9) - 0.5));
-        float verge = smoothstep(0.35, 0.0, abs(pathD - 1.35)) * step(0.6, vnoise(p * 3.1));
-        alb = mix(alb, uEarth * (1.25 + 0.3 * fine) * vec3(1.05, 1.0, 0.92), path * 0.85);
-        alb = mix(alb, uStone * 0.35, verge * 0.7);
-        moss *= 1.0 - path;
-        float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
-        float wet = smoothstep(0.245, 0.225, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
-        alb *= 1.0 - 0.75 * wet;
-        float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
-        alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
+        vec4 g = texture2D(uAlbedo, buv);
+        vec3 alb = g.rgb * g.rgb;
+        float wet = g.a;
         diffuseColor.rgb = alb;`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.9, wet);')
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
-          // Relief: a world-space height (mounds and sunk stones) differenced across a few cm, so the moon rakes across
-          // it smoothly (screen-space derivatives stair-step in 2x2 blocks).
-          const float E = 0.06;
-          float h0 = reliefH(p), hx = reliefH(p + vec2(E, 0.0)), hz = reliefH(p + vec2(0.0, E));
-          float k = uRelief * (1.0 - 0.8 * wet) / E;
+          // Relief from the baked slope: the moon rakes across stones, plates and furrows; water lies flat.
+          vec2 sl = (texture2D(uSlope, buv).rg - 0.5) * 2.0 * uRelief * (1.0 - 0.8 * wet);
           vec3 base = (vec4(normal, 0.0) * viewMatrix).xyz; // the bank's slope, in world space
-          vec3 nw = normalize(base + vec3(-(hx - h0) * k, 0.0, -(hz - h0) * k));
+          vec3 nw = normalize(base + vec3(-sl.x, 0.0, -sl.y));
           normal = normalize((viewMatrix * vec4(nw, 0.0)).xyz);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
@@ -147,8 +191,9 @@ function floorMaterial() {
         // Standing water: the moonlit sky in it (stronger at a glancing angle), a pale shoreline, and the spells mirrored.
         float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
         float shore = smoothstep(0.15, 0.5, wet) * smoothstep(0.85, 0.5, wet);
-        totalEmissiveRadiance += alb * (spell + lamp) + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
-          + uMoon * wave * 0.012 * (0.5 + broad);`);
+        float shimmer = 0.8 + 0.2 * sin(p.x * 3.1 + uTime * 0.7) * sin(p.y * 2.7 - uTime * 0.5);
+        totalEmissiveRadiance += alb * (spell + lamp) + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * shimmer + shore * 0.012)
+          + uMoon * wave * 0.012;`);
   };
   return { material: m, uniforms };
 }
@@ -296,8 +341,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const camTarget = new THREE.Vector3();
 
   // The clearing: procedural floor, ground fog, and the dead wood, graves and roots round its edge.
-  const { material: floorMat, uniforms: floorU } = floorMaterial();
-  const floorGeo = new THREE.PlaneGeometry(140, 100, 280, 200).rotateX(-Math.PI / 2);
+  const { material: floorMat, uniforms: floorU } = floorMaterial(renderer);
+  const floorGeo = new THREE.PlaneGeometry(140, 100, 70, 50).rotateX(-Math.PI / 2);
   const fp = floorGeo.attributes.position!;
   for (let i = 0; i < fp.count; i++) fp.setY(i, bermHeight(fp.getX(i), fp.getZ(i)));
   floorGeo.computeVertexNormals();
@@ -387,8 +432,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   let rippleNext = 0, shake = 0, hurt = 0, time = 0, last: GameState | null = null;
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v3 = new THREE.Vector3(), s3 = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
 
-  // Adaptive quality: a phone that can't hold ~45 fps drops to 1x pixels, then loses bloom. Measured on wall time
-  // between rendered frames (not game time), over SLOW_WINDOW_MS; never steps back up (no oscillation).
+  // Adaptive quality: a phone that can't hold ~45 fps drops to 1x pixels and a half-size shadow map, then loses bloom
+  // and moon shadows. Measured on wall time between rendered frames (not game time), over SLOW_WINDOW_MS; never steps
+  // back up (no oscillation).
   const SLOW_FRAME_MS = 22, SLOW_WINDOW_MS = 2500;
   let lastFrame = 0, slowSince = 0, tier = 0;
   function adapt() {
@@ -400,7 +446,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     if (!slowSince) slowSince = now;
     if (now - slowSince < SLOW_WINDOW_MS || tier >= 2) return;
     tier++; slowSince = 0;
-    if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); }
+    if (tier === 1) { renderer.setPixelRatio(1); composer.setPixelRatio(1); moon.shadow.mapSize.set(LOOK.SHADOW_MAP / 2, LOOK.SHADOW_MAP / 2); moon.shadow.map?.dispose(); moon.shadow.map = null; }
     else { bloom.enabled = false; moon.castShadow = false; }
   }
 
