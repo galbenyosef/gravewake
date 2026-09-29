@@ -1,0 +1,65 @@
+// Every shared prefab and custom element in its states, on a demo screen of its own (sized by its CSS, as a real
+// consumer's would be). The taps prove each prefab's `tap`/`pick` binding reaches its handler.
+import type { Meta, StoryObj } from '@storybook/html-vite';
+import { expect } from 'storybook/test';
+import { use } from '../decl/engine';
+import { newRun } from '../game';
+import { bar, btn, enemyCard, screenUi, upgradeCard } from '../screens/shared';
+import { press, ready, stage, storyScreen, storyArgs, storyControls, type StoryArgs } from './stage';
+
+const demoKdl = `
+prefab "demo" {
+    panel class="demo" {
+        panel class="demo-row" slot="buttons"
+        panel class="demo-row" {
+            pips class="demo-pips" count=6 value=4
+            panel class="demo-bar" slot="bar"
+        }
+        panel class="demo-row" slot="cards"
+        panel class="demo-row demo-enemies" slot="enemies"
+    }
+}`;
+const demoCss = `
+.demo { width: 100%; height: 100%; background-color: #04050c; pointer-events: auto; padding: 8px 12px; gap: 8px; align-items: center }
+.demo-row { flex-direction: row; gap: 10px; align-items: center }
+.demo-pips { width: 150px; height: 16px; tint: #3cf2ff }
+.demo-bar { width: 300px }
+.demo button { width: 150px; height: 40px }
+.demo .upgrade-card { width: 150px; height: 150px; padding: 10px 8px }
+.demo .shared-card-blurb { width: 130px }
+.demo-enemies { flex-wrap: wrap; width: 820px; justify-content: center }
+.demo .enemy-card { width: 200px; height: 50px; padding: 3px 6px }
+.demo .shared-enemy-glyph { width: 40px; height: 40px }
+.demo .shared-enemy-blurb { width: 140px; font-size: 10px }
+`;
+const demo = screenUi(demoKdl, demoCss);
+storyScreen(() => demo.show(null));
+const taps: string[] = [];
+const hit = (what: string) => () => { taps.push(what); };
+
+function draw() {
+  demo.show(use('demo', {}, {
+    buttons: [btn('PLAIN', hit('plain')), btn('PRIMARY', hit('primary'), 'primary'), btn('DANGER', hit('danger'), 'danger'), btn('OFF', hit('off'), 'off')],
+    bar: [bar('BOSS', 0.62)],
+    cards: ['overclock', 'hollow-point', 'split-barrel', 'plating', 'tractor'].map((id, i) => upgradeCard(id, i % 3, hit(id))),
+    enemies: ['drone', 'lancer', 'bulwark', 'hive', 'seraph', 'colossus', 'mite', 'phantom'].map(enemyCard),
+  }));
+}
+
+export default {
+  title: 'Shared Prefabs',
+  args: storyArgs,
+  ...storyControls,
+} satisfies Meta<StoryArgs>;
+
+export const AllPrefabs: StoryObj<StoryArgs> = {
+  render: () => stage(() => { draw(); return { run: newRun(1), ui: { screen: 'play' } }; }),
+  play: async ({ args }) => {
+    if (!args.runInteraction) return;
+    await ready();
+    taps.length = 0;
+    await press('PRIMARY');
+    await press('HOLLOW POINT');
+    await expect(taps).toEqual(['primary', 'hollow-point']);
+  },
+};
