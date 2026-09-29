@@ -1,0 +1,59 @@
+// Sound effects, synthesised (no audio files). Each `sound` is one or more voices played together:
+//   tone "<wave>" from= to= s= vol= [jitter=]: an oscillator (wave: sine, square, sawtooth, triangle) sweeping
+//     from Hz to Hz over s seconds, fading from vol to silence; `jitter` adds up to that many Hz to `from` at random.
+//   hiss s= vol= cutoff=: white noise through a low-pass that falls from `cutoff` Hz to 80 Hz over s seconds.
+// `gap` is the least time between two of the same sound, s, so sixty hits in a frame don't stack into a roar.
+// `mix "master" volume=` is the level everything plays at (0..1).
+
+mix "master" volume=0.35
+
+// The menus
+sound "tap" {
+    tone "square" from=880 to=1320 s=0.06 vol=0.12
+}
+
+// The fight
+sound "fire" gap=0.06 {
+    tone "square" from=1400 to=500 s=0.05 vol=0.035
+}
+sound "enemy-fire" gap=0.08 {
+    tone "sawtooth" from=420 to=260 s=0.08 vol=0.04
+}
+sound "hit" gap=0.04 {
+    tone "triangle" from=300 to=120 s=0.05 vol=0.08
+}
+sound "kill" gap=0.03 {
+    hiss s=0.25 vol=0.35 cutoff=2400
+    tone "sine" from=180 to=50 s=0.2 vol=0.2
+}
+sound "big-kill" {
+    hiss s=0.9 vol=0.6 cutoff=3000
+    tone "sine" from=120 to=30 s=0.8 vol=0.5
+}
+sound "hurt" {
+    hiss s=0.35 vol=0.5 cutoff=1200
+    tone "sawtooth" from=220 to=60 s=0.35 vol=0.25
+}
+sound "pickup" gap=0.03 {
+    tone "sine" from=1200 to=2200 s=0.07 vol=0.07 jitter=300
+}
+sound "warp" {
+    tone "sine" from=200 to=900 s=0.5 vol=0.06
+}
+sound "blast" {
+    hiss s=0.5 vol=0.45 cutoff=1800
+}
+
+// The run's beats
+sound "wave" {
+    tone "triangle" from=330 to=660 s=0.35 vol=0.15
+    tone "triangle" from=495 to=990 s=0.45 vol=0.1
+}
+sound "upgrade" {
+    tone "square" from=660 to=1320 s=0.2 vol=0.1
+    tone "sine" from=990 to=1980 s=0.3 vol=0.1
+}
+sound "dead" {
+    hiss s=1.4 vol=0.6 cutoff=1500
+    tone "sawtooth" from=300 to=30 s=1.4 vol=0.3
+}

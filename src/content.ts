@@ -1,4 +1,4 @@
-// Content kinds: enemy, wave, upgrade. Each is a zod schema handed to loadKdl, so the schema is the type and the only
+// Content kinds: enemy, wave, upgrade, scatter, sound, mix. Each is a zod schema handed to loadKdl, so the schema is the type and the only
 // parser; behaviour words attach through `combinators()` with the registry of the module that owns the rule.
 import { z } from 'zod';
 import { combinators, loadKdl } from './content-load';
@@ -8,6 +8,7 @@ import enemiesKdl from '../content/enemies.kdl?raw';
 import wavesKdl from '../content/waves.kdl?raw';
 import upgradesKdl from '../content/upgrades.kdl?raw';
 import arenaKdl from '../content/arena.kdl?raw';
+import soundsKdl from '../content/sounds.kdl?raw';
 import { rand } from './rng';
 import { T } from './tuning';
 
@@ -162,3 +163,21 @@ export const ScatterSchema = z.strictObject({
 });
 export type ScatterDef = z.output<typeof ScatterSchema>;
 export const SCATTERS = Object.values(loadKdl(arenaKdl, { scatter: ScatterSchema }).scatter);
+
+const Voice = z.discriminatedUnion('name', [
+  /** An oscillator sweeping `from` Hz to `to` Hz over `s` seconds, fading from `vol`; `jitter` adds up to that many Hz. */
+  z.strictObject({ name: z.literal('tone'), args: z.tuple([z.enum(['sine', 'square', 'sawtooth', 'triangle'])]), props: z.strictObject({ from: pos, to: pos, s: pos, vol: pos, jitter: nonneg.default(0) }) }),
+  /** Low-passed noise, the cutoff falling from `cutoff` Hz over `s` seconds, fading from `vol`. */
+  z.strictObject({ name: z.literal('hiss'), args: z.tuple([]), props: z.strictObject({ s: pos, vol: pos, cutoff: pos }) }),
+]);
+export const SoundSchema = z.strictObject({
+  id: z.string(),
+  /** The least time between two of this sound, s. */
+  gap: nonneg.default(0),
+  children: z.array(Voice).min(1),
+}).transform(({ children, ...s }) => ({ ...s, voices: children.map((v) => (v.name === 'tone' ? { kind: 'tone' as const, wave: v.args[0], ...v.props } : { kind: 'hiss' as const, ...v.props })) }));
+export type SoundDef = z.output<typeof SoundSchema>;
+export const MixSchema = z.strictObject({ id: z.string(), volume: z.number().min(0).max(1), children: z.array(z.never()).max(0) });
+const soundContent = loadKdl(soundsKdl, { sound: SoundSchema, mix: MixSchema });
+export const SOUNDS = soundContent.sound;
+export const MASTER_VOLUME = soundContent.mix.master?.volume ?? (() => { throw new Error('content/sounds.kdl: no mix "master" volume='); })();

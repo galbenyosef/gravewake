@@ -36,7 +36,7 @@ describe('the catalog matches the code', () => {
   it('every look token is read by the shell', () => expect(Object.keys(LOOK).map(lookToken).sort()).toEqual([...looks].sort()));
   it('behaviour words', () => same('Behaviour words', Object.keys(BEHAVIOURS)));
   it('effect words', () => same('Effect words', Object.keys(EFFECTS)));
-  it('content kinds', () => same('Content kinds', all(contentTs, /loadKdl\(\w+, \{ (\w+):/g)));
+  it('content kinds', () => same('Content kinds', all(contentTs, /loadKdl\(\w+, \{ ([^}]+) \}/g).flatMap((kinds) => kinds.split(',').map((k) => k.split(':')[0]!.trim()))));
   it('content helpers', () => same('Content helpers', all(contentLoadTs, /^export function (\w+)/gm)));
   it('models', () => same('Models', [...RIGS]));
   it('model rig', () => same('Model rig', [...CLIPS, ...SLOTS]));

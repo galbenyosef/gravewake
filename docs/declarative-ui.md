@@ -17,6 +17,7 @@ Homes:
 | Behaviour words | `BEHAVIOURS` in `src/enemies.ts` |
 | Upgrade effect words | `EFFECTS` in `src/upgrades.ts` |
 | Content kinds | zod schemas in `src/content.ts`, data in `content/*.kdl` |
+| Sound effects | `sound` nodes in `content/sounds.kdl`, synthesised by `src/audio.ts` |
 | Screens and their stacking | `src/runtime.ts` (import order = draw order) |
 | 3D models | `models/<name>.py` (Blender, built from `models/kit.py`), exported by `npm run models` to `models/<name>.glb` (committed); `src/view/models.ts` loads them; `MODELS` in `src/content.ts` names them |
 | Modelling words | `models/kit.py` (the only module model scripts import) |
@@ -337,6 +338,8 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
+| `sound` | `sound "id" [gap=] { tone "wave" from= to= s= vol= [jitter=] / hiss s= vol= cutoff= }`: a synthesised sound effect, its voices played together, in `content/sounds.kdl` (header there has the units); `SFX` in `src/audio.ts` names the ones the game plays |
+| `mix` | `mix "master" volume=`: the level every sound plays at (0..1), in `content/sounds.kdl` |
 | `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" light= shadow= out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
 
 ## Content helpers
