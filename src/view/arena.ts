@@ -145,8 +145,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   // Instanced shots and pickups
   const inst = (g: THREE.BufferGeometry, m: THREE.Material, n: number) => { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; };
   const bolts = inst(new THREE.CapsuleGeometry(0.09, 0.7, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3), 600);
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--enemy-shot'), 2.6), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--enemy-shot'), 1.2, 0.35), 800);
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2.6), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.2, 0.35), 800);
   const lobs = inst(new THREE.IcosahedronGeometry(0.4, 0), glowMaterial(token('--lob'), 3), 64);
   const shards = inst(new THREE.OctahedronGeometry(0.22, 0), glowMaterial(token('--shard'), 2.4), 600);
   const repairs = inst(new THREE.OctahedronGeometry(0.4, 0), glowMaterial(token('--repair'), 2.6), 16);
@@ -215,7 +215,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         else if (e.what === 'lob') { const r = s.shots.find((b) => b.lob && b.tx === e.tx && b.ty === e.ty)?.blast ?? 2; rings.ring(e.tx, e.ty, r, r, e.dur, token('--lob'), { blink: true }); rings.ring(e.tx, e.ty, 0.1, r, e.dur, token('--lob'), { fill: true }); }
         else { rings.ring(e.tx, e.ty, 1.4, 0.4, e.dur, token('--blink'), { blink: true }); rings.column(e.tx, e.ty, 0.5, 5, e.dur + 0.2, token('--blink')); }
         break;
-      case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--enemy-shot'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--lob')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
+      case 'blast': sfx('blast'); particles.burst(e.x, e.y, token('--hostile-shot'), 40, e.r * 5, 0.16, 0.7); rings.ring(e.x, e.y, 0.3, e.r * 1.3, 0.45, token('--lob')); ripple(e.x, e.y, 1.1); shake = Math.max(shake, 0.35); break;
       case 'block': particles.burst(e.x, e.y, token('--shield'), 6, 8, 0.07, 0.25); break;
       case 'heal': particles.burst(e.x, e.y, token('--heal'), 3, 1.5, 0.1, 0.8, 0.6, 2); break;
       case 'enemy-fire': sfx('enemy-fire'); break;

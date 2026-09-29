@@ -7,7 +7,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     projects: [
-      { extends: true, test: { name: 'unit', include: ['src/**/*.test.ts'] } },
+      // css.include: vitest otherwise replaces .css imports (even ?raw) with empty strings, and the screens' sheets are data here.
+      { extends: true, test: { name: 'unit', include: ['src/**/*.test.ts'], css: { include: [/.+/] } } },
       {
         extends: true,
         plugins: [storybookTest({ configDir: '.storybook', tags: { skip: ['skip'] } })],
