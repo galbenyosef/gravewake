@@ -18,10 +18,10 @@ export const LOOK = {
   /** Models shaded in flat facets (hard, chiselled planes) rather than smoothed. */
   FACETED: true,
   /** Tone-mapping exposure: the whole frame. */
-  EXPOSURE: 1.1,
+  EXPOSURE: 1.35,
   /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
   MOON_KEY: 2.2,
-  MOON_FILL: 0.14,
+  MOON_FILL: 0.22,
   ENV: 0.6,
   /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
   RIM: 1.6,
@@ -31,7 +31,7 @@ export const LOOK = {
   SURFACE_GRAIN: 0.6,
   SURFACE_BUMP: 0.06,
   /** How tall the floor's procedural relief is (stones, mounds, cracks), so light rakes across it. */
-  FLOOR_RELIEF: 1.2,
+  FLOOR_RELIEF: 1.8,
   /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
   FOG_Y_U: 0.35,
   FOG_VEIL: 0.18,

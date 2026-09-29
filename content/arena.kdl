@@ -18,7 +18,7 @@ scatter "snags" model="snag" paint="--wood" along="all" out=5 spread=4 step=9 ji
 
 // The edge itself: a broken line of graves facing into the clearing, and roots between them.
 scatter "graves" model="grave" paint="--stone" along="all" out=0.9 spread=0.8 step=2.4 jitter=1 scale=0.9 vary=0.35 chance=0.5 face="in" seed=21
-scatter "roots" model="roots" paint="--wood" along="all" out=0.8 spread=1 step=3.1 jitter=1.4 scale=1.2 vary=0.7 chance=0.4 seed=22
+scatter "roots" model="roots" paint="--wood" along="all" out=0.8 spread=1 step=3.1 jitter=1.4 scale=1.2 vary=0.7 chance=0.15 seed=22
 
 // The floor of the clearing: stones, dead grass, and the bones of the ones who came before.
 scatter "stones" model="rocks" paint="--wood" along="field" step=6 jitter=4 extend=4 scale=0.8 vary=0.8 chance=0.3 seed=31

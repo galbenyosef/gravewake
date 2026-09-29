@@ -74,7 +74,10 @@ function floorMaterial() {
         ${NOISE}
         float reliefH(vec2 q) {
           vec3 st = cells(q * 0.8 + 40.0);
-          return 0.5 * fbm(q * 0.21) + 0.08 * vnoise(q * 2.3) + step(0.82, st.z) * 0.3 * smoothstep(0.28, 0.0, st.x);
+          vec3 pl = cells(q * 0.9 + 3.0 + 0.4 * sin(q.yx * 0.7));
+          float dry = smoothstep(0.55, 0.7, fbm(q * 0.21));
+          // Dry plates stand proud with bevelled edges; the seams between them sink.
+          return 0.5 * fbm(q * 0.21) + 0.08 * vnoise(q * 2.3) + step(0.82, st.z) * 0.3 * smoothstep(0.28, 0.0, st.x) + dry * 0.12 * smoothstep(0.0, 0.12, pl.y);
         }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         vec2 p = vPos; float wave = 0.0;
@@ -91,8 +94,8 @@ function floorMaterial() {
         float moss = smoothstep(0.5, 0.72, fbm(warp * 0.33 + 3.1));
         alb = mix(alb, mix(uMoss, vec3(dot(uMoss, vec3(0.33))), 0.4) * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.7);
         // Dry ground cracks into plates: warped cells, wide dark seams, only where it is dry and bare.
-        vec3 plate = cells(warp * 0.9 + 3.0);
-        float dry = smoothstep(0.45, 0.62, broad) * (1.0 - moss);
+        vec3 plate = cells(p * 0.9 + 3.0 + 0.4 * sin(p.yx * 0.7));
+        float dry = smoothstep(0.55, 0.7, broad) * (1.0 - moss);
         float seam = (1.0 - smoothstep(0.02, 0.07 + 0.06 * fine, plate.y)) * dry * smoothstep(0.35, 0.6, fbm(p * 0.7 + 21.0));
         alb *= (1.0 - seam * 0.7) * (0.9 + 0.2 * plate.z * dry);
         float litter = 0.0;
@@ -128,7 +131,7 @@ function floorMaterial() {
           normal = normalize((viewMatrix * vec4(nw, 0.0)).xyz);
         }`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        vec3 spell = vec3(0.0);
+        vec3 spell = vec3(0.0), lamp = vec3(0.0);
         for (int i = 0; i < ${MAX_FLOOR_LIGHTS}; i++) {
           vec4 l = uLights[i];
           if (l.w <= 0.0) continue;
@@ -139,12 +142,12 @@ function floorMaterial() {
           vec4 l = uStatic[i];
           if (l.w <= 0.0) continue;
           float d = length(p - l.xy) / l.z;
-          spell += uStaticCol[i] * l.w * exp(-d * d) * (0.85 + 0.15 * sin(uTime * 3.0 + float(i) * 1.7));
+          lamp += uStaticCol[i] * l.w * exp(-d * d) * (0.85 + 0.15 * sin(uTime * 3.0 + float(i) * 1.7));
         }
         // Standing water: the moonlit sky in it (stronger at a glancing angle), a pale shoreline, and the spells mirrored.
         float fres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
         float shore = smoothstep(0.15, 0.5, wet) * smoothstep(0.85, 0.5, wet);
-        totalEmissiveRadiance += alb * spell + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
+        totalEmissiveRadiance += alb * (spell + lamp) + spell * 0.2 * wet + uMoon * (wet * (0.008 + 0.07 * fres) * (0.6 + 0.8 * fbm(p * 1.3 + uTime * 0.05)) + shore * 0.012)
           + uMoon * wave * 0.012 * (0.5 + broad);`);
   };
   return { material: m, uniforms };
@@ -279,7 +282,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   const moon = lightNight(scene, renderer);
   // Moon shadows over the whole clearing: trees, graves, the dead and the wizard all cast them.
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   moon.castShadow = true;
   moon.position.copy(MOON_DIR).normalize().multiplyScalar(40);
   moon.shadow.mapSize.set(LOOK.SHADOW_MAP, LOOK.SHADOW_MAP);
