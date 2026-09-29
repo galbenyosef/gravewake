@@ -9,7 +9,8 @@ def cranium(s, loc, rot):
     """Just the braincase of a skull (the golem is packed with them)."""
     sk = skull(s)
     for o in sk[1:]: bpy.data.objects.remove(o, do_unlink=True)
-    return at(sk[0], loc, rot)
+    sk[0].location, sk[0].rotation_euler = loc, Euler([D(a) for a in rot])
+    return sk[0]
 
 
 core = smooth(ball('core', 0.55, 'body', 14, 10), 1)
@@ -24,7 +25,7 @@ hips = at(smooth(box('hips', (0.5, 0.8, 0.3), 'body', 0.1)), (-0.05, 0, -0.35))
 rough(hips, 0.05, 4, 2)
 body = part('torso', core, *lumps, *cage, soul, *spine, *spikes, hips)
 
-skl = skull(0.42, (0.5, 0, 0.72), jaw=20)
+skl = skull(0.42, (0.5, 0, 0.72), jaw=20, tilt=25)
 horns = [tube('horn', [(0.45, s * 0.14, 0.9), (0.35, s * 0.36, 1.05), (0.12, s * 0.45, 1.05), (0.0, s * 0.35, 0.9)], [0.07, 0.06, 0.04, 0.0], 'trim', 6) for s in (1, -1)]
 head = part('head', *skl, *horns, pivot=(0.4, 0, 0.6), parent=body)
 

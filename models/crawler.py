@@ -2,9 +2,9 @@
 # spider's, carry it low and fast; its jaw chatters and it lunges when it gets close.
 from kit import *
 
-cranium = skull(1.0, (0.05, 0, -0.1), jaw=18)
-body = part('skull', *cranium[:1], *cranium[1:2], *cranium[3:], pivot=(0, 0, -0.1))
-jaw = part('jaw', cranium[2], pivot=(0.1, 0, -0.35), parent=body)
+cranium = skull(1.0, (0.05, 0, -0.1), jaw=18, tilt=35)
+body = part('skull', cranium[0], *cranium[2:], pivot=(0, 0, -0.1))
+jaw = part('jaw', cranium[1], pivot=(0.1, 0, -0.35), parent=body)
 
 legs = []
 for i, (a, reach) in enumerate(((35, 1.0), (90, 1.1), (145, 1.0), (-35, 1.0), (-90, 1.1), (-145, 1.0))):

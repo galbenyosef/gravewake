@@ -19,7 +19,7 @@ body = part('body', robe, over, sash, *charms, *collar)
 hood = smooth(ball('hood', 0.22, 'body', 12, 8))
 cut(hood, lambda c: not (c.x > 0.1 and abs(c.y) < 0.14 and c.z < 0.1))
 shell(hood, 0.03)
-mask = skull(0.3, (0.05, 0, -0.02), jaw=0)
+mask = skull(0.3, (0.05, 0, -0.02), jaw=0, tilt=20)
 for o in [hood] + mask: o.location += Vector((0.04, 0, 0.88))
 head = part('head', hood, *mask, pivot=(0.04, 0, 0.72), parent=body)
 

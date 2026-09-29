@@ -12,7 +12,7 @@ quiver = tube('quiver', [(-0.22, 0.12, 0.05), (-0.3, 0.2, 0.62)], [0.08, 0.09], 
 fletch = [tube('arrow', [(-0.3, 0.2 + dy, 0.6), (-0.33, 0.21 + dy, 0.8)], 0.02, 'body', 4) for dy in (-0.04, 0.0, 0.04)]
 body = part('body', pelvis, *ribs, cape, quiver, *fletch)
 
-skl = skull(0.42, (0.08, 0, 0.84), jaw=6)
+skl = skull(0.44, (0.08, 0, 0.84), jaw=6, tilt=20)
 hood = smooth(ball('hood', 0.27, 'trim', 12, 8))
 cut(hood, lambda c: not (c.x > 0.08 and c.z < 0.12))
 shell(hood, 0.03)

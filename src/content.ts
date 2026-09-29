@@ -15,7 +15,7 @@ import { T } from './tuning';
 export const MODELS = ['skeleton', 'crawler', 'ghoul', 'banshee', 'blightskull', 'warden', 'barrow', 'wraith', 'bloat', 'necromancer', 'catapult', 'lich', 'golem', 'archer'] as const;
 export type Model = (typeof MODELS)[number];
 /** Scenery models round the clearing (models/<name>.py like the characters; content/arena.kdl places them). */
-export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass'] as const;
+export const SCENERY = ['tree', 'grave', 'roots', 'rocks', 'bones', 'grass', 'altar'] as const;
 
 const pos = z.number().positive();
 
@@ -103,15 +103,18 @@ export function waveDef(n: number): { def: WaveDef; loop: number } {
 /** The boss a wave brings, if any. */
 export const bossOf = (w: WaveDef) => w.spawns.map((s) => ENEMIES[s.kind]!).find((e) => e.tier === 'boss')?.id ?? null;
 
-const EDGES = { top: ['top'], bottom: ['bottom'], sides: ['left', 'right'], all: ['top', 'bottom', 'left', 'right'], field: [] } as const;
+const EDGES = { top: ['top'], bottom: ['bottom'], sides: ['left', 'right'], all: ['top', 'bottom', 'left', 'right'], field: [], ring: [] } as const;
 const nonneg = z.number().nonnegative();
 export const ScatterSchema = z.strictObject({
   id: z.string(),
   model: z.enum(SCENERY),
   /** Palette token the model is painted in. */
   paint: z.string().regex(/^--[\w-]+$/, 'a palette token like "--wood"'),
-  /** Edges to walk, or `field`: a grid over the whole clearing. */
-  along: z.enum(['top', 'bottom', 'sides', 'all', 'field']),
+  /** Palette token its glow parts burn in (default: the paint). */
+  glow: z.string().regex(/^--[\w-]+$/, 'a palette token like "--soulfire"').optional(),
+  /** Edges to walk, `field` (a grid over the whole clearing) or `ring` (round the centre at radius `out`; radius 0 is
+   *  one slot at the centre). */
+  along: z.enum(['top', 'bottom', 'sides', 'all', 'field', 'ring']),
   /** Past the edge, u (negative is inside); `spread` adds up to that much more. Unused by `field`. */
   out: z.number().default(0), spread: nonneg.default(0),
   /** Slot spacing along the edge, how far a slot may slide, and how far the row runs past the edge's ends, u. */
@@ -130,6 +133,14 @@ export const ScatterSchema = z.strictObject({
     for (let x = -hw - sc.extend; x <= hw + sc.extend + 1e-6; x += sc.step) for (let zz = -hh - sc.extend; zz <= hh + sc.extend + 1e-6; zz += sc.step) {
       const px = x + (r() - 0.5) * sc.jitter, pz = zz + (r() - 0.5) * sc.jitter, keep = r() < sc.chance, scale = sc.scale + (r() - 0.5) * sc.vary, yaw = r() * Math.PI * 2;
       if (keep) placements.push({ x: px, z: pz, scale, yaw });
+    }
+  }
+  if (sc.along === 'ring') {
+    const n = Math.max(1, Math.round((Math.PI * 2 * sc.out) / sc.step));
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + (r() - 0.5) * sc.jitter / Math.max(sc.out, 1), rad = sc.out + r() * sc.spread, keep = r() < sc.chance, scale = sc.scale + (r() - 0.5) * sc.vary, turn = r();
+      const x = Math.cos(a) * rad, zz = Math.sin(a) * rad;
+      if (keep) placements.push({ x, z: zz, scale, yaw: sc.face === 'in' && rad > 0 ? Math.atan2(-zz, -x) + (turn - 0.5) * 0.7 : turn * Math.PI * 2 });
     }
   }
   for (const edge of EDGES[sc.along]) {

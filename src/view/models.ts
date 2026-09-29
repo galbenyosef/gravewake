@@ -88,17 +88,33 @@ export function paintMaterial(body: number, glow = body, emissive = body, rim: n
   const uniforms = {
     uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) },
     uRim: { value: new THREE.Color(token('--moon')).multiplyScalar(rim) },
+    uSurface: { value: new THREE.Vector2(LOOK.SURFACE_GRAIN, LOOK.SURFACE_BUMP) },
   };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, uniforms);
     sh.vertexShader = sh.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float slot;\nvarying float vSlot;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSlot = slot;');
+      .replace('#include <common>', '#include <common>\nattribute float slot;\nvarying float vSlot;\nvarying vec3 vObj;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSlot = slot;\nvObj = position;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 uBody, uTrim, uGlow, uRim;\nvarying float vSlot;')
+      .replace('#include <common>', `#include <common>
+        uniform vec3 uBody, uTrim, uGlow, uRim; uniform vec2 uSurface;
+        varying float vSlot; varying vec3 vObj;
+        ${SURFACE_NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float isTrim = step(0.5, vSlot) * step(vSlot, 1.5), isGlow = step(1.5, vSlot);
-        diffuseColor.rgb *= mix(mix(uBody, uTrim, isTrim), vec3(0.0), isGlow);`)
+        // Surface: a procedural grain in model space (bone pits, cloth weave, rust) instead of a texture, plus stains.
+        float grain = 0.55 * n3(vObj * 5.0) + 0.3 * n3(vObj * 11.0) + 0.15 * n3(vObj * 23.0);
+        float stain = smoothstep(0.55, 0.8, n3(vObj * 3.1 + 9.0));
+        diffuseColor.rgb *= mix(mix(uBody, uTrim, isTrim), vec3(0.0), isGlow) * mix(1.0, (0.55 + 0.9 * grain) * (1.0 - 0.45 * stain), uSurface.x);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        {
+          // Bump from the grain (three's perturbNormalArb, on a procedural height).
+          vec3 dpdx = dFdx(-vViewPosition), dpdy = dFdy(-vViewPosition);
+          vec3 r1 = cross(dpdy, normal), r2 = cross(normal, dpdx);
+          float det = dot(dpdx, r1);
+          vec3 grad = sign(det) * (dFdx(grain) * r1 + dFdy(grain) * r2);
+          normal = normalize(abs(det) * normal - uSurface.y * (1.0 - isGlow) * grad);
+        }`)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.5, isTrim);')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.6, isTrim);')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
@@ -108,6 +124,15 @@ export function paintMaterial(body: number, glow = body, emissive = body, rim: n
   m.customProgramCacheKey = () => 'paint';
   return m;
 }
+/** 3D value noise for the paint's procedural surface grain. */
+const SURFACE_NOISE = /* glsl */ `
+  float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+  float n3(vec3 p) {
+    vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(h3(i), h3(i + vec3(1, 0, 0)), f.x), mix(h3(i + vec3(0, 1, 0)), h3(i + vec3(1, 1, 0)), f.x), f.y),
+               mix(mix(h3(i + vec3(0, 0, 1)), h3(i + vec3(1, 0, 1)), f.x), mix(h3(i + vec3(0, 1, 1)), h3(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+  }`;
+
 /** Moonlight's direction (towards the moon): high and from the far side, so what faces the camera stays in shade and
  *  the moon only catches tops and edges. */
 export const MOON_DIR = new THREE.Vector3(-0.35, 1, -0.55);
@@ -222,7 +247,7 @@ export function buildShip(color: number, glow: number) {
   const paint = paintMaterial(color, glow, glow);
   paint.emissiveIntensity = 0.3;
   const rig = buildRig('wizard', paint);
-  rig.obj.scale.setScalar(0.85);
+  rig.obj.scale.setScalar(LOOK.WIZARD_SCALE);
   return rig;
 }
 

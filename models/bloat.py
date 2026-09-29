@@ -12,7 +12,7 @@ seams = [tube('seam', [(math.cos(a) * 0.74, math.sin(a) * 0.74, z) for z in (-0.
 stitches = [at(box('stitch', (0.03, 0.16, 0.03), 'trim', 0.005), (math.cos(a) * 0.76, math.sin(a) * 0.76, z), (0, 0, math.degrees(a))) for a in (0.2, 2.3, 4.2) for z in (-0.4, -0.1, 0.2)]
 body = part('belly', belly, *bumps, *[o for f in faces for o in f], *seams, *stitches)
 
-skl = skull(0.34, (0.22, 0, 0.72), jaw=25)
+skl = skull(0.34, (0.22, 0, 0.72), jaw=25, tilt=25)
 neck = tube('neck', [(0.1, 0, 0.5), (0.18, 0, 0.62)], 0.12, 'body', 6)
 head = part('head', *skl, neck, pivot=(0.12, 0, 0.56), parent=body)
 arms = []

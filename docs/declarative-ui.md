@@ -155,6 +155,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 
 | Name | Use |
 |---|---|
+| `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
+| `WIZARD_SCALE` | the wizard's drawn size |
 | `EXPOSURE` | tone-mapping exposure, the whole frame |
 | `MOON_KEY` | moon key light intensity (--moon) |
 | `MOON_FILL` | moonlit hemisphere fill |
@@ -162,6 +164,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `RIM` | cold fresnel rim on every character's silhouette |
 | `RIM_POWER` | the rim's falloff (higher is a thinner edge) |
 | `SCENERY_RIM` | scenery's weaker rim |
+| `SURFACE_GRAIN` | how much models' procedural grain and stains vary their paint |
+| `SURFACE_BUMP` | depth of that grain's bump |
 | `FLOOR_AMBIENT` | moonlight on the floor everywhere |
 | `FLOOR_MOON` | extra moonlight in the clearing |
 | `FLOOR_DAPPLE` | moonlight through gaps in the dead canopy |
@@ -188,6 +192,8 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `VIGNETTE` | vignette depth |
 | `GRADE` | how far the shadows lean towards moonlight |
 | `GRAIN` | film grain |
+| `SATURATION` | saturation kept in everything that isn't bright (the world squashed towards grey, magic untouched) |
+| `SHADOW_CAST` | how far a character's shadow falls away from the moon, in radii |
 
 ## Behaviour words
 
@@ -256,6 +262,7 @@ See each in Storybook under Models (idle, attack and die side by side; `still` f
 | `rocks` | scenery: a few half-sunk, weathered stones |
 | `bones` | scenery: an old skull, a femur and loose ribs lying in the leaves |
 | `grass` | scenery: a tuft of dead, bent grass |
+| `altar` | scenery: the sunken ritual circle at the clearing's heart: broken flagstones, smouldering runes, guttered candles |
 
 ## Model rig
 
@@ -290,8 +297,10 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `smooth` | `smooth(ob, levels)`: subdivide (soft chunky forms, and vertices to hold the paint) |
 | `shell` | `shell(ob, thickness)`: give an open surface thickness |
 | `cut` | `cut(ob, keep)`: delete faces whose centre fails `keep`: open a hood, split plates |
+| `fuse` | `fuse(name, *shapes, voxel, keep)`: melt shapes into one organic mesh (voxel remesh, decimated to `keep`): fused bone, flesh, earth |
+| `carve` | `carve(ob, *cutters)`: boolean-cut the cutters' volumes out (sockets, hollows); the cutters are deleted |
 | `sphere_dirs` | `sphere_dirs(n, zmin)`: evenly spread directions (spikes, crystals) |
-| `skull` | `skull(s, loc, mat, eyes, jaw)`: a skull facing +X with lit sockets (`eyes` material) and an open jaw; returns objects for `part` |
+| `skull` | `skull(s, loc, mat, eyes, jaw, tilt)`: a sculpted skull facing +X, sockets and nose carved hollow with a light (`eyes`) deep in each, jaw open `jaw` degrees, face raised `tilt` degrees for the high camera; returns [skull, jaw, eye, eye] |
 | `ribcage` | `ribcage(w, h, n, loc, mat, r)`: a spine and `n` rib pairs curving forward, top at `loc`; returns objects for `part` |
 | `part` | `part(name, *shapes, pivot, parent)`: merge shapes into one moving rig part |
 | `key` | `key(part, clip, [(s, {loc, rot, scale}), ...])`: key a clip relative to rest; one per part per clip |
@@ -300,7 +309,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `still` | `still(part, clips)`: scenery's clips, an imperceptible settle in each (the exporter drops a clip that doesn't move) |
 | `crumble` | `crumble(parts, dur, floor, scatter)`: the undead `die`: bones drop to the floor, skid, lie, then sink into the earth |
 | `burst_apart` | `burst_apart(parts, dur, fling, rise)`: the generic `die`: parts fly out, tumble, shrink |
-| `export` | `export(__file__)`: paint the vertices (value only; hue comes from CSS) and write the .glb |
+| `export` | `export(__file__)`: paint the vertices (value only; hue comes from CSS: top light, cavities, baked ambient occlusion against the whole model) and write the .glb |
 
 ## Content kinds
 
@@ -309,7 +318,7 @@ Words in `models/kit.py` for model scripts (`from kit import *`). Blender +X is 
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
 | `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
-| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field step= scale= seed= [out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges (or a grid over it, `field`), in `content/arena.kdl` |
+| `scatter` | `scatter "id" model= paint="--token" along=top/bottom/sides/all/field/ring step= scale= seed= [glow="--token" out= spread= jitter= extend= vary= chance= face=in/any]`: scenery dropped in slots along the arena's edges, in a grid over it (`field`), or round its centre (`ring`), in `content/arena.kdl` |
 
 ## Content helpers
 

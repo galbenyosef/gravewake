@@ -3,11 +3,11 @@
 # bursts in a shower of bone.
 from kit import *
 
-skl = skull(1.15, (0.05, 0, 0.0), jaw=22)
+skl = skull(1.15, (0.05, 0, 0.0), jaw=22, tilt=30)
 cracks = [tube('crack', [(0.1, y, 0.45), (0.0, y * 1.2, 0.33), (-0.08, y, 0.2)], 0.02, 'glow', 4) for y in (-0.12, 0.1)]
 horns = [tube('horn', [(-0.05, s * 0.36, 0.18), (-0.2, s * 0.62, 0.32), (-0.48, s * 0.66, 0.22), (-0.58, s * 0.5, 0.0)], [0.12, 0.09, 0.05, 0.0], 'trim', 7) for s in (1, -1)]
-body = part('skull', *skl[:2], *skl[3:], *cracks, *horns)
-jaw = part('jaw', skl[2], pivot=(0.15, 0, -0.35), parent=body)
+body = part('skull', skl[0], *skl[2:], *cracks, *horns)
+jaw = part('jaw', skl[1], pivot=(0.15, 0, -0.35), parent=body)
 flames = []
 for i, (y, z, ln) in enumerate(((0, 0.3, 1.2), (0.3, 0.1, 0.9), (-0.3, 0.1, 0.9), (0.18, -0.2, 0.8), (-0.18, -0.2, 0.8))):
     t = tube('flame', [(-0.3, y, z), (-0.3 - ln * 0.4, y * 1.2, z + 0.12), (-0.3 - ln * 0.8, y * 1.1, z + 0.05), (-0.3 - ln, y, z + 0.15)], [0.22, 0.15, 0.07, 0.0], 'glow', 6)

@@ -17,7 +17,7 @@ deform(rag, lambda v: Vector((v.x, v.y, v.z)))
 rough(rag, 0.03, 9)
 body = part('body', pelvis, *spine_ribs, collar, pauldron, strap, rag)
 
-head = part('head', *skull(0.46, (0.08, 0, 0.84), jaw=12), tube('neck', [(0.0, 0, 0.62), (0.04, 0, 0.72)], B * 0.9, 'body', 6), pivot=(0.02, 0, 0.66), parent=body)
+head = part('head', *skull(0.5, (0.08, 0, 0.84), jaw=12, tilt=25), tube('neck', [(0.0, 0, 0.62), (0.04, 0, 0.72)], B * 0.9, 'body', 6), pivot=(0.02, 0, 0.66), parent=body)
 
 arms = []
 for s in (1, -1):

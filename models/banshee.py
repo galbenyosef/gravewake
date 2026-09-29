@@ -12,8 +12,8 @@ chest = tube('chest', [(0.0, 0, 0.1), (0.02, 0, 0.42)], [0.16, 0.12], 'body', 8)
 collar = ribcage(0.2, 0.22, 3, (0.04, 0, 0.42), r=0.022)
 body = part('body', gown, *streamers, chest, *collar)
 
-skl = skull(0.34, (0.1, 0, 0.66), jaw=40)
-skl[4].scale = skl[5].scale = (0.8, 1.3, 1.2)  # wide, staring sockets
+skl = skull(0.36, (0.1, 0, 0.66), jaw=40, tilt=25)
+skl[2].scale = skl[3].scale = (0.8, 1.3, 1.2)  # wide, staring eyes
 mouth = at(ball('wail', 0.07, 'glow', 8, 5), (0.2, 0, 0.5), scale=(0.5, 1, 1.4))
 hair = [tube('hair', [(-0.02, y, 0.8), (-0.3, y * 1.4, 0.82), (-0.65, y * 1.8, 0.72), (-1.0, y * 2.0, 0.62)], [0.07, 0.06, 0.04, 0.0], 'trim', 5) for y in (-0.12, -0.05, 0.02, 0.09, 0.15)]
 head = part('head', *skl, mouth, *hair, pivot=(0.04, 0, 0.5), parent=body)

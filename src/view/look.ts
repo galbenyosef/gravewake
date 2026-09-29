@@ -2,6 +2,10 @@
 // scene. Hues are the palette's (screens/shared.css); these say how much of them you see. One home for tweaking the
 // render, like tuning.ts is for the rules (catalog: ## Look, drift-tested).
 export const LOOK = {
+  /** Characters are drawn larger than their collision radius r, at r + this (u): small ones read at phone size, a boss
+   *  grows a little. View only; hits still use r. The wizard is drawn at WIZARD_SCALE. */
+  CHARACTER_PAD_U: 0.35,
+  WIZARD_SCALE: 1.1,
   /** Tone-mapping exposure: the whole frame. */
   EXPOSURE: 1.1,
   /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
@@ -12,6 +16,9 @@ export const LOOK = {
   RIM: 1.6,
   RIM_POWER: 2.6,
   SCENERY_RIM: 0.2,
+  /** Models' procedural surface: how much the grain and stains vary the paint, and how deep its bump is. */
+  SURFACE_GRAIN: 0.6,
+  SURFACE_BUMP: 0.06,
   /** Moonlight on the floor: everywhere, in the clearing, and through gaps in the canopy (the dapple). */
   FLOOR_AMBIENT: 0.1,
   FLOOR_MOON: 0.25,
@@ -46,7 +53,11 @@ export const LOOK = {
   /** Blob shadows under characters. */
   SHADOW: 0.75,
   /** The final grade: vignette depth, how far the shadows lean towards moonlight, film grain. */
-  VIGNETTE: 0.8,
+  VIGNETTE: 0.6,
   GRADE: 0.25,
   GRAIN: 0.03,
+  /** Saturation kept in everything that isn't bright (magic stays saturated; the world is squashed towards grey). */
+  SATURATION: 0.7,
+  /** How far a character's shadow is cast away from the moon, in character radii. */
+  SHADOW_CAST: 0.45,
 } as const;

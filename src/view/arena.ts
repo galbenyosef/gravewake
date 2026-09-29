@@ -142,15 +142,16 @@ const fogShader = {
 
 /** Vignette, a cold grade in the shadows, film grain and a red hurt wash, after tone mapping. */
 const finalShader = {
-  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: 0.0012 }, uTime: { value: 0 }, uHurtCol: { value: new THREE.Color() }, uGradeCol: { value: new THREE.Color() }, uLook: { value: new THREE.Vector3(LOOK.VIGNETTE, LOOK.GRADE, LOOK.GRAIN) } },
+  uniforms: { tDiffuse: { value: null }, uHurt: { value: 0 }, uAberration: { value: 0.0012 }, uTime: { value: 0 }, uHurtCol: { value: new THREE.Color() }, uGradeCol: { value: new THREE.Color() }, uLook: { value: new THREE.Vector4(LOOK.VIGNETTE, LOOK.GRADE, LOOK.GRAIN, LOOK.SATURATION) } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
   fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration; uniform float uTime; uniform vec3 uHurtCol, uGradeCol, uLook; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uHurt; uniform float uAberration; uniform float uTime; uniform vec3 uHurtCol, uGradeCol; uniform vec4 uLook; varying vec2 vUv;
     void main() {
       vec2 c = vUv - 0.5; float d = length(c * vec2(1.0, 0.8));
       float ab = uAberration * (1.0 + uHurt * 5.0) * d * 2.0;
       vec3 col = vec3(texture2D(tDiffuse, vUv + c * ab).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - c * ab).b);
       float lum = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(lum), col, mix(uLook.w, 1.0, smoothstep(0.35, 0.8, lum)));
       col = mix(col, vec3(lum) * uGradeCol, uLook.y * (1.0 - smoothstep(0.05, 0.4, lum)));
       col *= 1.0 - smoothstep(0.3, 0.85, d) * uLook.x;
       col = mix(col, uHurtCol, smoothstep(0.25, 0.8, d) * uHurt * 0.7);
@@ -165,9 +166,9 @@ type EnemyView = { rig: Rig; body: THREE.MeshStandardMaterial; shield?: THREE.Me
 type Corpse = { rig: Rig; body: THREE.Material; t: number };
 /** A melee enemy within this many u of its own edge from the ship lunges (its attack clip). */
 const LUNGE_U = 1.4;
-/** Models are drawn larger than their collision radius by LEGIBLE_U / r: a mite (0.28) nearly doubles so it reads
- *  as a beetle at phone size, a boss (2+) grows about 12%. View only; hits still use the radius. */
-const LEGIBLE_U = 0.25;
+const LEGIBLE_U = LOOK.CHARACTER_PAD_U;
+/** Spells that leave an ember trail each frame (the rest don't: a full barrage would flood the particle pool). */
+const TRAILED_BOLTS = 40;
 
 
 /** A soft round shadow (alpha falls off from the centre), made in code: no image files. */
@@ -187,10 +188,10 @@ function blobTexture() {
  *  never moves. */
 function plantClearing(scene: THREE.Scene) {
   const groups = new Map<string, ScatterDef[]>();
-  for (const sc of SCATTERS) groups.set(`${sc.model} ${sc.paint}`, [...(groups.get(`${sc.model} ${sc.paint}`) ?? []), sc]);
+  for (const sc of SCATTERS) { const k = `${sc.model} ${sc.paint} ${sc.glow}`; groups.set(k, [...(groups.get(k) ?? []), sc]); }
   for (const scs of groups.values()) {
-    const { model, paint } = scs[0]!, spots = scs.flatMap((sc) => sc.placements);
-    const im = new THREE.InstancedMesh(restGeometry(model), paintMaterial(token(paint), undefined, undefined, LOOK.SCENERY_RIM), spots.length);
+    const { model, paint, glow } = scs[0]!, spots = scs.flatMap((sc) => sc.placements);
+    const im = new THREE.InstancedMesh(restGeometry(model), paintMaterial(token(paint), token(glow ?? paint), undefined, LOOK.SCENERY_RIM), spots.length);
     spots.forEach((p, i) => im.setMatrixAt(i, new THREE.Matrix4().compose(new THREE.Vector3(p.x, 0, p.z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -p.yaw), new THREE.Vector3(p.scale, p.scale, p.scale))));
     im.frustumCulled = false;
     (im.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.05;
@@ -250,15 +251,23 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   };
 
   // Blob shadows under every character: the moon is too faint to cast, but in the dark a figure needs ground under it.
+  const shadowTurn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(MOON_DIR.x, MOON_DIR.z));
   const shadows = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: LOOK.SHADOW, depthWrite: false }), 400);
   shadows.renderOrder = 0;
+
+  // Scorch: a kill burns a dark mark into the ground that fades over SCORCH_S (a shrinking disc: instanced, one draw).
+  const SCORCH_N = 48, SCORCH_S = 4;
+  const scorches = inst(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, alphaMap: blobTexture(), transparent: true, opacity: 0.7, depthWrite: false }), SCORCH_N);
+  const scorchLife = Array.from({ length: SCORCH_N }, () => ({ x: 0, z: 0, r: 0, t: 0 }));
+  let scorchNext = 0;
+  const scorch = (x: number, z: number, r: number) => { scorchLife[scorchNext] = { x, z, r, t: SCORCH_S }; scorchNext = (scorchNext + 1) % SCORCH_N; };
 
   // Instanced spells and pickups
   function inst(g: THREE.BufferGeometry, m: THREE.Material, n: number) { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; }
   const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
   const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 2), 800);
-  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.6, 0.18), 800);
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.5), 800);
+  const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.12), 800);
   const lobs = inst(new THREE.IcosahedronGeometry(0.4, 1), glowMaterial(token('--lob'), 3), 64);
   const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
   const repairs = inst(new THREE.CapsuleGeometry(0.16, 0.26, 3, 8), glowMaterial(token('--repair'), 2.2), 16);
@@ -349,7 +358,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         dust.burst(e.x, e.y, col, big ? 200 : 10 + d.r * 24, big ? 14 : 4 + d.r * 4, big ? 0.22 : 0.08 + d.r * 0.04, big ? 1.6 : 0.9, 0.6, 0.9);
         particles.burst(e.x, e.y, token('--player-shot'), big ? 80 : 8, big ? 16 : 6, 0.08, 0.4);
         particles.burst(e.x, e.y, token('--soulfire'), big ? 60 : 5, 1.5, 0.12, big ? 2 : 1.1, 0.8, 4);
-        rings.ring(e.x, e.y, d.r * 0.5, d.r * (big ? 12 : 2.5), big ? 1.4 : 0.4, token('--player-shot'), { boost: 0.4 });
+        if (big) rings.ring(e.x, e.y, d.r * 0.5, d.r * 12, 1.4, token('--player-shot'), { boost: 0.4 });
+        scorch(e.x, e.y, 0.5 + d.r * 0.8);
         if (big) rings.column(e.x, e.y, 2.5, 14, 1.2, token('--soulfire'));
         ripple(e.x, e.y, big ? 2.5 : Math.min(1.2, 0.35 + d.r * 0.5));
         shake = Math.max(shake, big ? 1.4 : Math.min(0.5, d.r * 0.3));
@@ -490,6 +500,8 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         bolts.setMatrixAt(nb, m4);
         m4.compose(v3, q, s3.setScalar(0.34 + Math.sin(time * 30 + b.id) * 0.05));
         boltHalos.setMatrixAt(nb++, m4);
+        // A trail of embers behind each spell.
+        if (dt > 0 && nb < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.05 + (Math.random() - 0.5) * 0.6, -b.vy * 0.05 + (Math.random() - 0.5) * 0.6, token('--player-shot'), 0.05, 0.25, 0.45);
         floorLight(b.x, b.y, 2.2, 1.5, token('--player-shot'));
       }
     }
@@ -504,11 +516,21 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     shards.count = ns; repairs.count = nr;
     // Blob shadows: the wizard and every standing or fallen character.
     let nsh = 0;
-    const blob = (x: number, z: number, r: number) => { m4.compose(v3.set(x, 0.02, z), q.identity(), s3.set(r * 2.6, 1, r * 2.2)); shadows.setMatrixAt(nsh++, m4); };
+    // Cast away from the moon (it's high on the far side): stretched towards the camera and a little right.
+    const blob = (x: number, z: number, r: number) => { m4.compose(v3.set(x - MOON_DIR.x * r * LOOK.SHADOW_CAST, 0.02, z - MOON_DIR.z * r * LOOK.SHADOW_CAST), shadowTurn, s3.set(r * 2.4, 1, r * 3.2)); shadows.setMatrixAt(nsh++, m4); };
     if (!dead) blob(p.x, p.y, 0.55);
     for (const e of s.enemies) blob(e.x, e.y, radius(e) + LEGIBLE_U);
     shadows.count = nsh;
-    for (const im of [bolts, boltHalos, orbs, halos, lobs, shards, repairs, shadows]) im.instanceMatrix.needsUpdate = true;
+    let nsc = 0;
+    for (const sc of scorchLife) {
+      if (sc.t <= 0) continue;
+      sc.t -= dt;
+      const k = Math.max(0, sc.t / SCORCH_S);
+      m4.compose(v3.set(sc.x, 0.015, sc.z), q.identity(), s3.set(sc.r * 2 * (0.6 + 0.4 * k), 1, sc.r * 2 * (0.6 + 0.4 * k)));
+      scorches.setMatrixAt(nsc++, m4);
+    }
+    scorches.count = nsc;
+    for (const im of [bolts, boltHalos, orbs, halos, lobs, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
 
     // effects
     particles.update(dt);
@@ -551,6 +573,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     snap(s: GameState) {
       camTarget.set(s.player.x * FOLLOW, 0, s.player.y * FOLLOW); last = null;
       for (const c of corpses) { scene.remove(c.rig.obj); c.body.dispose(); }
+      for (const sc of scorchLife) sc.t = 0;
       corpses.length = 0;
       sync(s, 0); // meshes for everything already in play, so the next step can animate from them (a kill leaves a corpse)
     },

@@ -11,6 +11,7 @@
 #   - Everything hangs under one empty called `rig`, so a clip can move the whole character.
 import bpy, bmesh, math, os, sys
 from mathutils import Vector, Matrix, Euler, noise
+from mathutils.bvhtree import BVHTree
 
 FPS = 30
 MATERIALS = {'body': (0.8, 0.8, 0.8, 1), 'trim': (0.25, 0.25, 0.3, 1), 'glow': (1, 1, 1, 1)}
@@ -208,6 +209,41 @@ def cut(ob, keep):
     return ob
 
 
+def _join(obs):
+    obs = [o for o in obs if o is not None]
+    for o in obs: _bake(o)
+    base = obs[0]
+    if len(obs) > 1:
+        with bpy.context.temp_override(active_object=base, selected_editable_objects=obs, selected_objects=obs):
+            bpy.ops.object.join()
+    return base
+
+
+def fuse(name, *obs, voxel=0.03, keep=0.5):
+    """Melt shapes into one organic mesh: a voxel remesh of their union (`voxel` units per cell), decimated to `keep`
+    of its faces. Fused bone, rotting flesh, heaped earth, a skull. One material: the first shape's."""
+    base = _join(obs)
+    m = base.modifiers.new('remesh', 'REMESH')
+    m.mode, m.voxel_size, m.adaptivity = 'VOXEL', voxel, 0.0
+    _apply(base)
+    if keep < 1:
+        d = base.modifiers.new('decimate', 'DECIMATE')
+        d.ratio = keep
+        _apply(base)
+    base.name = base.data.name = name
+    return base
+
+
+def carve(ob, *cutters):
+    """Cut the cutters' volumes out of `ob` (boolean difference; the cutters are deleted): eye sockets, a hollow."""
+    for c in cutters:
+        m = ob.modifiers.new('carve', 'BOOLEAN')
+        m.operation, m.object, m.solver = 'DIFFERENCE', c, 'EXACT'
+        _apply(ob)
+        bpy.data.objects.remove(c, do_unlink=True)
+    return ob
+
+
 def aim(ob, direction, loc=(0, 0, 0)):
     """Place `ob` at `loc` with its local +Z pointing along `direction` (spikes, legs, barrels built along Z)."""
     ob.matrix_basis = Matrix.Translation(loc) @ Vector(direction).normalized().to_track_quat('Z', 'Y').to_matrix().to_4x4() @ Matrix.Diagonal((*ob.scale, 1))
@@ -249,18 +285,32 @@ def part(name, *obs, pivot=(0, 0, 0), parent=None):
 
 # ---------- anatomy: each returns a list of objects for part() ----------
 
-def skull(s=1.0, loc=(0, 0, 0), mat='body', eyes='glow', jaw=0.0):
-    """A skull `s` units long facing +X at `loc`: cranium, cheekbones, open jaw (`jaw` degrees), dark nose, lit sockets."""
+def skull(s=1.0, loc=(0, 0, 0), mat='body', eyes='glow', jaw=0.0, tilt=0.0):
+    """A skull `s` units long facing +X at `loc`, sculpted in one piece (braincase, brow, cheekbones, muzzle) with the
+    sockets and nose carved hollow and a light (`eyes` material) deep in each socket; the jaw is its own piece, open
+    `jaw` degrees, the whole face raised `tilt` degrees (so a high camera sees the sockets). Returns [skull, jaw, eye, eye]."""
+    cr = ball('cranium', 0.5 * s, mat, 16, 10)
+    deform(cr, lambda v: Vector((v.x * (1.08 if v.x < 0 else 0.92), v.y * 0.8, v.z * (0.9 if v.z > 0 else 0.72))))
+    face = at(box('face', (0.34 * s, 0.58 * s, 0.32 * s), mat, 0.1 * s), (0.27 * s, 0, -0.17 * s))
+    brow = at(tube('brow', [(0.36 * s, -0.24 * s, 0.02 * s), (0.42 * s, 0, 0.05 * s), (0.36 * s, 0.24 * s, 0.02 * s)], 0.06 * s, mat, 6), (0, 0, 0))
+    cheeks = [at(ball('cheek', 0.1 * s, mat, 8, 6), (0.3 * s, d * 0.24 * s, -0.2 * s), scale=(1.2, 0.8, 0.7)) for d in (1, -1)]
+    head = fuse('skull', cr, face, brow, *cheeks, voxel=0.05 * s, keep=0.3)
+    sockets = [at(ball('cut', 0.12 * s, mat, 10, 7), (0.42 * s, d * 0.14 * s, -0.08 * s), scale=(1, 0.95, 0.85)) for d in (1, -1)]
+    nose = at(cone('cut', 0.06 * s, 0.0, 0.16 * s, mat, 3), (0.5 * s, 0, -0.26 * s), (0, -70, 0))
+    carve(head, *sockets, nose)
+    at(head, loc)
     x, y, z = loc
-    cr = smooth(ball('cranium', 0.5 * s, mat, 12, 8))
-    deform(cr, lambda v: Vector((v.x * (1.05 if v.x < 0 else 0.9), v.y * 0.82, v.z * (0.92 if v.z > 0 else 0.7))))
-    face = at(smooth(box('face', (0.36 * s, 0.62 * s, 0.34 * s), mat, 0.08 * s)), (x + 0.28 * s, y, z - 0.16 * s))
-    at(cr, loc)
-    jw = at(smooth(box('jaw', (0.34 * s, 0.46 * s, 0.14 * s), mat, 0.05 * s)), (x + 0.26 * s, y, z - 0.44 * s), (0, -jaw, 0))
-    nose = at(cone('nose', 0.07 * s, 0.0, 0.1 * s, 'trim', 3), (x + 0.44 * s, y, z - 0.22 * s), (0, 90, 0))
-    lit = [at(ball('socket', 0.085 * s, eyes, 8, 5), (x + 0.4 * s, y + d * 0.15 * s, z - 0.06 * s), scale=(0.6, 1, 0.8)) for d in (1, -1)]
-    rims = [at(torus('rim', 0.11 * s, 0.035 * s, 'trim', 10, 4), (x + 0.42 * s, y + d * 0.15 * s, z - 0.06 * s), (0, 90, 0)) for d in (1, -1)]
-    return [cr, face, jw, nose, *lit, *rims]
+    jw = smooth(box('jaw', (0.3 * s, 0.44 * s, 0.12 * s), mat, 0.05 * s))
+    teeth = tube('teeth', [(0.14 * s, -0.16 * s, 0.07 * s), (0.17 * s, 0, 0.08 * s), (0.14 * s, 0.16 * s, 0.07 * s)], 0.03 * s, mat, 5)
+    jw = at(fuse('jaw', jw, teeth, voxel=0.045 * s, keep=0.35), (x + 0.24 * s, y, z - 0.42 * s), (0, -jaw, 0))
+    lit = [at(ball('eye', 0.05 * s, eyes, 8, 5), (x + 0.36 * s, y + d * 0.14 * s, z - 0.08 * s)) for d in (1, -1)]
+    out = [head, jw, *lit]
+    if tilt:
+        m = Matrix.Translation(loc) @ Matrix.Rotation(D(-tilt), 4, 'Y') @ Matrix.Translation(-Vector(loc))
+        for o in out:
+            _bake(o)
+            o.data.transform(m)
+    return out
 
 
 def ribcage(w=0.36, h=0.5, n=4, loc=(0, 0, 0), mat='body', r=0.035):
@@ -408,7 +458,7 @@ def _smooth_normals(ob, sharp_deg):
     bm.free()
 
 
-def _paint(ob, zmin, zmax, seed):
+def _paint(ob, zmin, zmax, seed, bvh):
     """Value painting in the vertices: light from above, dark underneath, cavities shadowed, convex edges caught,
     a low brush noise so flat faces don't read as plastic, warm lights and cool shadows."""
     me = ob.data
@@ -443,6 +493,7 @@ def _paint(ob, zmin, zmax, seed):
         c = max(-1, min(1, cav[i] * 4))
         val += -0.3 * c if c < 0 else -0.35 * c  # convex edges catch light, cavities shadow
         val += 0.12 * noise.noise(p * 3.5 + Vector((seed, seed, 0))) + 0.06 * noise.noise(p * 11)
+        val *= 1 - 0.65 * _occlusion(bvh, p, n)
         val = max(0.12, min(1.0, val))
         warm = max(0, min(1, (val - 0.45) * 2))
         r = val * (0.8 + 0.28 * warm)
@@ -450,6 +501,18 @@ def _paint(ob, zmin, zmax, seed):
         b = val * (1.12 - 0.26 * warm)
         attr.data[i].color = (min(1, r), min(1, g), min(1, b), 1)
     me.color_attributes.active_color = attr
+
+
+# Fixed hemisphere of ray directions (around +Z) for the ambient-occlusion bake.
+_AO_DIRS = [Vector((math.cos(i * 2.39996) * math.sqrt(1 - (0.15 + 0.85 * (i + 0.5) / 12) ** 2), math.sin(i * 2.39996) * math.sqrt(1 - (0.15 + 0.85 * (i + 0.5) / 12) ** 2), 0.15 + 0.85 * (i + 0.5) / 12)) for i in range(12)]
+AO_REACH = 0.45
+
+
+def _occlusion(bvh, p, n):
+    """How much of the sky a vertex can't see (0..1): rays over its hemisphere against every mesh in the model."""
+    rot = Vector((0, 0, 1)).rotation_difference(n)
+    hit = sum(1 for d in _AO_DIRS if bvh.ray_cast(p + n * 0.01, rot @ d, AO_REACH)[0] is not None)
+    return hit / len(_AO_DIRS)
 
 
 def export(script, sharp_deg=40, seed=0):
@@ -460,10 +523,16 @@ def export(script, sharp_deg=40, seed=0):
         bad = [m.name for m in o.data.materials if m.name not in MATERIALS]
         if bad: raise SystemExit(f'{o.name}: materials must be body/trim/glow, got {bad}')
     zs = [(o.matrix_world @ v.co).z for o in meshes for v in o.data.vertices]
+    verts, polys = [], []
+    for o in meshes:
+        base = len(verts)
+        verts += [o.matrix_world @ v.co for v in o.data.vertices]
+        polys += [[base + i for i in p.vertices] for p in o.data.polygons]
+    bvh = BVHTree.FromPolygons(verts, polys)
     for o in meshes:
         for uv in list(o.data.uv_layers): o.data.uv_layers.remove(uv)
         _smooth_normals(o, sharp_deg)
-        _paint(o, min(zs), max(zs), seed)
+        _paint(o, min(zs), max(zs), seed, bvh)
     clips = {t.name for o in bpy.context.scene.objects if o.animation_data for t in o.animation_data.nla_tracks}
     if clips != set(CLIPS): raise SystemExit(f'clips must be {CLIPS}, got {sorted(clips)}')
     out = os.path.splitext(os.path.abspath(script))[0] + '.glb'

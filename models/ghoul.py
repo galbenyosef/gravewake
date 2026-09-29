@@ -14,7 +14,7 @@ at(rag, (-0.42, 0, -0.12), (0, 70, 0))
 rough(rag, 0.03, 8)
 body = part('body', torso, *spine, *ribs, rag)
 
-skl = skull(0.42, (0.62, 0, 0.14), jaw=30)
+skl = skull(0.44, (0.62, 0, 0.14), jaw=30, tilt=30)
 horns = [tube('tuft', [(0.5, s * 0.1, 0.3), (0.35, s * 0.18, 0.42), (0.18, s * 0.2, 0.44)], [0.03, 0.02, 0.0], 'trim', 4) for s in (1, -1)]
 head = part('head', *skl, *horns, pivot=(0.45, 0, 0.18), parent=body)
 

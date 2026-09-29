@@ -16,7 +16,7 @@ ribs = ribcage(0.26, 0.32, 3, (0.2, 0, 0.62), r=0.035)
 phyl = at(smooth(ball('phylactery', 0.13, 'glow', 10, 7)), (0.22, 0, 0.44), scale=(0.8, 0.8, 1.2))
 body = part('body', robe, tabard, mantle, *ribs, phyl)
 
-skl = skull(0.44, (0.14, 0, 0.92), jaw=14)
+skl = skull(0.46, (0.14, 0, 0.92), jaw=14, tilt=25)
 crown_base = at(torus('crown', 0.19, 0.035, 'trim', 16, 4), (0.08, 0, 1.08), (0, -12, 0))
 spikes = [aim(cone('spike', 0.04, 0.0, 0.3 if i % 2 == 0 else 0.2, 'trim', 4), (math.cos(a) * 0.35, math.sin(a) * 0.35, 1), (0.08 + math.cos(a) * 0.19, math.sin(a) * 0.19, 1.1)) for i, a in enumerate(i / 8 * math.tau for i in range(8))]
 jewel = at(ball('jewel', 0.035, 'glow', 6, 4), (0.27, 0, 1.12))

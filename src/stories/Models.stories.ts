@@ -59,7 +59,7 @@ function viewer() {
 
   function show(name: RigName, still: boolean) {
     stage.clear();
-    const scenery: Record<string, string> = { tree: '--wood', roots: '--wood', grave: '--stone', rocks: '--stone', bones: '--bone', grass: '--moss' };
+    const scenery: Record<string, string> = { tree: '--wood', roots: '--wood', grave: '--stone', rocks: '--stone', bones: '--bone', grass: '--moss', altar: '--stone' };
     const col = name === 'wizard' ? token('--player') : scenery[name] ? token(scenery[name]) : enemyColor(Object.values(ENEMIES).find((e) => e.model === name)!.id);
     rigs = CLIPS.map((c, i) => {
       const rig = name === 'wizard' ? buildShip(token('--player'), token('--player-glow')) : buildRig(name, paintMaterial(col, token('--soulfire')));
@@ -141,3 +141,4 @@ export const Roots = model('roots');
 export const Rocks = model('rocks');
 export const Bones = model('bones');
 export const Grass = model('grass');
+export const Altar = model('altar');
