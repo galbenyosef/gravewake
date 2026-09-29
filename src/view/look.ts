@@ -2,10 +2,16 @@
 // scene. Hues are the palette's (screens/shared.css); these say how much of them you see. One home for tweaking the
 // render, like tuning.ts is for the rules (catalog: ## Look, drift-tested).
 export const LOOK = {
+  /** Camera: tilt off straight down (rad), how much it follows the wizard (0 = fixed on the centre, 1 = locked to him),
+   *  field of view, and distance (it must still fit the arena's height, follow slack included). */
+  CAMERA_TILT_RAD: 0.62,
+  CAMERA_FOLLOW: 0.32,
+  CAMERA_FOV_DEG: 38,
+  CAMERA_DIST_U: 32.5,
   /** Characters are drawn larger than their collision radius r, at r + this (u): small ones read at phone size, a boss
    *  grows a little. View only; hits still use r. The wizard is drawn at WIZARD_SCALE. */
-  CHARACTER_PAD_U: 0.35,
-  WIZARD_SCALE: 1.1,
+  CHARACTER_PAD_U: 0.4,
+  WIZARD_SCALE: 1.3,
   /** Tone-mapping exposure: the whole frame. */
   EXPOSURE: 1.1,
   /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */

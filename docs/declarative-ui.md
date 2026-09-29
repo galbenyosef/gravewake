@@ -155,6 +155,10 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 
 | Name | Use |
 |---|---|
+| `CAMERA_TILT_RAD` | camera tilt off straight down, rad (more shows more of every figure's height) |
+| `CAMERA_FOLLOW` | how much the camera follows the wizard (0 fixed, 1 locked) |
+| `CAMERA_FOV_DEG` | field of view |
+| `CAMERA_DIST_U` | camera distance; the arena's height must still fit |
 | `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
 | `WIZARD_SCALE` | the wizard's drawn size |
 | `EXPOSURE` | tone-mapping exposure, the whole frame |

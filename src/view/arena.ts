@@ -17,10 +17,7 @@ import { BODY_GLOW, MOON_DIR, buildRig, buildShield, buildShip, glowMaterial, li
 import { LOOK } from './look';
 
 const HALF_W = T.ARENA_W_U / 2, HALF_H = T.ARENA_H_U / 2;
-/** Camera: tilt from straight down, and how much it follows the ship (0 = fixed on the centre, 1 = locked to the ship). */
-const TILT_RAD = 0.52, FOLLOW = 0.32, FOV_DEG = 38;
-/** Distance that fits the arena's height (with the follow slack) on screen. */
-const CAM_DIST_U = 31;
+const { CAMERA_TILT_RAD: TILT_RAD, CAMERA_FOLLOW: FOLLOW, CAMERA_FOV_DEG: FOV_DEG, CAMERA_DIST_U: CAM_DIST_U } = LOOK;
 const MAX_RIPPLES = 8;
 const LOB_ARC_U = 3.2;
 const SHAKE_DECAY_PER_S = 5;
@@ -307,7 +304,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
   function inst(g: THREE.BufferGeometry, m: THREE.Material, n: number) { const im = new THREE.InstancedMesh(g, m, n); im.frustumCulled = false; im.count = 0; scene.add(im); return im; }
   const bolts = inst(new THREE.CapsuleGeometry(0.1, 0.5, 2, 6).rotateZ(Math.PI / 2), glowMaterial(token('--player-shot'), 3.2), 600);
   const boltHalos = inst(new THREE.SphereGeometry(1, 10, 6), glowMaterial(token('--player-shot'), 0.9, 0.22), 600);
-  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.5), 800);
+  // Enemy spells: a white-hot core in a necrotic wisp, drawn out behind it along its flight.
+  const orbs = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 1.2, 0.8), 800);
+  const cores = inst(new THREE.SphereGeometry(1, 8, 6), glowMaterial(0xffffff, 1.6), 800);
   const halos = inst(new THREE.SphereGeometry(1, 12, 8), glowMaterial(token('--hostile-shot'), 0.5, 0.12), 800);
   const lobs = inst(new THREE.IcosahedronGeometry(0.4, 1), glowMaterial(token('--lob'), 3), 64);
   const shards = inst(new THREE.SphereGeometry(0.16, 8, 6).scale(1, 1.8, 1), glowMaterial(token('--shard'), 2.4), 600);
@@ -530,11 +529,15 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         lobs.setMatrixAt(nl++, m4);
         floorLight(b.x, b.y, 1.6, 1.2, token('--lob'));
       } else if (b.hostile) {
-        const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15;
-        m4.compose(v3.set(b.x, 0.5, b.y), q.identity(), s3.setScalar(b.r * pulse));
+        const pulse = 1 + Math.sin(time * 20 + b.id) * 0.15, sp = Math.hypot(b.vx, b.vy) || 1;
+        q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx));
+        m4.compose(v3.set(b.x - (b.vx / sp) * b.r * 0.4, 0.5, b.y - (b.vy / sp) * b.r * 0.4), q, s3.set(b.r * 1.8 * pulse, b.r * pulse, b.r * pulse));
         orbs.setMatrixAt(no, m4);
+        m4.compose(v3.set(b.x, 0.5, b.y), q, s3.setScalar(b.r * 0.45));
+        cores.setMatrixAt(no, m4);
         m4.compose(v3, q, s3.setScalar(b.r * 1.7 * pulse));
         halos.setMatrixAt(no++, m4);
+        if (dt > 0 && no < TRAILED_BOLTS) particles.spark(b.x, b.y, -b.vx * 0.1 + (Math.random() - 0.5) * 0.4, -b.vy * 0.1 + (Math.random() - 0.5) * 0.4, token('--hostile-shot'), 0.05, 0.3, 0.5);
         floorLight(b.x, b.y, 1.2, 0.45, token('--hostile-shot'));
       } else {
         m4.compose(v3.set(b.x, 0.45, b.y), q.setFromAxisAngle(up, -Math.atan2(b.vy, b.vx)), s3.set(1, 1, 1));
@@ -547,7 +550,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       }
     }
     for (let i = nf; i < MAX_FLOOR_LIGHTS; i++) floorU.uLights.value[i]!.w = 0;
-    bolts.count = nb; boltHalos.count = nb; orbs.count = no; halos.count = no; lobs.count = nl;
+    bolts.count = nb; boltHalos.count = nb; orbs.count = no; cores.count = no; halos.count = no; lobs.count = nl;
     let ns = 0, nr = 0;
     for (const k of s.pickups) {
       const blink = k.life < 2 && Math.floor(time * 10) % 2 === 0 ? 0.001 : 1;
@@ -571,7 +574,7 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       scorches.setMatrixAt(nsc++, m4);
     }
     scorches.count = nsc;
-    for (const im of [bolts, boltHalos, orbs, halos, lobs, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
+    for (const im of [bolts, boltHalos, orbs, cores, halos, lobs, shards, repairs, shadows, scorches]) im.instanceMatrix.needsUpdate = true;
 
     // effects
     particles.update(dt);
