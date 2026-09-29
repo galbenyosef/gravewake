@@ -15,12 +15,14 @@ export const LOOK = {
   /** The brightest a body's paint may be (linear luminance): kept low so the dead stay dark shapes with bright tells
    *  (soulfire eyes, the moon on their edges), under the wizard's light. */
   BODY_LUM: 0.1,
+  /** Models shaded in flat facets (hard, chiselled planes) rather than smoothed. */
+  FACETED: true,
   /** Tone-mapping exposure: the whole frame. */
   EXPOSURE: 1.1,
   /** Moonlight (--moon): the key light's intensity, the dim hemisphere fill, and environment reflections on metal. */
   MOON_KEY: 2.2,
-  MOON_FILL: 0.3,
-  ENV: 0.12,
+  MOON_FILL: 0.14,
+  ENV: 0.6,
   /** The cold rim on every character's silhouette (fresnel strength and falloff), and scenery's weaker one. */
   RIM: 1.6,
   RIM_POWER: 2.6,
@@ -32,9 +34,9 @@ export const LOOK = {
   FLOOR_RELIEF: 1.2,
   /** Ground fog: the veil's height (u), its thickness in the open and under the trees, and how moonlit it is. */
   FOG_Y_U: 0.35,
-  FOG_VEIL: 0.34,
-  FOG_EDGE: 0.35,
-  FOG_BRIGHT: 0.09,
+  FOG_VEIL: 0.18,
+  FOG_EDGE: 0.4,
+  FOG_BRIGHT: 0.04,
   /** Distance fog (--fog) from and to, u from the camera. */
   FOG_NEAR_U: 30,
   FOG_FAR_U: 62,

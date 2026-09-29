@@ -7,7 +7,7 @@ from kit import *
 heap = [at(ball('heap', 1.0, 'body', 16, 8), (0, 0, -0.9), scale=(1.15, 1.0, 0.32))]
 heap += [at(ball('clod', 0.22 + 0.1 * math.sin(i * 1.7), 'body', 8, 5), (math.cos(a) * r, math.sin(a) * r, -0.75 + 0.05 * math.sin(i)), scale=(1.3, 1, 0.6))
          for i, (a, r) in enumerate(((0.4, 0.95), (1.4, 0.9), (2.5, 1.05), (3.6, 0.92), (4.6, 1.0), (5.6, 0.9), (1.0, 1.2), (3.0, 1.2), (5.0, 1.15)))]
-mound = fuse('mound', *heap, voxel=0.06, keep=0.3)
+mound = fuse('mound', *heap, voxel=0.06, keep=0.1)
 carve(mound, at(box('pit', (1.0, 0.6, 0.5), 'body', 0.1), (0, 0, -0.45)))
 rough(mound, 0.05, 3, 1)
 clods = []

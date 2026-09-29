@@ -39,7 +39,7 @@ mass = [ball('core', 0.5, 'body', 12, 8)]
 deform(mass[0], lambda v: Vector((v.x * 0.85 + 0.15 * v.z, v.y * 1.2, v.z * 0.95 + 0.12)))
 mass += [at(ball('pate', 0.14, 'body', 8, 6), (d.x * 0.52, d.y * 0.6, d.z * 0.5 + 0.12), scale=(1.2, 1, 0.9)) for d in sphere_dirs(12, -0.3)]
 mass.append(at(box('hips', (0.5, 0.8, 0.3), 'body', 0.1), (-0.05, 0, -0.35)))
-torso = fuse('torso', *mass, voxel=0.04, keep=0.35)
+torso = fuse('torso', *mass, voxel=0.04, keep=0.08)
 carve(torso, at(ball('cut', 0.3, 'body', 10, 7), (0.5, 0, 0.3), scale=(1, 1.2, 1.2)))
 rough(torso, 0.03, 6, 1)
 cage = ribcage(0.5, 0.55, 4, (0.38, 0, 0.58), r=0.055)
@@ -59,14 +59,14 @@ for s in (1, -1):
               tube('upper', [sh, el], [0.18, 0.14], 'body', 8), tube('fore', [el, wr], [0.16, 0.2], 'body', 8),
               at(ball('fist', 0.24, 'body', 10, 7), (wr[0] + 0.05, wr[1], wr[2] - 0.12), scale=(1.15, 1, 0.9))]
     pieces += [at(ball('knuckle', 0.085, 'body', 6, 4), (wr[0] + 0.27, wr[1] + d * 0.1, wr[2] - 0.12)) for d in (-1.5, -0.5, 0.5, 1.5)]
-    limb = fuse('arm', *pieces, voxel=0.035, keep=0.35)
+    limb = fuse('arm', *pieces, voxel=0.035, keep=0.08)
     rough(limb, 0.025, 7, 3 + s)
     rune = at(torus('rune', 0.1, 0.02, 'glow', 10, 4), (el[0] + 0.14, el[1] + s * 0.06, el[2]), (0, 70, 0))
     arms.append(part('arm_l' if s > 0 else 'arm_r', limb, rune, *bundle(el, 0.45, 2, 0.045), *bundle(sh, 0.4, 2, 0.05), pivot=sh, parent=body))
 legs = []
 for s in (1, -1):
     limb = fuse('leg', tube('leg', [(-0.05, s * 0.32, -0.35), (0.1, s * 0.4, -0.65), (0.0, s * 0.4, -0.88)], [0.2, 0.17, 0.18], 'body', 8),
-                at(box('foot', (0.42, 0.26, 0.12), 'body', 0.05), (0.08, s * 0.4, -0.9)), voxel=0.035, keep=0.35)
+                at(box('foot', (0.42, 0.26, 0.12), 'body', 0.05), (0.08, s * 0.4, -0.9)), voxel=0.035, keep=0.08)
     rough(limb, 0.02, 7, 8)
     legs.append(part('leg_l' if s > 0 else 'leg_r', limb, pivot=(-0.05, s * 0.32, -0.35), parent=body))
 

@@ -296,7 +296,7 @@ def skull(s=1.0, loc=(0, 0, 0), mat='body', eyes='glow', jaw=0.0, tilt=0.0):
     face = at(box('face', (0.34 * s, 0.58 * s, 0.32 * s), mat, 0.1 * s), (0.27 * s, 0, -0.17 * s))
     brow = at(tube('brow', [(0.36 * s, -0.24 * s, 0.02 * s), (0.42 * s, 0, 0.05 * s), (0.36 * s, 0.24 * s, 0.02 * s)], 0.06 * s, mat, 6), (0, 0, 0))
     cheeks = [at(ball('cheek', 0.1 * s, mat, 8, 6), (0.3 * s, d * 0.24 * s, -0.2 * s), scale=(1.2, 0.8, 0.7)) for d in (1, -1)]
-    head = fuse('skull', cr, face, brow, *cheeks, voxel=0.05 * s, keep=0.3)
+    head = fuse('skull', cr, face, brow, *cheeks, voxel=0.05 * s, keep=0.18)
     sockets = [at(ball('cut', 0.12 * s, mat, 10, 7), (0.42 * s, d * 0.14 * s, -0.08 * s), scale=(1, 0.95, 0.85)) for d in (1, -1)]
     nose = at(cone('cut', 0.06 * s, 0.0, 0.16 * s, mat, 3), (0.5 * s, 0, -0.26 * s), (0, -70, 0))
     carve(head, *sockets, nose)

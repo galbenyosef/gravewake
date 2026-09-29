@@ -161,6 +161,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `CAMERA_DIST_U` | camera distance; the arena's height must still fit |
 | `CHARACTER_PAD_U` | characters are drawn at their radius plus this (u), so small ones read; hits still use the radius |
 | `WIZARD_SCALE` | the wizard's drawn size |
+| `FACETED` | models shaded in flat facets (hard, chiselled planes) rather than smoothed |
 | `BODY_LUM` | the brightest a body's paint may be: the dead stay dark shapes with bright tells |
 | `EXPOSURE` | tone-mapping exposure, the whole frame |
 | `MOON_KEY` | moon key light intensity (--moon) |

@@ -7,7 +7,6 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { MODELS, SCENERY } from '../content';
 import { LOOK } from './look';
 import { token } from '../tokens';
@@ -84,7 +83,7 @@ function atLum(color: number, lum: number, exact = false) {
  * `emissiveIntensity` is the body's glow: the arena flashes it on a hit.
  */
 export function paintMaterial(body: number, glow = body, emissive = body, rim: number = LOOK.RIM) {
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35 });
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, emissive: atLum(emissive, BODY_LUM * 2), emissiveIntensity: BODY_GLOW, metalness: 0.1, roughness: 0.8, envMapIntensity: 0.35, flatShading: LOOK.FACETED });
   const uniforms = {
     uBody: { value: atLum(body, BODY_LUM) }, uTrim: { value: atLum(token('--trim'), TRIM_LUM) }, uGlow: { value: atLum(glow, GLOW_LUM, true) }, uCloth: { value: atLum(body, CLOTH_LUM, true) },
     uRim: { value: new THREE.Color(token('--moon')).multiplyScalar(rim) },
@@ -139,12 +138,29 @@ const SURFACE_NOISE = /* glsl */ `
  *  the moon only catches tops and edges. */
 export const MOON_DIR = new THREE.Vector3(-0.35, 1, -0.55);
 
+/** What metal and water reflect: a black sky going to a faint moonlit haze at the horizon, and the moon itself. */
+function nightSky(moon: THREE.Color) {
+  const sky = new THREE.Scene();
+  sky.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: { uMoon: { value: moon }, uDir: { value: MOON_DIR.clone().normalize() } },
+    vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform vec3 uMoon, uDir; varying vec3 vDir;
+      void main() {
+        float haze = pow(1.0 - abs(vDir.y), 4.0) * 0.12;
+        float disc = smoothstep(0.995, 0.999, dot(vDir, uDir)) * 6.0 + pow(max(dot(vDir, uDir), 0.0), 40.0) * 0.4;
+        gl_FragColor = vec4(uMoon * (0.01 + haze + disc), 1.0);
+      }`,
+  })));
+  return sky;
+}
+
 /** The night every model is seen in (the arena and the model viewer): a near-black sky, a faint environment so metal
  *  isn't dead, a cold moon key and a dim moonlit hemisphere. Warm light comes only from the wizard and his spells. */
 export function lightNight(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
   const moon = new THREE.Color(token('--moon'));
   scene.background = new THREE.Color(token('--fog'));
-  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(nightSky(moon), 0.02).texture;
   scene.environmentIntensity = LOOK.ENV;
   scene.add(new THREE.HemisphereLight(moon, 0x000000, LOOK.MOON_FILL));
   const key = new THREE.DirectionalLight(moon, LOOK.MOON_KEY);

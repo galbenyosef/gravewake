@@ -89,10 +89,13 @@ function floorMaterial() {
         float broad = fbm(p * 0.21), fine = vnoise(p * 5.0);
         vec3 alb = uEarth * (0.5 + 1.0 * broad) * (0.85 + 0.3 * fine);
         float moss = smoothstep(0.5, 0.72, fbm(warp * 0.33 + 3.1));
-        alb = mix(alb, uMoss * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.85);
-        vec3 leaf = cells(p * 2.6);
-        float litter = step(0.55, leaf.z) * smoothstep(0.34, 0.18, leaf.x);
-        alb *= 1.0 + litter * (fract(leaf.z * 13.7) - 0.35) * 1.0;
+        alb = mix(alb, mix(uMoss, vec3(dot(uMoss, vec3(0.33))), 0.4) * (0.7 + 0.6 * fbm(p * 1.7)), moss * 0.7);
+        // Dry ground cracks into plates: warped cells, wide dark seams, only where it is dry and bare.
+        vec3 plate = cells(warp * 0.9 + 3.0);
+        float dry = smoothstep(0.45, 0.62, broad) * (1.0 - moss);
+        float seam = (1.0 - smoothstep(0.02, 0.07 + 0.06 * fine, plate.y)) * dry * smoothstep(0.35, 0.6, fbm(p * 0.7 + 21.0));
+        alb *= (1.0 - seam * 0.7) * (0.9 + 0.2 * plate.z * dry);
+        float litter = 0.0;
         vec3 stones = cells(p * 0.8 + 40.0);
         float stone = step(0.82, stones.z) * smoothstep(0.28, 0.16, stones.x);
         alb = mix(alb, uStone * 0.3 * (0.6 + fine), stone);
@@ -107,12 +110,12 @@ function floorMaterial() {
         alb = mix(alb, uStone * 0.35, verge * 0.7);
         moss *= 1.0 - path;
         float low = 0.5 * broad * (1.0 - 0.6 * path) + stone * 0.3 * smoothstep(0.28, 0.0, stones.x) - furrow * 0.15 * (1.0 - path) + verge * 0.12;
-        float wet = smoothstep(0.3, 0.24, low) * smoothstep(0.5, 0.68, fbm(p * 0.4 + 8.0));
-        alb *= 1.0 - 0.45 * wet;
+        float wet = smoothstep(0.27, 0.25, low) * smoothstep(0.55, 0.6, fbm(p * 0.4 + 8.0));
+        alb *= 1.0 - 0.75 * wet;
         float edge = max(abs(vPos.x) - uHalf.x, abs(vPos.y) - uHalf.y);
         alb *= mix(1.0, 0.4, smoothstep(-1.0, 4.0, edge));
         diffuseColor.rgb = alb;`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.4, wet);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(0.95, 0.75, wet);')
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         {
           // Relief: a world-space height (mounds and sunk stones) differenced across a few cm, so the moon rakes across
@@ -211,7 +214,7 @@ function canopy() {
     const u = (x / n) * 16, v = (y / n) * 16;
     const f = 0.5 * vn(u, v) + 0.3 * vn(u * 2, v * 2) + 0.2 * vn(u * 4, v * 4);
     const dx = x / n - 0.5, dy = y / n - 0.5, thin = Math.exp(-(dx * dx + dy * dy) * 9);
-    const leaf = f > 0.5 + 0.18 * thin ? 255 : 0;
+    const leaf = f > 0.56 + 0.25 * thin ? 255 : 0;
     data.set([leaf, leaf, leaf, 255], (y * n + x) * 4);
   }
   const tex = new THREE.DataTexture(data, n, n);
