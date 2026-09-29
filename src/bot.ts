@@ -1,6 +1,6 @@
 // A pilot for the sim, the golden-run test and the title screen's attract mode: leads its shots at the nearest enemy,
 // circles round shields, kites away from crowds and shots, drifts back toward the middle. Pure: state in, input out.
-import { enemyDef } from './content';
+import { enemyDef, radius } from './content';
 import { T } from './tuning';
 import type { Enemy, GameState, Input } from './world';
 
@@ -11,7 +11,7 @@ export function botInput(s: GameState): Input {
   let mx = -p.x * 0.04, my = -p.y * 0.06; // home toward the centre
   let target: Enemy | null = null, best = Infinity;
   for (const e of s.enemies) {
-    const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1, r = enemyDef(e.kind).r;
+    const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy) || 1, r = radius(e);
     const score = d + (shielded(e) ? 6 : 0); // anything unshielded first
     if (score < best) { best = score; target = e; }
     const fear = (r + 3) / d; // flee what's close, harder the closer

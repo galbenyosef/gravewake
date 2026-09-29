@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { botInput } from './bot';
-import { ENEMIES, ENEMY_IDS, EnemySchema, UPGRADE_IDS, WAVES } from './content';
+import { ENEMIES, ENEMY_IDS, EnemySchema, UPGRADE_IDS, WaveSchema, WAVES } from './content';
 import { loadKdl } from './content-load';
 import { boss, maxHp, newRun, pickUpgrade, step } from './game';
 import { T } from './tuning';
@@ -78,6 +78,13 @@ describe('waves', () => {
     expect(pickUpgrade(s, 'nope')).toBe(s);
     s = pickUpgrade(s, s.offer[0]!);
     expect([s.phase, s.wave, s.taken.length]).toEqual(['fight', 2, 1]);
+  });
+  it('reads tint= and spawn scale=, and a scaled enemy collides at its scaled size', () => {
+    const w = loadKdl('wave "x" title="X" tint="--ice" {\n spawn "drone" scale=2\n}', { wave: WaveSchema }).wave.x!;
+    expect([w.tint, w.spawns[0]!.scale]).toEqual(['--ice', 2]);
+    const gap = ENEMIES.drone!.r * 1.5 + T.PLAYER_R_U; // inside 2r, outside r
+    const touches = (scale?: number) => { const s0 = arena([['drone', gap, 0]]); return types(step({ ...s0, enemies: [{ ...s0.enemies[0]!, scale }] }, IDLE, DT)).includes('hurt'); };
+    expect([touches(), touches(2)]).toEqual([false, true]);
   });
   it('plating repairs to the new maximum', () => {
     const s0 = run(arena([]), T.CLEAR_PAUSE_S + 0.1);

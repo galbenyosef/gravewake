@@ -122,6 +122,7 @@ UI colours, the arena's colours, and one `--enemy-<id>` per enemy (a guard test 
 | `--blink` | blink marks |
 | `--shield` | shield arcs and blocks |
 | `--heal` | mend pulses |
+| `--ice` | a wave tint: every enemy in the wave, icy blue |
 | `--enemy-mite` | mite |
 | `--enemy-drone` | drone |
 | `--enemy-lancer` | lancer |
@@ -178,7 +179,7 @@ Under an `upgrade` node in `content/upgrades.kdl`.
 | Kind | Use |
 |---|---|
 | `enemy` | `enemy "id" name= blurb= hp= r= score= model= [tier=] [touch=] [spawns=] { words }` |
-| `wave` | `wave "id" title= { spawn "enemy" count= gap= at= }`, in play order |
+| `wave` | `wave "id" title= [tint="--token"] { spawn "enemy" count= gap= at= [scale=] }`, in play order; `tint` recolours every enemy in the wave, `scale` sizes that spawn (collision and mesh) |
 | `upgrade` | `upgrade "id" name= icon= blurb= { effect words }` |
 
 ## Content helpers

@@ -34,6 +34,7 @@
   --blink: #b06bff;
   --shield: #6fd2ff;
   --heal: #5dff9d;
+  --ice: #8fe3ff;
 
   /* One per enemy in content/enemies.kdl (a test checks the pairing). */
   --enemy-mite: #ff9a3c;

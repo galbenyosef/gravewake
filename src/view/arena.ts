@@ -8,7 +8,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { enemyDef } from '../content';
+import { enemyDef, radius, waveDef } from '../content';
 import { sfx } from '../audio';
 import { T } from '../tuning';
 import { enemyColor, token } from '../tokens';
@@ -192,8 +192,11 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
 
   const ripple = (x: number, z: number, strength: number) => { ripples[rippleNext]!.set(x, z, 0, strength); rippleNext = (rippleNext + 1) % MAX_RIPPLES; };
 
-  function makeEnemy(kind: string): EnemyView {
-    const d = enemyDef(kind), col = enemyColor(kind), body = bodyMaterial(col);
+  /** An enemy's colour: its own, or the wave's tint (`wave tint="--ice"`) when the wave has one. */
+  const hue = (kind: string, s: GameState) => { const t = waveDef(s.wave).def.tint; return t ? token(t) : enemyColor(kind); };
+
+  function makeEnemy(kind: string, s: GameState): EnemyView {
+    const d = enemyDef(kind), col = hue(kind, s), body = bodyMaterial(col);
     const obj = buildEnemy(d.model, d.r, body, glowMaterial(col, 2.2));
     const parts: Part[] = [];
     obj.traverse((o) => { if ((o as Part).userData.spin) parts.push(o as Part); });
@@ -216,9 +219,9 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
         for (let i = 0; i < 2; i++) particles.spark(e.x + nx * 0.6, e.y + nz * 0.6, nx * 6 + (Math.random() - 0.5) * 3, nz * 6 + (Math.random() - 0.5) * 3, token('--player-shot'), 0.07, 0.12);
         break;
       }
-      case 'hit': sfx('hit'); particles.burst(e.x, e.y, enemyColor(e.kind), 4, 7, 0.08, 0.25); break;
+      case 'hit': sfx('hit'); particles.burst(e.x, e.y, hue(e.kind, s), 4, 7, 0.08, 0.25); break;
       case 'kill': {
-        const d = enemyDef(e.kind), col = enemyColor(e.kind), big = d.tier === 'boss';
+        const d = enemyDef(e.kind), col = hue(e.kind, s), big = d.tier === 'boss';
         sfx(big || d.tier === 'elite' ? 'big-kill' : 'kill');
         particles.burst(e.x, e.y, col, big ? 260 : 16 + d.r * 30, big ? 22 : 9 + d.r * 5, big ? 0.3 : 0.14 + d.r * 0.05, big ? 1.6 : 0.8);
         particles.burst(e.x, e.y, 0xffffff, big ? 60 : 6, big ? 16 : 6, 0.08, 0.4);
@@ -277,14 +280,14 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
     for (const e of s.enemies) {
       seen.add(e.id);
       let v = enemies.get(e.id);
-      if (!v) { v = makeEnemy(e.kind); enemies.set(e.id, v); }
-      const d = enemyDef(e.kind), grow = Math.min(1, e.age / 0.25);
-      v.obj.position.set(e.x, d.r * 0.9 + Math.sin(time * 2 + e.id) * 0.08, e.y);
+      if (!v) { v = makeEnemy(e.kind, s); enemies.set(e.id, v); }
+      const r = radius(e), grow = Math.min(1, e.age / 0.25);
+      v.obj.position.set(e.x, r * 0.9 + Math.sin(time * 2 + e.id) * 0.08, e.y);
       v.obj.rotation.y = -e.facing;
-      v.obj.scale.setScalar(d.r * (0.3 + 0.7 * grow) * (1 + (e.flash > 0 ? 0.12 : 0)));
+      v.obj.scale.setScalar(r * (0.3 + 0.7 * grow) * (1 + (e.flash > 0 ? 0.12 : 0)));
       v.body.emissiveIntensity = e.flash > 0 ? 3 : 0.35 + (1 - e.hp / e.maxHp) * 0.4 + Math.sin(time * 4 + e.id) * 0.08;
       for (const part of v.parts) { const w = part.userData.spin!; part.rotation.x += w.x * dt; part.rotation.y += w.y * dt; part.rotation.z += w.z * dt; }
-      if (v.shield) { v.shield.position.set(e.x, d.r * 0.9, e.y); v.shield.rotation.y = -e.facing; v.shield.scale.setScalar(d.r); }
+      if (v.shield) { v.shield.position.set(e.x, r * 0.9, e.y); v.shield.rotation.y = -e.facing; v.shield.scale.setScalar(r); }
     }
     for (const [id, v] of enemies) if (!seen.has(id)) { dropEnemy(v); enemies.delete(id); }
 
@@ -294,11 +297,11 @@ export function createArena(el: HTMLElement, cssW: number, cssH: number) {
       gates.add(g.id);
       let o = warps.get(g.id);
       if (!o) {
-        const r = enemyDef(g.kind).r;
+        const r = radius(g);
         o = new THREE.Group();
         const ringMesh = new THREE.Mesh(shared.thinTorus, glowMaterial(token('--warp'), 3));
         ringMesh.rotation.x = Math.PI / 2;
-        o.add(ringMesh, new THREE.Mesh(shared.torus, glowMaterial(enemyColor(g.kind), 2, 0.5)));
+        o.add(ringMesh, new THREE.Mesh(shared.torus, glowMaterial(hue(g.kind, s), 2, 0.5)));
         o.scale.setScalar(r * 1.6);
         o.position.set(g.x, 0.1, g.y);
         scene.add(o);

@@ -1,6 +1,6 @@
 // Foundation guards: vocabulary is defined in one home, colours in one palette.
 import { describe, expect, it } from 'vitest';
-import { ENEMY_IDS } from '../content';
+import { ENEMY_IDS, WAVES } from '../content';
 import { TOKENS } from '../tokens';
 
 const SRC = import.meta.glob<string>(['../**/*.ts', '!../**/*.test.ts', '!../stories/**'], { query: '?raw', import: 'default', eager: true });
@@ -30,5 +30,8 @@ describe('foundation guards', () => {
   it('every enemy has a palette colour, and every enemy colour has an enemy', () => {
     const tokens = Object.keys(TOKENS).filter((k) => k.startsWith('--enemy-')).map((k) => k.slice(8));
     expect(tokens.sort()).toEqual([...ENEMY_IDS].sort());
+  });
+  it('every wave tint is a palette colour', () => {
+    expect(WAVES.filter((w) => w.tint && !(w.tint in TOKENS)).map((w) => `${w.id}: ${w.tint}`)).toEqual([]);
   });
 });

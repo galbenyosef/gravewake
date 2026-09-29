@@ -1,7 +1,7 @@
 // The rules of a run: (state, input, dt) -> state, pure. Randomness is the seeded RNG in state.seed; time arrives as dt.
 // Each step copies the state into a private draft, mutates the draft, and returns it, so callers see a pure function
 // (the previous state is never touched). `events` lists what happened in the step, for the shell to animate.
-import { bossOf, enemyDef, UPGRADE_IDS, upgradeDef, waveDef, type EnemyDef } from './content';
+import { bossOf, enemyDef, radius, UPGRADE_IDS, upgradeDef, waveDef, type EnemyDef } from './content';
 import { rand as nextRand, shuffle } from './rng';
 import { T } from './tuning';
 import { BASE_STATS } from './upgrades';
@@ -68,9 +68,10 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   const { def: wave, loop } = waveDef(s.wave);
   const hpScale = T.LOOP_HP_MULT ** loop;
 
-  const makeEnemy = (kind: string, x: number, y: number, parent: number): Enemy => {
+  const makeEnemy = (kind: string, x: number, y: number, parent: number, scale?: number): Enemy => {
     const d = enemyDef(kind), hp = d.hp * hpScale;
     const e: Enemy = { id: s.nextId++, kind, x, y, vx: 0, vy: 0, hp, maxHp: hp, age: 0, facing: Math.atan2(s.player.y - y, s.player.x - x), flash: 0, mem: d.behaviours.map((b) => b.mem(rand)), parent };
+    if (scale !== undefined && scale !== 1) e.scale = scale;
     s.enemies.push(e);
     return e;
   };
@@ -87,7 +88,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   });
   const w: World = {
     s, rand, emit, hurtPlayer,
-    summon: (kind, x, y, parent) => { s.warps.push({ id: s.nextId++, kind, x, y, t: T.WARP_S, parent }); emit({ type: 'warp', x, y, kind }); },
+    summon: (kind, x, y, parent, scale) => { s.warps.push({ id: s.nextId++, kind, x, y, t: T.WARP_S, parent, ...(scale !== undefined && scale !== 1 && { scale }) }); emit({ type: 'warp', x, y, kind }); },
     spawn: (kind, x, y, parent) => makeEnemy(kind, x, y, parent),
     shoot: (x, y, a, speed) => { s.shots.push(shot(x, y, Math.cos(a) * speed, Math.sin(a) * speed, {})); },
     lob: (x, y, tx, ty, blast) => { s.shots.push(shot(x, y, (tx - x) / T.LOB_FLIGHT_S, (ty - y) / T.LOB_FLIGHT_S, { life: T.LOB_FLIGHT_S, lob: true, tx, ty, blast })); },
@@ -125,14 +126,14 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   // --- gates open on the wave's schedule ---
   if (s.phase === 'fight') {
     while (s.spawnIdx < wave.spawns.length && wave.spawns[s.spawnIdx]!.at <= s.waveTime) {
-      const { kind } = wave.spawns[s.spawnIdx++]!;
-      const [x, y] = gatePoint(s, rand, enemyDef(kind));
-      w.summon(kind, x, y, 0);
+      const { kind, scale } = wave.spawns[s.spawnIdx++]!;
+      const [x, y] = gatePoint(s, rand, enemyDef(kind), radius({ kind, scale }));
+      w.summon(kind, x, y, 0, scale);
     }
   }
   for (const g of s.warps) {
     g.t -= dt;
-    if (g.t <= 0) { const e = makeEnemy(g.kind, g.x, g.y, g.parent); emit({ type: 'arrive', id: e.id, kind: e.kind, x: e.x, y: e.y }); }
+    if (g.t <= 0) { const e = makeEnemy(g.kind, g.x, g.y, g.parent, g.scale); emit({ type: 'arrive', id: e.id, kind: e.kind, x: e.x, y: e.y }); }
   }
   s.warps = s.warps.filter((g) => g.t > 0);
 
@@ -145,7 +146,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   }
   separate(s.enemies, dt);
   for (const e of s.enemies) {
-    const r = enemyDef(e.kind).r;
+    const r = radius(e);
     e.x = clamp(e.x + e.vx * dt, -HALF_W + r, HALF_W - r);
     e.y = clamp(e.y + e.vy * dt, -HALF_H + r, HALF_H - r);
     if (!enemyDef(e.kind).behaviours.some((b) => b.guard)) {
@@ -172,7 +173,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
     for (const e of s.enemies) {
       if (e.hp <= 0 || b.hit.includes(e.id)) continue;
       const d = enemyDef(e.kind);
-      if (dist(b.x, b.y, e.x, e.y) > b.r + d.r) continue;
+      if (dist(b.x, b.y, e.x, e.y) > b.r + radius(e)) continue;
       const fx = b.x - b.vx * 0.02, fy = b.y - b.vy * 0.02; // where it came from, for shields
       const dmg = d.behaviours.reduce((acc, bh, i) => (bh.guard ? bh.guard(e.mem[i]!, w, e, acc, fx, fy) : acc), b.dmg);
       b.hit.push(e.id);
@@ -187,7 +188,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
   // --- contact ---
   for (const e of s.enemies) {
     const d = enemyDef(e.kind);
-    if (e.hp <= 0 || dist(e.x, e.y, p.x, p.y) > d.r + T.PLAYER_R_U) continue;
+    if (e.hp <= 0 || dist(e.x, e.y, p.x, p.y) > radius(e) + T.PLAYER_R_U) continue;
     if (d.behaviours.some((b) => b.kamikaze)) e.hp = 0;
     else if (d.touch > 0) hurtPlayer(d.touch);
   }
@@ -200,7 +201,7 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
     s.score += score; s.kills++;
     emit({ type: 'kill', id: e.id, x: e.x, y: e.y, kind: e.kind, score });
     const shards = d.tier === 'boss' ? T.BOSS_SHARDS : d.tier === 'elite' ? T.ELITE_SHARDS : 1;
-    for (let i = 0; i < shards; i++) s.pickups.push({ id: s.nextId++, kind: 'shard', x: e.x + (rand() - 0.5) * d.r * 2, y: e.y + (rand() - 0.5) * d.r * 2, life: T.SHARD_LIFE_S });
+    for (let i = 0; i < shards; i++) s.pickups.push({ id: s.nextId++, kind: 'shard', x: e.x + (rand() - 0.5) * radius(e) * 2, y: e.y + (rand() - 0.5) * radius(e) * 2, life: T.SHARD_LIFE_S });
     if (rand() < T.REPAIR_DROP_CHANCE) s.pickups.push({ id: s.nextId++, kind: 'repair', x: e.x, y: e.y, life: T.SHARD_LIFE_S });
   }
   s.enemies = s.enemies.filter((e) => e.hp > 0);
@@ -243,8 +244,8 @@ export function step(prev: GameState, input: Input, dt: number): GameState {
 }
 
 /** A gate on the arena's rim, at least SPAWN_MIN_DIST_U from the ship; bosses take the far side. */
-function gatePoint(s: GameState, rand: () => number, d: EnemyDef): [number, number] {
-  const pad = d.r + 0.6;
+function gatePoint(s: GameState, rand: () => number, d: EnemyDef, r: number): [number, number] {
+  const pad = r + 0.6;
   if (d.tier === 'boss') return [s.player.x > 0 ? -HALF_W / 2 : HALF_W / 2, 0];
   for (let tries = 0; ; tries++) {
     const side = Math.floor(rand() * 4), t = rand() * 2 - 1;
@@ -257,9 +258,9 @@ function gatePoint(s: GameState, rand: () => number, d: EnemyDef): [number, numb
 /** Overlapping enemies push apart (pairwise; ponytail: O(n²), a grid if waves pass ~200 alive). */
 function separate(es: Enemy[], dt: number) {
   for (let i = 0; i < es.length; i++) {
-    const a = es[i]!, ra = enemyDef(a.kind).r;
+    const a = es[i]!, ra = radius(a);
     for (let j = i + 1; j < es.length; j++) {
-      const b = es[j]!, rb = enemyDef(b.kind).r, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = ra + rb;
+      const b = es[j]!, rb = radius(b), dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), min = ra + rb;
       if (d >= min || d === 0) continue;
       const push = ((min - d) / d) * Math.min(1, T.SEPARATION_PER_S * dt) * 0.5;
       a.x -= dx * push; a.y -= dy * push; b.x += dx * push; b.y += dy * push;

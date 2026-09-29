@@ -20,6 +20,8 @@ export type Enemy = {
   mem: number[][];
   /** Who summoned it, so a hive counts its own brood. */
   parent: number;
+  /** Size multiplier from its wave's `spawn scale=` (absent = 1): collision and mesh both. */
+  scale?: number;
 };
 
 export type Shot = {
@@ -42,7 +44,7 @@ export type Shot = {
 export type Pickup = { id: number; kind: 'shard' | 'repair'; x: number; y: number; life: number };
 
 /** A gate opening: `kind` steps out at (x, y) when `t` (seconds left) runs out. */
-export type Warp = { id: number; kind: string; x: number; y: number; t: number; parent: number };
+export type Warp = { id: number; kind: string; x: number; y: number; t: number; parent: number; scale?: number };
 
 export type Player = {
   x: number; y: number;
@@ -125,7 +127,7 @@ export type World = {
   rand: () => number;
   emit: (e: GameEvent) => void;
   /** Open a warp gate for `kind` that delivers it at (x, y) after the warp time; `parent` is the summoner. */
-  summon: (kind: string, x: number, y: number, parent: number) => void;
+  summon: (kind: string, x: number, y: number, parent: number, scale?: number) => void;
   /** Put `kind` straight into play (a splitter's children don't wait for a gate). */
   spawn: (kind: string, x: number, y: number, parent: number) => Enemy;
   shoot: (x: number, y: number, angle: number, speed: number) => void;

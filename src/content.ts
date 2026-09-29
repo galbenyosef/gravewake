@@ -50,17 +50,20 @@ const SpawnSchema = z.strictObject({
   name: z.literal('spawn'),
   args: z.tuple([kind]),
   /** `count` gates, `gap` s apart, the first `at` s into the wave. */
-  props: z.strictObject({ count: z.number().int().positive().default(1), gap: z.number().nonnegative().default(0.4), at: z.number().nonnegative().default(0) }),
+  /** `scale` multiplies the enemy's size (collision and mesh). */
+  props: z.strictObject({ count: z.number().int().positive().default(1), gap: z.number().nonnegative().default(0.4), at: z.number().nonnegative().default(0), scale: pos.default(1) }),
 });
 
 export const WaveSchema = z.strictObject({
   id: z.string(),
   title: z.string(),
+  /** A palette token (`--ice`) that colours every enemy in the wave instead of its own `--enemy-<id>`. */
+  tint: z.string().regex(/^--[\w-]+$/, 'a palette token like "--ice"').optional(),
   children: z.array(SpawnSchema).min(1),
 }).transform(({ children, ...w }) => ({
   ...w,
   /** One entry per gate, sorted by when it opens. */
-  spawns: children.flatMap((c) => Array.from({ length: c.props.count }, (_, i) => ({ kind: c.args[0], at: c.props.at + i * c.props.gap }))).sort((a, b) => a.at - b.at),
+  spawns: children.flatMap((c) => Array.from({ length: c.props.count }, (_, i) => ({ kind: c.args[0], at: c.props.at + i * c.props.gap, scale: c.props.scale }))).sort((a, b) => a.at - b.at),
 }));
 export type WaveDef = z.output<typeof WaveSchema>;
 export const WAVES = Object.values(loadKdl(wavesKdl, { wave: WaveSchema }).wave);
@@ -82,6 +85,9 @@ export function upgradeDef(id: string): UpgradeDef {
   if (!d) throw new Error(`unknown upgrade "${id}"`);
   return d;
 }
+
+/** An enemy's (or its gate's) collision radius, u: its kind's `r` times its spawn scale. */
+export const radius = (e: { kind: string; scale?: number }) => enemyDef(e.kind).r * (e.scale ?? 1);
 
 /** The wave list loops past its end; `loop` counts completed passes (0 on the first). */
 export function waveDef(n: number): { def: WaveDef; loop: number } {
