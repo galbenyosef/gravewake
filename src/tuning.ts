@@ -33,7 +33,7 @@ export const T = {
   /** A lobbed mortar round's flight time: the landing ring is on screen this long, the dodge window. */
   LOB_FLIGHT_S: 1.25,
   /** How fast a shielded enemy can turn its shield to face the ship. */
-  ENEMY_TURN_RAD_PER_S: 1.6,
+  ENEMY_TURN_RAD_PER_S: 1.1,
   /** How quickly enemies reach the velocity their movement word wants: they have heft, unlike the ship. */
   ENEMY_ACCEL_PER_S: 4,
   /** A dasher creeps at this fraction of its charge speed between charges. */
