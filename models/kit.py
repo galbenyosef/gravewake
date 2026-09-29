@@ -476,7 +476,7 @@ def _paint(ob, zmin, zmax, seed, bvh):
         acc = [n.dot((e.other_vert(v).co - v.co).normalized()) for e in v.link_edges if (e.other_vert(v).co - v.co).length > 1e-6]
         cav.append(sum(acc) / len(acc) if acc else 0)
     bm.free()
-    attr = me.color_attributes.new('Color', 'FLOAT_COLOR', 'POINT')
+    attr = me.color_attributes.new('Color', 'BYTE_COLOR', 'POINT')
     pz = [(mw @ v.co).z for v in me.vertices]
     lo, hi = min(pz), max(pz)
     for i, v in enumerate(me.vertices):
@@ -539,6 +539,7 @@ def export(script, sharp_deg=40, seed=0):
     if clips != set(CLIPS): raise SystemExit(f'clips must be {CLIPS}, got {sorted(clips)}')
     out = os.path.splitext(os.path.abspath(script))[0] + '.glb'
     bpy.ops.export_scene.gltf(filepath=out, export_format='GLB', export_animation_mode='NLA_TRACKS', export_vertex_color='ACTIVE',
-                              export_texcoords=False, export_extras=False, export_yup=True, export_apply=True, export_materials='EXPORT')
+                              export_texcoords=False, export_extras=False, export_yup=True, export_apply=True, export_materials='EXPORT',
+                              export_force_sampling=False, export_optimize_animation_size=True)
     tris = sum(len(p.vertices) - 2 for o in meshes for p in o.data.polygons)
     print(f'MODEL {os.path.basename(out)}: {len(meshes)} parts, {tris} tris, {os.path.getsize(out) // 1024} KB')
