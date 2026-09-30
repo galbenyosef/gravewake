@@ -2,7 +2,11 @@
 
 A dark fantasy twin-stick shooter for phones. You are a wizard alone in a dead clearing at midnight, and the dead are climbing out of the ground.
 
-**This game was vibecoded by [Liora Labs](https://lioralabs.dev) as an experiment in keeping human control at agentic speed. [Read how it was made.](https://lioralabs.dev/blog/agentic-speed-human-control)**
+GRAVEWAKE is an experiment in vibecoding video games with Opus 5.5, by [Liora Labs](https://lioralabs.dev): one prompt for the first playable game, a handful more to reshape it, and a set of house rules that kept every change readable along the way.
+
+- **Read the story:** [Agentic Speed, Human Control in Game Dev](https://lioralabs.dev/blog/agentic-speed-human-control)
+- **Play it:** [shiny-guru.itch.io/gravewake](https://shiny-guru.itch.io/gravewake)
+- **The house rules:** the [game-bible plugin](https://github.com/LioraLabs/claude-plugins/tree/main/plugins/game-bible) for Claude Code
 
 ![The GRAVEWAKE title screen: the name in gold over a dark forest clearing, with Enter, Bestiary and Sound buttons.](docs/media/title.webp)
 
